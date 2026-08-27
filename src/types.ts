@@ -44,6 +44,10 @@ export interface Target {
   charge: number; // 0..1
   isSatisfied: boolean;
   name?: string;
+  targetRgb?: [number, number, number];
+  sampledRgb?: [number, number, number];
+  isColorMatching?: boolean;
+  hasLight?: boolean;
 }
 
 export interface Emitter {
@@ -66,7 +70,7 @@ export interface LevelDef {
   title: string;
   subtitle: string;
   hint: string;
-  emitter: Emitter;
+  emitter: Emitter | Emitter[];
   prisms: Prism[];
   targets: Target[];
   obstacles: Obstacle[];
