@@ -476,83 +476,77 @@ export class GameRenderer {
 
       ctx.restore();
 
-      // 2.2 Move Indicator - ALWAYS FIXED AT THE BOTTOM at (0, 55 * s)
-      const moveY = 55 * s;
+      // 2.2 Move Indicator - ALWAYS FIXED AT THE BOTTOM at (0, 82 * s)
+      const moveY = 82 * s;
       const isMoveActive = (isDragged && dragMode === 'move') || hoverHandle === 'body';
 
       ctx.save();
       // Move badge background
-      ctx.fillStyle = isMoveActive ? 'rgba(30, 41, 69, 0.95)' : 'rgba(15, 23, 42, 0.88)';
-      ctx.strokeStyle = isMoveActive ? '#ffd700' : 'rgba(56, 189, 248, 0.8)';
-      ctx.lineWidth = isMoveActive ? 2.0 : 1.4;
+      ctx.fillStyle = isMoveActive ? 'rgba(28, 40, 72, 0.96)' : 'rgba(15, 23, 42, 0.90)';
+      ctx.strokeStyle = isMoveActive ? '#ffd700' : 'rgba(56, 189, 248, 0.85)';
+      ctx.lineWidth = isMoveActive ? 2.4 : 1.6;
 
-      const badgeR = 13.5 * s;
+      const badgeR = 19 * s;
       ctx.beginPath();
       ctx.arc(0, moveY, badgeR, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Badge glow when active
-      if (isMoveActive) {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.arc(0, moveY, badgeR + 2 * s, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      }
+      // Outer badge glow ring
+      ctx.save();
+      ctx.strokeStyle = isMoveActive ? 'rgba(255, 215, 0, 0.6)' : 'rgba(56, 189, 248, 0.25)';
+      ctx.lineWidth = isMoveActive ? 3.5 : 1.8;
+      ctx.beginPath();
+      ctx.arc(0, moveY, badgeR + 3 * s, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
 
-      // 4-directional Move Arrows (✥) - Always upright
+      // 4-directional Move Arrows (✥) - Always upright and prominent
       const arrowColor = isMoveActive ? '#ffd700' : '#38bdf8';
       ctx.fillStyle = arrowColor;
       ctx.strokeStyle = arrowColor;
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 2.0;
 
-      const arm = 8 * s;
-      const arrowSize = 2.6 * s;
+      const arm = 11.5 * s;
+      const arrowSize = 3.6 * s;
 
-      // Vertical line & arrowheads
+      // Vertical & Horizontal cross lines
       ctx.beginPath();
       ctx.moveTo(0, moveY - arm);
       ctx.lineTo(0, moveY + arm);
-      ctx.stroke();
-
-      // Horizontal line
-      ctx.beginPath();
       ctx.moveTo(-arm, moveY);
       ctx.lineTo(arm, moveY);
       ctx.stroke();
 
       // North arrow
       ctx.beginPath();
-      ctx.moveTo(0, moveY - arm - 1);
-      ctx.lineTo(-arrowSize, moveY - arm + arrowSize);
-      ctx.lineTo(arrowSize, moveY - arm + arrowSize);
+      ctx.moveTo(0, moveY - arm - 1.5 * s);
+      ctx.lineTo(-arrowSize, moveY - arm + arrowSize * 0.7);
+      ctx.lineTo(arrowSize, moveY - arm + arrowSize * 0.7);
       ctx.closePath();
       ctx.fill();
 
       // South arrow
       ctx.beginPath();
-      ctx.moveTo(0, moveY + arm + 1);
-      ctx.lineTo(-arrowSize, moveY + arm - arrowSize);
-      ctx.lineTo(arrowSize, moveY + arm - arrowSize);
+      ctx.moveTo(0, moveY + arm + 1.5 * s);
+      ctx.lineTo(-arrowSize, moveY + arm - arrowSize * 0.7);
+      ctx.lineTo(arrowSize, moveY + arm - arrowSize * 0.7);
       ctx.closePath();
       ctx.fill();
 
       // West arrow
       ctx.beginPath();
-      ctx.moveTo(-arm - 1, moveY);
-      ctx.lineTo(-arm + arrowSize, moveY - arrowSize);
-      ctx.lineTo(-arm + arrowSize, moveY + arrowSize);
+      ctx.moveTo(-arm - 1.5 * s, moveY);
+      ctx.lineTo(-arm + arrowSize * 0.7, moveY - arrowSize);
+      ctx.lineTo(-arm + arrowSize * 0.7, moveY + arrowSize);
       ctx.closePath();
       ctx.fill();
 
       // East arrow
       ctx.beginPath();
-      ctx.moveTo(arm + 1, moveY);
-      ctx.lineTo(arm - arrowSize, moveY - arrowSize);
-      ctx.lineTo(arm - arrowSize, moveY + arrowSize);
+      ctx.moveTo(arm + 1.5 * s, moveY);
+      ctx.lineTo(arm - arrowSize * 0.7, moveY - arrowSize);
+      ctx.lineTo(arm - arrowSize * 0.7, moveY + arrowSize);
       ctx.closePath();
       ctx.fill();
 

@@ -12,11 +12,11 @@ export interface DragState {
   prismIndex: number | null;
   mode: 'move' | 'rotate' | null;
   dragOffset: Vec2;
-  rotOffset: number;
+  lastAngle: number;
   isTouch: boolean;
 }
 
-const TOUCH_DRAG_OFFSET_Y = 55; // World units offset upwards so finger does not cover pony & rays
+const TOUCH_DRAG_OFFSET_Y = 60; // World units offset upwards so finger does not cover pony & rays
 
 export class InputHandler {
   private canvas: HTMLCanvasElement;
@@ -26,7 +26,7 @@ export class InputHandler {
     prismIndex: null,
     mode: null,
     dragOffset: v2(0, 0),
-    rotOffset: 0,
+    lastAngle: 0,
     isTouch: false,
   };
   public hoverPrismIndex: number | null = null;
@@ -126,12 +126,12 @@ export class InputHandler {
       const prism = prisms[this.selectedPrismIndex];
       if (!prism.locked) {
         const s = prism.scale || 1;
-        const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 55 * s };
+        const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 82 * s };
         const dMove = vDist(this.mousePos, moveHandlePos);
         const dCenter = vDist(this.mousePos, prism.pos);
 
-        // 1. Move hit (bottom handle or center body)
-        if (dMove <= 24 * s || dCenter <= 38 * s || isPointInPolygon(this.mousePos, getPrismVertices(prism))) {
+        // 1. Move hit (bottom handle with generous hit radius or center body)
+        if (dMove <= 34 * s || dCenter <= 38 * s || isPointInPolygon(this.mousePos, getPrismVertices(prism))) {
           this.hoverPrismIndex = this.selectedPrismIndex;
           this.hoverHandle = 'body';
           this.canvas.style.cursor = 'move';
@@ -185,7 +185,7 @@ export class InputHandler {
     ) {
       const prism = prisms[this.selectedPrismIndex];
       const s = prism.scale || 1;
-      const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 55 * s };
+      const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 82 * s };
       const dMove = vDist(pos, moveHandlePos);
       const dCenter = vDist(pos, prism.pos);
 
@@ -194,7 +194,7 @@ export class InputHandler {
           targetIdx = this.selectedPrismIndex;
           mode = 'rotate';
         }
-      } else if (dMove <= 24 * s || dCenter <= 38 * s || isPointInPolygon(pos, getPrismVertices(prism))) {
+      } else if (dMove <= 34 * s || dCenter <= 38 * s || isPointInPolygon(pos, getPrismVertices(prism))) {
         // Tapped move badge or center body
         targetIdx = this.selectedPrismIndex;
         mode = 'move';
@@ -247,7 +247,7 @@ export class InputHandler {
           prismIndex: targetIdx,
           mode: 'rotate',
           dragOffset: v2(0, 0),
-          rotOffset: currentAngle - prism.rot,
+          lastAngle: currentAngle,
           isTouch,
         };
         this.canvas.style.cursor = 'grabbing';
@@ -257,7 +257,7 @@ export class InputHandler {
           prismIndex: targetIdx,
           mode: 'move',
           dragOffset: { x: prism.pos.x - pos.x, y: prism.pos.y - effectiveY },
-          rotOffset: 0,
+          lastAngle: 0,
           isTouch,
         };
         this.canvas.style.cursor = 'move';
@@ -287,13 +287,22 @@ export class InputHandler {
           }
           playPrismRotate(0.2);
         } else if (this.dragState.mode === 'rotate') {
-          const currentAngle = Math.atan2(pos.y - prism.pos.y, pos.x - prism.pos.x);
-          const oldRot = prism.rot;
-          prism.rot = currentAngle - this.dragState.rotOffset;
-          if (prism.baseRot !== undefined) {
-            prism.baseRot = prism.rot;
+          const dFromCenter = vDist(pos, prism.pos);
+          if (dFromCenter >= 10) {
+            const currentAngle = Math.atan2(pos.y - prism.pos.y, pos.x - prism.pos.x);
+            let dTheta = currentAngle - this.dragState.lastAngle;
+            // Normalize delta to (-PI, PI] to handle crossing the -PI/PI branch cut seamlessly
+            while (dTheta > Math.PI) dTheta -= Math.PI * 2;
+            while (dTheta < -Math.PI) dTheta += Math.PI * 2;
+
+            prism.rot += dTheta;
+            this.dragState.lastAngle = currentAngle;
+
+            if (prism.baseRot !== undefined) {
+              prism.baseRot = prism.rot;
+            }
+            playPrismRotate(Math.abs(dTheta) * 8);
           }
-          playPrismRotate(Math.abs(prism.rot - oldRot) * 10);
         }
         this.onStateChange?.();
       }
@@ -308,7 +317,7 @@ export class InputHandler {
         prismIndex: null,
         mode: null,
         dragOffset: v2(0, 0),
-        rotOffset: 0,
+        lastAngle: 0,
         isTouch: false,
       };
       this.canvas.style.cursor = 'default';
