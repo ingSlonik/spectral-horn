@@ -100,36 +100,19 @@ export class GameRenderer {
   public renderSquareBounds(size: number = 1000): void {
     const ctx = this.ctx;
     ctx.save();
-    // Subtle boundary glow
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(0, 0, size, size);
 
-    // Elegant celestial corner accents
-    const cLen = 32;
+    const c = 32;
     ctx.strokeStyle = 'rgba(255, 215, 0, 0.35)';
     ctx.lineWidth = 2.0;
-
-    // Top-Left
     ctx.beginPath();
-    ctx.moveTo(0, cLen); ctx.lineTo(0, 0); ctx.lineTo(cLen, 0);
+    ctx.moveTo(0, c); ctx.lineTo(0, 0); ctx.lineTo(c, 0);
+    ctx.moveTo(size - c, 0); ctx.lineTo(size, 0); ctx.lineTo(size, c);
+    ctx.moveTo(size, size - c); ctx.lineTo(size, size); ctx.lineTo(size - c, size);
+    ctx.moveTo(c, size); ctx.lineTo(0, size); ctx.lineTo(0, size - c);
     ctx.stroke();
-
-    // Top-Right
-    ctx.beginPath();
-    ctx.moveTo(size - cLen, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cLen);
-    ctx.stroke();
-
-    // Bottom-Right
-    ctx.beginPath();
-    ctx.moveTo(size, size - cLen); ctx.lineTo(size, size); ctx.lineTo(size - cLen, size);
-    ctx.stroke();
-
-    // Bottom-Left
-    ctx.beginPath();
-    ctx.moveTo(cLen, size); ctx.lineTo(0, size); ctx.lineTo(0, size - cLen);
-    ctx.stroke();
-
     ctx.restore();
   }
 
@@ -356,59 +339,114 @@ export class GameRenderer {
     ctx.translate(prism.pos.x, prism.pos.y);
     ctx.rotate(prism.rot);
 
-    // 1.1 Render Minimalist Vector Pony beneath the Horn
-    this.renderPonyHead(s, isHovered || isSelected, isDragged, time);
-
-    // 1.2 Render Crystal Horn (Prism)
-    // Horn apex is at (0, -38*s), base is from (-22*s, 22*s) to (22*s, 22*s)
-    const localVerts = [
-      { x: 0, y: -38 * s },
-      { x: 22 * s, y: 22 * s },
-      { x: -22 * s, y: 22 * s },
-    ];
-
-    // Glass body fill
-    const grad = ctx.createLinearGradient(0, -38 * s, 0, 22 * s);
-    grad.addColorStop(0, isDragged ? 'rgba(255, 240, 200, 0.45)' : 'rgba(200, 240, 255, 0.32)');
-    grad.addColorStop(1, isDragged ? 'rgba(255, 215, 0, 0.22)' : 'rgba(120, 180, 240, 0.15)');
-
-    ctx.beginPath();
-    ctx.moveTo(localVerts[0].x, localVerts[0].y);
-    for (let i = 1; i < localVerts.length; i++) {
-      ctx.lineTo(localVerts[i].x, localVerts[i].y);
+    // 1.1 Render Minimalist Vector Pony beneath the Horn ONLY if shape is 'horn'
+    if (prism.shape === 'horn') {
+      this.renderPonyHead(s, isHovered || isSelected, isDragged, time);
     }
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
 
-    // Outer crystal rim stroke
-    ctx.lineWidth = isDragged ? 2.5 : (isHovered || isSelected) ? 2.0 : 1.5;
-    ctx.strokeStyle = isDragged
+    const rimStroke = isDragged
       ? '#ffd700'
       : (isHovered || isSelected)
       ? '#a5e5ff'
       : 'rgba(210, 235, 255, 0.85)';
-    ctx.stroke();
+    const rimWidth = isDragged ? 2.5 : (isHovered || isSelected) ? 2.0 : 1.5;
 
-    // Internal crystalline facet lines (spiral horn grooves)
-    ctx.save();
-    ctx.strokeStyle = isDragged ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.35)';
-    ctx.lineWidth = 1.2;
+    if (prism.shape === 'mirror') {
+      // 1.2 Celestial Mirror Bar
+      const w = 36 * s;
+      const h = 6 * s;
 
-    const tip = localVerts[0];
-    const bRight = localVerts[1];
-    const bLeft = localVerts[2];
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-w - 2 * s, -h - 2 * s, (w + 2 * s) * 2, (h + 2 * s) * 2);
 
-    for (let f = 1; f <= 3; f++) {
-      const t = f / 4;
-      const pL = { x: tip.x + (bLeft.x - tip.x) * t, y: tip.y + (bLeft.y - tip.y) * t };
-      const pR = { x: tip.x + (bRight.x - tip.x) * t, y: tip.y + (bRight.y - tip.y) * t };
+      ctx.save();
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      ctx.lineWidth = 1.2;
+      for (let x = -w + 6 * s; x <= w; x += 12 * s) {
+        ctx.beginPath();
+        ctx.moveTo(x, 2 * s);
+        ctx.lineTo(x - 6 * s, h + 2 * s);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      const grad = ctx.createLinearGradient(-w, 0, w, 0);
+      grad.addColorStop(0, '#7dd3fc');
+      grad.addColorStop(0.5, '#ffffff');
+      grad.addColorStop(1, '#38bdf8');
+      ctx.fillStyle = grad;
+      ctx.fillRect(-w, -h, w * 2, h * 2);
+
+      ctx.lineWidth = rimWidth;
+      ctx.strokeStyle = rimStroke;
+      ctx.strokeRect(-w, -h, w * 2, h * 2);
+
+      ctx.fillStyle = isDragged ? '#ffd700' : '#38bdf8';
       ctx.beginPath();
-      ctx.moveTo(pL.x, pL.y);
-      ctx.quadraticCurveTo(0, (pL.y + pR.y) / 2 - 3 * s, pR.x, pR.y);
+      ctx.arc(0, 0, 3 * s, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // 1.3 Glass Body (Horn, Dove, Lens, Orb)
+      const grad = ctx.createLinearGradient(0, -38 * s, 0, 38 * s);
+      grad.addColorStop(0, isDragged ? 'rgba(255, 240, 200, 0.45)' : 'rgba(200, 240, 255, 0.32)');
+      grad.addColorStop(1, isDragged ? 'rgba(255, 215, 0, 0.22)' : 'rgba(120, 180, 240, 0.15)');
+      ctx.fillStyle = grad;
+
+      ctx.beginPath();
+      if (prism.shape === 'horn') {
+        ctx.moveTo(0, -38 * s);
+        ctx.lineTo(22 * s, 22 * s);
+        ctx.lineTo(-22 * s, 22 * s);
+      } else if (prism.shape === 'dove') {
+        ctx.moveTo(-20 * s, -24 * s);
+        ctx.lineTo(20 * s, -24 * s);
+        ctx.lineTo(44 * s, 24 * s);
+        ctx.lineTo(-44 * s, 24 * s);
+      } else {
+        // orb
+        ctx.arc(0, 0, 30 * s, 0, Math.PI * 2);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.lineWidth = rimWidth;
+      ctx.strokeStyle = rimStroke;
       ctx.stroke();
+
+      // Shape-specific internal crystal accents
+      ctx.save();
+      ctx.strokeStyle = isDragged ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 1.2;
+
+      if (prism.shape === 'horn') {
+        for (let f = 1; f <= 3; f++) {
+          const t = f / 4;
+          ctx.beginPath();
+          ctx.moveTo(-22 * s * t, -38 * s + 60 * s * t);
+          ctx.quadraticCurveTo(0, -38 * s + 60 * s * t - 3 * s, 22 * s * t, -38 * s + 60 * s * t);
+          ctx.stroke();
+        }
+      } else if (prism.shape === 'dove') {
+        ctx.beginPath();
+        ctx.moveTo(-20 * s, -24 * s);
+        ctx.lineTo(0, 24 * s);
+        ctx.lineTo(20 * s, -24 * s);
+        ctx.stroke();
+      } else if (prism.shape === 'orb') {
+        const starPulse = 3.5 * s + Math.sin(time * 0.005) * 1.5 * s;
+        ctx.fillStyle = isDragged ? '#ffd700' : '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-8 * s, -8 * s, 4 * s, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, -starPulse);
+        ctx.lineTo(starPulse * 0.3, 0);
+        ctx.lineTo(0, starPulse);
+        ctx.lineTo(-starPulse * 0.3, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
     }
-    ctx.restore();
 
     ctx.restore(); // Restore rotated transform
 
@@ -687,6 +725,16 @@ export class GameRenderer {
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore();
+  }
+
+  public renderFPS(fps: number): void {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.5)';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${fps} FPS`, 985, 24);
     ctx.restore();
   }
 }

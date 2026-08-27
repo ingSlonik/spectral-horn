@@ -59,8 +59,10 @@ html, body {
   font-weight: 800;
   letter-spacing: 1px;
   background: linear-gradient(135deg, #ffd700, #ff7b00, #ff007f, #00d4ff);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: transparent;
   padding-right: 4px;
   display: flex;
   align-items: center;
@@ -77,7 +79,7 @@ select, button {
   font-weight: 500;
   cursor: pointer;
   outline: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -187,7 +189,6 @@ button:active {
     font-size: 0.82rem;
   }
 
-  /* Enhanced bottom level hint bar for mobile */
   #game-hint-bar {
     bottom: 12px;
     padding: 6px 16px;
@@ -195,37 +196,12 @@ button:active {
     gap: 3px;
     max-width: min(92vw, 440px);
     border-radius: 14px;
-    background: rgba(12, 16, 32, 0.90);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.6);
   }
-
-  .hint-sep {
-    display: none;
-  }
-
-  #lvl-title {
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-  }
-
-  #lvl-hint {
-    font-size: 0.73rem;
-    color: #cbd5e1;
-    line-height: 1.35;
-    text-align: center;
-  }
-
-  .title-cards {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  #title-screen {
-    padding: 24px 16px;
-  }
+  .hint-sep { display: none; }
+  #lvl-title { font-size: 0.78rem; }
+  #lvl-hint { font-size: 0.73rem; }
+  .title-cards { grid-template-columns: 1fr; gap: 12px; }
+  #title-screen { padding: 24px 16px; }
 }
 
 /* Mode toggles */
@@ -299,7 +275,7 @@ body:not(.is-title) #title-screen {
   border: none;
   cursor: pointer;
   box-shadow: 0 0 32px rgba(255, 215, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.5);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
