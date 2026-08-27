@@ -4,6 +4,7 @@ import { traceScene } from './raytracer';
 import { GameRenderer } from './renderer';
 import { InputHandler } from './input';
 import { v2 } from './math';
+import { checkColorMatch, wavelengthToRGB } from './color';
 import { initAudio, playVictory, playSensorPulse, playClick, toggleMute, isMuted } from './audio';
 
 const STORAGE_COMPLETED_KEY = 'spectral_horn_completed_levels';
@@ -86,7 +87,7 @@ export class Game {
       const dt = Math.min((time - lastTime) / 1000, 0.1);
       lastTime = time;
       this.update(dt, time);
-      this.render(time);
+      this.render(dt, time);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -259,63 +260,10 @@ export class Game {
           prism.pos.y = baseY + Math.sin(time * 0.0022 + phase) * 3.5;
         }
       }
-      return;
-    }
-
-    // 1. Ray-trace the scene across full viewport bounds
-    const bounds = this.getViewportBounds();
-    const traceResult = traceScene(
-      this.level.emitter,
-      this.prisms,
-      this.level.obstacles,
-      this.targets,
-      bounds
-    );
-
-    // 2. Update Target Sensor charges
-    let allSatisfied = true;
-
-    for (const target of this.targets) {
-      const hit = traceResult.targetHits.get(target.id) || { valid: 0, total: 0, avgWavelength: 0 };
-
-      if (hit.valid >= 2) {
-        // Correct spectrum hitting sensor!
-        target.charge = Math.min(1.0, target.charge + dt * 1.5);
-        if (target.charge >= 0.95) {
-          target.isSatisfied = true;
-        }
-        playSensorPulse(target.charge);
-      } else if (hit.total > 0) {
-        // Wrong spectrum hitting sensor -> discharge faster
-        target.charge = Math.max(0, target.charge - dt * 2.0);
-        target.isSatisfied = false;
-      } else {
-        // No rays -> slow discharge
-        target.charge = Math.max(0, target.charge - dt * 0.7);
-        target.isSatisfied = false;
-      }
-
-      if (!target.isSatisfied) {
-        allSatisfied = false;
-      }
-    }
-
-    // 3. Level Complete condition
-    if (allSatisfied && !this.isLevelComplete) {
-      this.winDelay += dt;
-      if (this.winDelay > 0.4) {
-        this.isLevelComplete = true;
-        markLevelCompleted(this.currentLevelIdx);
-        this.populateLevelSelect();
-        playVictory();
-        this.elWinModal.classList.remove('hidden');
-      }
-    } else if (!allSatisfied) {
-      this.winDelay = 0;
     }
   }
 
-  private render(time: number): void {
+  private render(dt: number, time: number): void {
     this.resizeCanvas();
 
     const ctx = this.ctx;
@@ -378,8 +326,8 @@ export class Game {
       this.renderer.renderObstacle(obs);
     }
 
-    // 3. Emitter
-    this.renderer.renderEmitter(this.level.emitter, time);
+    // 3. Emitters
+    this.renderer.renderEmitters(this.level.emitter, time);
 
     // 4. Prisms
     for (let i = 0; i < this.prisms.length; i++) {
@@ -400,12 +348,7 @@ export class Game {
       );
     }
 
-    // 5. Targets
-    for (const target of this.targets) {
-      this.renderer.renderTarget(target, time);
-    }
-
-    // 6. Ray-tracing & rendering extending all the way to browser window edges
+    // 5. Ray-tracing & rendering extending all the way to browser window edges
     const traceResult = traceScene(
       this.level.emitter,
       this.prisms,
@@ -415,10 +358,65 @@ export class Game {
     );
     this.renderer.renderRays(traceResult.segments);
 
-    // 7. Particles
+    // 6. Color Sampling from Canvas & Target Evaluation
+    let allSatisfied = true;
+
+    for (const target of this.targets) {
+      // Sample actual rendered color directly from the canvas at target position
+      const sampledRgb = this.renderer.sampleCanvasColorAt(target.pos, bounds, dpr);
+      const midWl = (target.minLambda + target.maxLambda) / 2;
+      const targetRgb = target.targetRgb || wavelengthToRGB(midWl);
+      const match = checkColorMatch(sampledRgb, targetRgb);
+
+      target.sampledRgb = match.sampledRgb;
+      target.isColorMatching = match.isMatch;
+      target.hasLight = match.hasLight;
+
+      if (match.isMatch) {
+        // Matching light color hitting the sensor center!
+        target.charge = Math.min(1.0, target.charge + dt * 1.5);
+        if (target.charge >= 0.95) {
+          target.isSatisfied = true;
+        }
+        playSensorPulse(target.charge);
+      } else if (match.hasLight) {
+        // Wrong color hitting the sensor center -> discharge faster
+        target.charge = Math.max(0, target.charge - dt * 2.0);
+        target.isSatisfied = false;
+      } else {
+        // No light -> slow discharge
+        target.charge = Math.max(0, target.charge - dt * 0.7);
+        target.isSatisfied = false;
+      }
+
+      if (!target.isSatisfied) {
+        allSatisfied = false;
+      }
+    }
+
+    // 7. Render Targets (with central optical lens showing sampled color feedback)
+    for (const target of this.targets) {
+      this.renderer.renderTarget(target, time);
+    }
+
+    // 8. Level Complete condition
+    if (allSatisfied && !this.isLevelComplete) {
+      this.winDelay += dt;
+      if (this.winDelay > 0.4) {
+        this.isLevelComplete = true;
+        markLevelCompleted(this.currentLevelIdx);
+        this.populateLevelSelect();
+        playVictory();
+        this.elWinModal.classList.remove('hidden');
+      }
+    } else if (!allSatisfied) {
+      this.winDelay = 0;
+    }
+
+    // 9. Particles
     this.renderer.renderParticles();
 
-    // 8. FPS display
+    // 10. FPS display
     this.renderer.renderFPS(this.fps);
 
     ctx.restore();

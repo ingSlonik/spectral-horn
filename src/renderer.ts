@@ -4,6 +4,7 @@ import {
   Obstacle,
   Emitter,
   RaySegment,
+  Vec2,
 } from './types';
 import {
   vAdd,
@@ -13,7 +14,9 @@ import {
 import {
   wavelengthToRGBA,
   wavelengthToHex,
+  wavelengthToRGB,
   getSpectrumName,
+  rgbToHex,
 } from './color';
 
 export interface Particle {
@@ -152,11 +155,16 @@ export class GameRenderer {
     ctx.translate(emitter.pos.x, emitter.pos.y);
     ctx.rotate(emitter.angle);
 
+    const isFiltered = (emitter.maxLambda - emitter.minLambda) < 150;
+    const midWl = (emitter.minLambda + emitter.maxLambda) / 2;
+    const emHex = isFiltered ? wavelengthToHex(midWl) : '#f1c40f';
+    const [er, eg, eb] = isFiltered ? wavelengthToRGB(midWl) : [255, 255, 255];
+
     // Glow aura
     const pulse = 0.8 + Math.sin(time * 0.005) * 0.2;
     const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, 28);
-    glow.addColorStop(0, `rgba(255, 255, 255, ${0.5 * pulse})`);
-    glow.addColorStop(0.5, `rgba(220, 240, 255, ${0.2 * pulse})`);
+    glow.addColorStop(0, `rgba(${er}, ${eg}, ${eb}, ${0.5 * pulse})`);
+    glow.addColorStop(0.5, `rgba(${er}, ${eg}, ${eb}, ${0.2 * pulse})`);
     glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -165,7 +173,7 @@ export class GameRenderer {
 
     // Projector body
     ctx.fillStyle = '#1c2237';
-    ctx.strokeStyle = '#f1c40f';
+    ctx.strokeStyle = emHex;
     ctx.lineWidth = 1.8;
 
     ctx.beginPath();
@@ -174,7 +182,7 @@ export class GameRenderer {
     ctx.stroke();
 
     // Aperture nozzle
-    ctx.fillStyle = '#f39c12';
+    ctx.fillStyle = isFiltered ? emHex : '#f39c12';
     ctx.beginPath();
     ctx.moveTo(2, -8);
     ctx.lineTo(6, -5);
@@ -184,7 +192,7 @@ export class GameRenderer {
     ctx.fill();
 
     // Lens slit
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isFiltered ? emHex : '#ffffff';
     ctx.fillRect(6, -emitter.width / 2, 2.5, emitter.width);
 
     ctx.restore();
@@ -600,74 +608,203 @@ export class GameRenderer {
     ctx.restore();
   }
 
+  public sampleCanvasColorAt(
+    pos: Vec2,
+    bounds: { scale: number; offsetX: number; offsetY: number },
+    dpr: number
+  ): [number, number, number] {
+    const ctx = this.ctx;
+    // Map virtual space (0..1000) to actual canvas pixel coordinates
+    const px = Math.round((pos.x * bounds.scale + bounds.offsetX) * dpr);
+    const py = Math.round((pos.y * bounds.scale + bounds.offsetY) * dpr);
+
+    // Sample a 5x5 region around the center
+    const radius = Math.max(1, Math.round(3 * bounds.scale * dpr));
+    const size = radius * 2 + 1;
+    const startX = Math.max(0, Math.min(ctx.canvas.width - size, px - radius));
+    const startY = Math.max(0, Math.min(ctx.canvas.height - size, py - radius));
+
+    try {
+      const imgData = ctx.getImageData(startX, startY, size, size);
+      const data = imgData.data;
+      let sumR = 0, sumG = 0, sumB = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        sumR += data[i];
+        sumG += data[i + 1];
+        sumB += data[i + 2];
+        count++;
+      }
+      if (count === 0) return [8, 10, 20];
+      return [sumR / count, sumG / count, sumB / count];
+    } catch {
+      return [8, 10, 20];
+    }
+  }
+
   public renderTarget(target: Target, time: number): void {
     const ctx = this.ctx;
     const midWl = (target.minLambda + target.maxLambda) / 2;
-    const colorHex = wavelengthToHex(midWl);
+    const targetRgb = target.targetRgb || wavelengthToRGB(midWl);
+    const targetHex = rgbToHex(targetRgb[0], targetRgb[1], targetRgb[2]);
+
+    const isMatch = !!target.isColorMatching;
+    const hasLight = !!target.hasLight;
+    const sampledRgb = target.sampledRgb || [0, 0, 0];
+    const sampledHex = rgbToHex(sampledRgb[0], sampledRgb[1], sampledRgb[2]);
 
     ctx.save();
     ctx.translate(target.pos.x, target.pos.y);
 
-    // Glowing aura when illuminated
-    if (target.charge > 0.05) {
-      const glowRad = target.radius * (1.3 + target.charge * 0.9 + Math.sin(time * 0.008) * 0.1);
-      const glow = ctx.createRadialGradient(0, 0, 3, 0, 0, glowRad);
-      glow.addColorStop(0, colorHex + '99');
-      glow.addColorStop(0.6, colorHex + '33');
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(0, 0, glowRad, 0, Math.PI * 2);
-      ctx.fill();
+    // Scale sensor to be slightly smaller and sleeker
+    const r = target.radius * 0.85;
+    const centerRadius = r * 0.44; // Central sensor lens ("jedno kolečko")
 
-      if (Math.random() < target.charge * 0.35) {
-        this.addSpark(target.pos.x, target.pos.y, colorHex, 1);
-      }
+    // 1. Vibrant outer glow & aura in the target's requested color
+    const basePulse = Math.sin(time * 0.005) * 0.08;
+    const glowRad = r * (1.25 + target.charge * 0.85 + (isMatch ? 0.2 : 0) + basePulse);
+    const glow = ctx.createRadialGradient(0, 0, centerRadius, 0, 0, glowRad);
+    glow.addColorStop(0, targetHex + (isMatch ? 'cc' : '66'));
+    glow.addColorStop(0.5, targetHex + (isMatch ? '55' : '22'));
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, glowRad, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (isMatch && Math.random() < 0.35) {
+      this.addSpark(target.pos.x, target.pos.y, targetHex, 1);
     }
 
-    // Outer Target Rim Base
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 3;
+    // 2. Translucent Mechanical Mounting Brackets (4 corners)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(100, 116, 139, 0.45)';
+    ctx.lineWidth = 2.0;
+    for (let angle = Math.PI / 4; angle < Math.PI * 2; angle += Math.PI / 2) {
+      ctx.beginPath();
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      ctx.moveTo(cosA * (r - 2), sinA * (r - 2));
+      ctx.lineTo(cosA * (r + 6), sinA * (r + 6));
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 3. Semi-Transparent Glass Chassis Backplate (lets underlying beams show through)
+    ctx.fillStyle = 'rgba(10, 15, 30, 0.42)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(0, 0, target.radius, 0, Math.PI * 2);
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
 
-    // Circular Charge Progress Ring
+    // 4. VIBRANT TARGET COLOR BAND (Very prominent indicator of required color)
+    // Colored filled ring band
+    ctx.fillStyle = targetHex + '2a';
+    ctx.beginPath();
+    ctx.arc(0, 0, r - 1, 0, Math.PI * 2);
+    ctx.arc(0, 0, r - 5, 0, Math.PI * 2, true);
+    ctx.fill();
+
+    // Solid prominent neon outer stroke
+    ctx.strokeStyle = targetHex;
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 5. Circular Charge Progress Ring (fills clockwise from top)
     if (target.charge > 0) {
-      ctx.strokeStyle = colorHex;
-      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = isMatch ? '#ffffff' : '#fef08a';
+      ctx.lineWidth = 4.0;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(0, 0, target.radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * target.charge);
+      ctx.arc(0, 0, r - 2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * target.charge);
       ctx.stroke();
     }
 
-    // Target Core
-    ctx.fillStyle = target.isSatisfied ? colorHex : '#121526';
-    ctx.strokeStyle = colorHex;
-    ctx.lineWidth = 1.8;
+    // 6. Translucent mid-chassis ring surrounding the central sensor
+    ctx.fillStyle = 'rgba(5, 8, 16, 0.55)';
     ctx.beginPath();
-    ctx.arc(0, 0, target.radius * 0.55, 0, Math.PI * 2);
+    ctx.arc(0, 0, r * 0.68, 0, Math.PI * 2);
     ctx.fill();
+
+    // =========================================================================
+    // 7. CENTRAL SENSOR APERTURE / LENS ("JEDNO KOLEČKO")
+    // =========================================================================
+    // Base lens background
+    ctx.beginPath();
+    ctx.arc(0, 0, centerRadius, 0, Math.PI * 2);
+
+    if (hasLight) {
+      // Light is striking the central circle!
+      // Fill central lens with the exact detected color from the canvas
+      const lensGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, centerRadius);
+      lensGrad.addColorStop(0, `rgba(${Math.min(255, Math.round(sampledRgb[0] + 50))}, ${Math.min(255, Math.round(sampledRgb[1] + 50))}, ${Math.min(255, Math.round(sampledRgb[2] + 50))}, 1.0)`);
+      lensGrad.addColorStop(0.7, `rgba(${Math.round(sampledRgb[0])}, ${Math.round(sampledRgb[1])}, ${Math.round(sampledRgb[2])}, 0.85)`);
+      lensGrad.addColorStop(1, `rgba(${Math.max(0, Math.round(sampledRgb[0] - 30))}, ${Math.max(0, Math.round(sampledRgb[1] - 30))}, ${Math.max(0, Math.round(sampledRgb[2] - 30))}, 0.4)`);
+      ctx.fillStyle = lensGrad;
+      ctx.fill();
+
+      // Optical core reflection
+      ctx.fillStyle = isMatch ? '#ffffff' : `rgba(255, 255, 255, 0.7)`;
+      ctx.beginPath();
+      ctx.arc(0, 0, isMatch ? 3.0 : 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Idle dark translucent lens awaiting light
+      ctx.fillStyle = 'rgba(3, 6, 14, 0.65)';
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Central lens border / metallic bezel
+    ctx.strokeStyle = isMatch
+      ? '#ffffff'
+      : hasLight
+      ? sampledHex
+      : 'rgba(148, 163, 184, 0.5)';
+    ctx.lineWidth = isMatch ? 2.2 : 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, centerRadius, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Central core bullseye
-    ctx.fillStyle = target.isSatisfied ? '#000000' : colorHex;
+    // 8. Optical Reticle / Crosshair notches indicating central sampling
+    ctx.save();
+    ctx.strokeStyle = isMatch ? '#ffffff' : 'rgba(255, 255, 255, 0.55)';
+    ctx.lineWidth = 1.0;
+    const tickInner = centerRadius - 2.0;
+    const tickOuter = centerRadius + 3.0;
+
+    // 4 cardinal reticle ticks (North, South, East, West)
     ctx.beginPath();
-    ctx.arc(0, 0, target.radius * 0.25, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(0, -tickInner); ctx.lineTo(0, -tickOuter);
+    ctx.moveTo(0, tickInner);  ctx.lineTo(0, tickOuter);
+    ctx.moveTo(-tickInner, 0); ctx.lineTo(-tickOuter, 0);
+    ctx.moveTo(tickInner, 0);  ctx.lineTo(tickOuter, 0);
+    ctx.stroke();
+    ctx.restore();
 
-    // Text Label below target
-    ctx.fillStyle = '#cbd5e1';
-    ctx.font = '10px sans-serif';
+    // 9. Prominent Text Label below target
+    ctx.font = 'bold 10px sans-serif';
     ctx.textAlign = 'center';
-    const spectrumName = getSpectrumName(midWl);
-    ctx.fillText(`${spectrumName} (${Math.round(midWl)}nm)`, 0, target.radius + 15);
 
-    // Charge percentage text
-    if (target.charge > 0) {
-      ctx.fillStyle = colorHex;
+    const spectrumName = target.name || `${getSpectrumName(midWl)} Sensor`;
+    ctx.fillStyle = targetHex;
+    ctx.fillText(spectrumName, 0, r + 14);
+
+    // Charge percentage or Lock indicator
+    if (target.isSatisfied) {
+      ctx.fillStyle = '#4ade80';
       ctx.font = 'bold 9px sans-serif';
-      ctx.fillText(`${Math.round(target.charge * 100)}%`, 0, 3.5);
+      ctx.fillText('✓ LOCKED', 0, r + 25);
+    } else if (target.charge > 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 9px sans-serif';
+      ctx.fillText(`${Math.round(target.charge * 100)}%`, 0, r + 25);
     }
 
     ctx.restore();
