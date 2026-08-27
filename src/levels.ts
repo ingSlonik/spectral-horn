@@ -49,15 +49,6 @@ export const TITLE_SCENE: { emitters: Emitter[]; prisms: Prism[] } = {
       baseRot: 0,            // Base rotation for harmonic sway
       swayPhase: Math.PI,    // Counter-phase sway
     },
-    {
-      id: 4,
-      pos: v2(640, 500),
-      rot: 0,
-      scale: 1.15,
-      baseIndex: 1.56,
-      dispersionB: 24000,
-      shape: 'orb',
-    },
   ],
 };
 
@@ -207,7 +198,75 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 4,
-    title: '4. Double Horn Relay',
+    title: '4. Chromatic Synthesis: Yellow',
+    subtitle: 'Additive Blending: Red + Green = Yellow',
+    hint: 'Single beams cannot satisfy the sensor! Steer the Red and Green beams so they intersect inside the Yellow Sensor.',
+    emitter: [
+      {
+        pos: v2(90, 240),
+        angle: 0.15,
+        width: 7,
+        rayCount: 44,
+        minLambda: 650,
+        maxLambda: 680, // Pure Red Light
+      },
+      {
+        pos: v2(90, 760),
+        angle: -0.15,
+        width: 7,
+        rayCount: 44,
+        minLambda: 525,
+        maxLambda: 545, // Pure Green Light
+      },
+    ],
+    prisms: [
+      {
+        id: 1,
+        pos: v2(380, 260),
+        rot: 0.35,
+        scale: 1.0,
+        baseIndex: 1.52,
+        dispersionB: 12000,
+        shape: 'horn',
+      },
+      {
+        id: 2,
+        pos: v2(380, 740),
+        rot: -0.35,
+        scale: 1.0,
+        baseIndex: 1.52,
+        dispersionB: 12000,
+        shape: 'horn',
+      },
+    ],
+    targets: [
+      {
+        id: 1,
+        pos: v2(870, 500),
+        radius: 24,
+        minLambda: 575,
+        maxLambda: 595,
+        targetRgb: [255, 235, 0],
+        charge: 0,
+        isSatisfied: false,
+        name: 'Yellow Sensor',
+      },
+    ],
+    obstacles: [
+      {
+        id: 1,
+        points: [
+          v2(520, 360),
+          v2(560, 360),
+          v2(560, 640),
+          v2(520, 640),
+        ],
+      },
+    ],
+  },
+  {
+    id: 5,
+    title: '5. Double Horn Relay',
     subtitle: 'Cascading refraction around obsidian barriers',
     hint: 'First horn splits the beam, second horn bends it past obstacles into the sensors.',
     emitter: {
@@ -273,8 +332,8 @@ export const LEVELS: LevelDef[] = [
     ],
   },
   {
-    id: 5,
-    title: '5. Trichromatic Harmony',
+    id: 6,
+    title: '6. Trichromatic Harmony',
     subtitle: 'Violet, green, and red alignment',
     hint: 'Disperse the spectrum wide enough to charge all three sensors simultaneously!',
     emitter: {
@@ -350,8 +409,8 @@ export const LEVELS: LevelDef[] = [
     ],
   },
   {
-    id: 6,
-    title: '6. Crystal Labyrinth',
+    id: 7,
+    title: '7. Crystal Labyrinth',
     subtitle: 'The grand optical finale',
     hint: 'Combine multi-stage refraction, chrome mirror reflection, and dispersion to illuminate every sensor.',
     emitter: {
@@ -446,8 +505,8 @@ export const LEVELS: LevelDef[] = [
     ],
   },
   {
-    id: 7,
-    title: '7. The Optical Playground',
+    id: 8,
+    title: '8. The Optical Playground',
     subtitle: 'Grand Finale: Horn, Mirror, Dove Prism & Crystal Orb',
     hint: 'A grand optical sandbox! Route the spectrum through celestial instruments to charge all targets.',
     emitter: {
