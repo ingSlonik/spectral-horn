@@ -28,7 +28,8 @@ export interface Prism {
   baseIndex: number; // base refractive index (e.g. 1.50)
   dispersionB: number; // Cauchy constant in nm^2 (e.g. 7000)
   locked?: boolean; // if true, cannot be moved/rotated
-  shape: 'horn' | 'triangle' | 'rhombus';
+  shape: 'horn' | 'mirror' | 'dove' | 'orb';
+  isMirror?: boolean;
   basePos?: Vec2;
   baseRot?: number;
   swayPhase?: number;

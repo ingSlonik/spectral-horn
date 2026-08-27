@@ -28,7 +28,7 @@ export interface TraceResult {
 }
 
 // Maximum number of bounces / refractions allowed per ray
-const MAX_BOUNCES = 12;
+const MAX_BOUNCES = 24;
 const EPS = 0.04;
 
 export function traceScene(
@@ -218,29 +218,38 @@ export function traceScene(
             break;
           }
         } else if (hitPrism && hitPrismEdgeNormal) {
-          const prismN = getRefractiveIndex(hitPrism.baseIndex, hitPrism.dispersionB, currentRay.wavelength);
-          const isCurrentlyInside = currentRay.insidePrismId === hitPrism.id;
-
-          if (isCurrentlyInside) {
-            // Exiting prism surface: Prism -> Air
-            const result = refractRay(currentRay.dir, hitPrismEdgeNormal, prismN, 1.0, false);
-            currentRay.dir = result.dir;
-            currentRay.origin = vAdd(hitPoint, vScale(result.dir, EPS));
-            if (!result.isTIR) {
-              currentRay.insidePrismId = null;
-              currentRay.mediumIndex = 1.0;
-            }
+          if (hitPrism.shape === 'mirror' || hitPrism.isMirror) {
+            // Interactive mirror element specular reflection
+            const n = hitPrismEdgeNormal;
+            const refl = vSub(currentRay.dir, vScale(n, 2 * vDot(currentRay.dir, n)));
+            currentRay.dir = vNorm(refl);
+            currentRay.origin = vAdd(hitPoint, vScale(currentRay.dir, EPS));
+            currentRay.bounceCount++;
           } else {
-            // Entering prism surface: Air -> Prism
-            const result = refractRay(currentRay.dir, hitPrismEdgeNormal, 1.0, prismN, true);
-            currentRay.dir = result.dir;
-            currentRay.origin = vAdd(hitPoint, vScale(result.dir, EPS));
-            if (!result.isTIR) {
-              currentRay.insidePrismId = hitPrism.id;
-              currentRay.mediumIndex = prismN;
+            const prismN = getRefractiveIndex(hitPrism.baseIndex, hitPrism.dispersionB, currentRay.wavelength);
+            const isCurrentlyInside = currentRay.insidePrismId === hitPrism.id;
+
+            if (isCurrentlyInside) {
+              // Exiting prism surface: Prism -> Air
+              const result = refractRay(currentRay.dir, hitPrismEdgeNormal, prismN, 1.0, false);
+              currentRay.dir = result.dir;
+              currentRay.origin = vAdd(hitPoint, vScale(result.dir, EPS));
+              if (!result.isTIR) {
+                currentRay.insidePrismId = null;
+                currentRay.mediumIndex = 1.0;
+              }
+            } else {
+              // Entering prism surface: Air -> Prism
+              const result = refractRay(currentRay.dir, hitPrismEdgeNormal, 1.0, prismN, true);
+              currentRay.dir = result.dir;
+              currentRay.origin = vAdd(hitPoint, vScale(result.dir, EPS));
+              if (!result.isTIR) {
+                currentRay.insidePrismId = hitPrism.id;
+                currentRay.mediumIndex = prismN;
+              }
             }
+            currentRay.bounceCount++;
           }
-          currentRay.bounceCount++;
         } else {
           // Hit screen boundary
           break;

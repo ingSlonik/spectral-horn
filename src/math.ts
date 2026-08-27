@@ -151,21 +151,45 @@ export function getPrismVertices(prism: Prism): Vec2[] {
       { x: 22 * s, y: 22 * s },  // Right base
       { x: -22 * s, y: 22 * s }, // Left base
     ];
-  } else if (prism.shape === 'rhombus') {
+  } else if (prism.shape === 'mirror') {
+    // Polished flat mirror bar
+    const w = 36 * s;
+    const h = 6 * s;
     localPoints = [
-      { x: 0, y: -36 * s },
-      { x: 30 * s, y: 0 },
-      { x: 0, y: 36 * s },
-      { x: -30 * s, y: 0 },
+      { x: -w, y: -h },
+      { x: w, y: -h },
+      { x: w, y: h },
+      { x: -w, y: h },
     ];
-  } else {
-    // Equilateral triangle
-    const h = 36 * s;
-    const w = 32 * s;
+  } else if (prism.shape === 'dove') {
+    // Dove prism trapezoid (45 deg entry/exit faces)
+    const topW = 20 * s;
+    const botW = 44 * s;
+    const h = 24 * s;
     localPoints = [
-      { x: 0, y: -h },
-      { x: w, y: h * 0.6 },
-      { x: -w, y: h * 0.6 },
+      { x: -topW, y: -h },
+      { x: topW, y: -h },
+      { x: botW, y: h },
+      { x: -botW, y: h },
+    ];
+  } else if (prism.shape === 'orb') {
+    // Crystal orb / sphere (64-sided ultra-precise regular polygon for smooth optical focus & caustics)
+    localPoints = [];
+    const segments = 64;
+    const r = 30 * s;
+    for (let i = 0; i < segments; i++) {
+      const a = (i / segments) * Math.PI * 2;
+      localPoints.push({
+        x: Math.cos(a) * r,
+        y: Math.sin(a) * r,
+      });
+    }
+  } else {
+    // Default fallback
+    localPoints = [
+      { x: 0, y: -38 * s },
+      { x: 22 * s, y: 22 * s },
+      { x: -22 * s, y: 22 * s },
     ];
   }
 
