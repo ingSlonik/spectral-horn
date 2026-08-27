@@ -39,6 +39,9 @@ export class Game {
 
   private isLevelComplete = false;
   private winDelay = 0;
+  private fps = 60;
+  private frameCount = 0;
+  private lastFpsTime = performance.now();
 
   // DOM Elements
   private elLevelTitle: HTMLElement;
@@ -237,6 +240,13 @@ export class Game {
   private update(dt: number, time: number): void {
     this.renderer.updateParticles();
 
+    this.frameCount++;
+    if (time - this.lastFpsTime >= 300) {
+      this.fps = Math.round((this.frameCount * 1000) / (time - this.lastFpsTime));
+      this.frameCount = 0;
+      this.lastFpsTime = time;
+    }
+
     if (this.isTitleScreen) {
       // Harmonic gentle swaying for title unicorn horns
       for (let i = 0; i < this.prisms.length; i++) {
@@ -358,6 +368,7 @@ export class Game {
 
       // 4. Render particles
       this.renderer.renderParticles();
+      this.renderer.renderFPS(this.fps);
       ctx.restore();
       return;
     }
@@ -406,6 +417,9 @@ export class Game {
 
     // 7. Particles
     this.renderer.renderParticles();
+
+    // 8. FPS display
+    this.renderer.renderFPS(this.fps);
 
     ctx.restore();
   }
