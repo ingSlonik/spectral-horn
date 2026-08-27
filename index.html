@@ -14,17 +14,17 @@
 
   <!-- Floating Game Header (Visible during gameplay) -->
   <div id="game-header">
-    <div class="logo">✨ SPECTRAL HORN</div>
+    <div class="logo"><span class="logo-icon">✨</span><span class="logo-text"> SPECTRAL HORN</span></div>
     <select id="lvl-select"></select>
-    <button id="menu-btn" title="Return to Title Screen">🏠 Menu</button>
-    <button id="reset-btn" title="Reset Horn Positions">🔄 Reset</button>
-    <button id="mute-btn" title="Toggle Sound">🔊 Sound</button>
+    <button id="menu-btn" title="Return to Title Screen"><span class="btn-icon">🏠</span><span class="btn-text"> Menu</span></button>
+    <button id="reset-btn" title="Reset Horn Positions"><span class="btn-icon">🔄</span><span class="btn-text"> Reset</span></button>
+    <button id="mute-btn" title="Toggle Sound"><span class="btn-icon">🔊</span><span class="btn-text"> Sound</span></button>
   </div>
 
   <!-- Floating Hint Bar (Visible during gameplay) -->
   <div id="game-hint-bar">
     <span id="lvl-title">Level 1</span>
-    <span>•</span>
+    <span class="hint-sep">•</span>
     <span id="lvl-hint">Rotate the unicorn horn so green light hits the sensor.</span>
   </div>
 
@@ -50,8 +50,9 @@
       <div class="glass-card">
         <div class="card-header">🎮 Controls</div>
         <div class="card-content">
-          <strong>🖱️ Drag Pony:</strong> Reposition unicorn across the cosmic arena.<br>
-          <strong>🟡 Golden Knob / Wheel:</strong> Rotate horn to steer the refraction angle.
+          <strong>🖱️ / 📱 Tap to Select:</strong> Activate unicorn controls.<br>
+          <strong>✥ Drag Center:</strong> Move unicorn (with touch offset for clear view).<br>
+          <strong>💫 Outer Ring / Wheel:</strong> Rotate horn to steer the refraction angle.
         </div>
       </div>
     </div>

@@ -6,6 +6,25 @@ import { InputHandler } from './input';
 import { v2 } from './math';
 import { initAudio, playVictory, playSensorPulse, playClick, toggleMute, isMuted } from './audio';
 
+const STORAGE_COMPLETED_KEY = 'spectral_horn_completed_levels';
+
+function getCompletedLevels(): number[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_COMPLETED_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function markLevelCompleted(idx: number): void {
+  try {
+    const set = new Set<number>(getCompletedLevels());
+    set.add(idx);
+    localStorage.setItem(STORAGE_COMPLETED_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
 export class Game {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -82,15 +101,27 @@ export class Game {
     }
   }
 
-  private setupUI(): void {
-    // Populate level select
+  private populateLevelSelect(): void {
+    const completed = new Set(getCompletedLevels());
     this.elLevelSelect.innerHTML = '';
     LEVELS.forEach((lvl, idx) => {
       const opt = document.createElement('option');
       opt.value = idx.toString();
-      opt.textContent = `${lvl.title}`;
+      const isDone = completed.has(idx);
+      opt.textContent = isDone ? `✓ ${lvl.title}` : `○ ${lvl.title}`;
+      if (isDone) {
+        opt.style.color = '#4ade80';
+        opt.style.fontWeight = 'bold';
+      } else {
+        opt.style.color = '#cbd5e1';
+      }
       this.elLevelSelect.appendChild(opt);
     });
+    this.elLevelSelect.value = this.currentLevelIdx.toString();
+  }
+
+  private setupUI(): void {
+    this.populateLevelSelect();
 
     this.elLevelSelect.addEventListener('change', (e) => {
       playClick();
@@ -122,7 +153,9 @@ export class Game {
     this.elMuteBtn.addEventListener('click', () => {
       playClick();
       const muted = toggleMute();
-      this.elMuteBtn.textContent = muted ? '🔇 Sound' : '🔊 Sound';
+      this.elMuteBtn.innerHTML = muted
+        ? '<span class="btn-icon">🔇</span><span class="btn-text"> Sound</span>'
+        : '<span class="btn-icon">🔊</span><span class="btn-text"> Sound</span>';
     });
 
     this.elNextBtn.addEventListener('click', () => {
@@ -143,12 +176,14 @@ export class Game {
     this.targets = [];
     this.isLevelComplete = false;
     this.winDelay = 0;
+    this.input.selectedPrismIndex = 0;
 
     this.elTitleScreen.classList.remove('hidden');
     this.elWinModal.classList.add('hidden');
 
     this.elLevelTitle.textContent = '✨ Cosmic Playground';
     this.elLevelHint.textContent = 'Rainbows cross at the center. Feel free to drag and twist the unicorn horns!';
+    this.populateLevelSelect();
   }
 
   public startGame(): void {
@@ -169,13 +204,17 @@ export class Game {
     this.prisms = JSON.parse(JSON.stringify(this.level.prisms));
     this.targets = JSON.parse(JSON.stringify(this.level.targets));
 
+    // Auto-select first movable prism
+    const firstMovable = this.prisms.findIndex((p) => !p.locked);
+    this.input.selectedPrismIndex = firstMovable !== -1 ? firstMovable : null;
+
     this.isLevelComplete = false;
     this.winDelay = 0;
     this.elWinModal.classList.add('hidden');
 
     this.elLevelTitle.textContent = this.level.title;
     this.elLevelHint.textContent = this.level.hint;
-    this.elLevelSelect.value = this.currentLevelIdx.toString();
+    this.populateLevelSelect();
   }
 
   private getViewportBounds() {
@@ -256,6 +295,8 @@ export class Game {
       this.winDelay += dt;
       if (this.winDelay > 0.4) {
         this.isLevelComplete = true;
+        markLevelCompleted(this.currentLevelIdx);
+        this.populateLevelSelect();
         playVictory();
         this.elWinModal.classList.remove('hidden');
       }
@@ -289,10 +330,20 @@ export class Game {
       // 2. Render swaying unicorn prisms
       for (let i = 0; i < this.prisms.length; i++) {
         const prism = this.prisms[i];
+        const isSelected = this.input.selectedPrismIndex === i;
         const isHovered = this.input.hoverPrismIndex === i;
         const isDragged = this.input.dragState.prismIndex === i;
         const handle = isHovered ? this.input.hoverHandle : null;
-        this.renderer.renderPrism(prism, isHovered, isDragged, handle, time);
+        const dragMode = isDragged ? this.input.dragState.mode : null;
+        this.renderer.renderPrism(
+          prism,
+          isHovered,
+          isDragged,
+          handle,
+          time,
+          isSelected,
+          dragMode
+        );
       }
 
       // 3. Render rays on top of unicorns extending all the way to screen edges
@@ -322,10 +373,20 @@ export class Game {
     // 4. Prisms
     for (let i = 0; i < this.prisms.length; i++) {
       const prism = this.prisms[i];
+      const isSelected = this.input.selectedPrismIndex === i;
       const isHovered = this.input.hoverPrismIndex === i;
       const isDragged = this.input.dragState.prismIndex === i;
       const handle = isHovered ? this.input.hoverHandle : null;
-      this.renderer.renderPrism(prism, isHovered, isDragged, handle, time);
+      const dragMode = isDragged ? this.input.dragState.mode : null;
+      this.renderer.renderPrism(
+        prism,
+        isHovered,
+        isDragged,
+        handle,
+        time,
+        isSelected,
+        dragMode
+      );
     }
 
     // 5. Targets

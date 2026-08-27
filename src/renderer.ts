@@ -341,19 +341,25 @@ export class GameRenderer {
     isHovered: boolean,
     isDragged: boolean,
     hoverHandle: 'body' | 'rot' | null,
-    time: number
+    time: number,
+    isSelected: boolean = false,
+    dragMode: 'move' | 'rotate' | null = null
   ): void {
     const ctx = this.ctx;
     const s = prism.scale || 1;
+    const showControls = !prism.locked && (isSelected || isDragged || isHovered);
 
+    // ==========================================
+    // 1. ROTATED LAYER (Pony head & Crystal Horn)
+    // ==========================================
     ctx.save();
     ctx.translate(prism.pos.x, prism.pos.y);
     ctx.rotate(prism.rot);
 
-    // 1. Render Minimalist Vector Pony beneath the Horn
-    this.renderPonyHead(s, isHovered, isDragged, time);
+    // 1.1 Render Minimalist Vector Pony beneath the Horn
+    this.renderPonyHead(s, isHovered || isSelected, isDragged, time);
 
-    // 2. Render Crystal Horn (Prism)
+    // 1.2 Render Crystal Horn (Prism)
     // Horn apex is at (0, -38*s), base is from (-22*s, 22*s) to (22*s, 22*s)
     const localVerts = [
       { x: 0, y: -38 * s },
@@ -376,10 +382,10 @@ export class GameRenderer {
     ctx.fill();
 
     // Outer crystal rim stroke
-    ctx.lineWidth = isDragged ? 2.5 : isHovered ? 2.0 : 1.5;
+    ctx.lineWidth = isDragged ? 2.5 : (isHovered || isSelected) ? 2.0 : 1.5;
     ctx.strokeStyle = isDragged
       ? '#ffd700'
-      : isHovered
+      : (isHovered || isSelected)
       ? '#a5e5ff'
       : 'rgba(210, 235, 255, 0.85)';
     ctx.stroke();
@@ -404,26 +410,154 @@ export class GameRenderer {
     }
     ctx.restore();
 
-    // 3. Rotation Gizmo & Pivot
-    const rotGizmoPosLocal = { x: 0, y: -50 * s };
-    const isRotHovered = hoverHandle === 'rot';
+    ctx.restore(); // Restore rotated transform
 
-    // Connector line
-    ctx.strokeStyle = isRotHovered ? '#ffd700' : 'rgba(255, 215, 0, 0.45)';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(localVerts[0].x, localVerts[0].y);
-    ctx.lineTo(rotGizmoPosLocal.x, rotGizmoPosLocal.y);
-    ctx.stroke();
+    // ==========================================
+    // 2. UNROTATED CONTROLS LAYER (World/Screen Aligned)
+    // ==========================================
+    ctx.save();
+    ctx.translate(prism.pos.x, prism.pos.y);
 
-    // Rotation Knob
-    ctx.fillStyle = isRotHovered ? '#ffd700' : '#d4af37';
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(rotGizmoPosLocal.x, rotGizmoPosLocal.y, isRotHovered ? 6.5 : 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    if (showControls) {
+      // 2.0 Selection Ambient Glow Aura
+      const pulse = 0.8 + Math.sin(time * 0.005) * 0.2;
+      const aura = ctx.createRadialGradient(0, 20 * s, 10, 0, 20 * s, 85 * s);
+      aura.addColorStop(
+        0,
+        isDragged
+          ? `rgba(255, 215, 0, ${0.28 * pulse})`
+          : `rgba(56, 189, 248, ${0.18 * pulse})`
+      );
+      aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = aura;
+      ctx.beginPath();
+      ctx.arc(0, 20 * s, 85 * s, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2.1 Radial Rotation Ring
+      const ringRadius = 78 * s;
+      const isRotActive = (isDragged && dragMode === 'rotate') || hoverHandle === 'rot';
+
+      ctx.save();
+      ctx.strokeStyle = isRotActive
+        ? '#ffd700'
+        : 'rgba(56, 189, 248, 0.45)';
+      ctx.lineWidth = isRotActive ? 2.2 : 1.4;
+
+      // Dashed outer rotation orbit
+      ctx.setLineDash([8 * s, 6 * s]);
+      ctx.beginPath();
+      ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Orbital Grip Beads (at top, left, right)
+      const beadPositions = [
+        { x: 0, y: -ringRadius },
+        { x: ringRadius, y: 0 },
+        { x: -ringRadius, y: 0 },
+      ];
+
+      for (let i = 0; i < beadPositions.length; i++) {
+        const bp = beadPositions[i];
+        const beadR = isRotActive ? (i === 0 ? 6.5 * s : 4.5 * s) : (i === 0 ? 5.5 * s : 3.8 * s);
+
+        ctx.fillStyle = isRotActive
+          ? '#ffd700'
+          : (i === 0 ? '#38bdf8' : 'rgba(56, 189, 248, 0.7)');
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.2;
+
+        ctx.beginPath();
+        ctx.arc(bp.x, bp.y, beadR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // 2.2 Move Indicator - ALWAYS FIXED AT THE BOTTOM at (0, 55 * s)
+      const moveY = 55 * s;
+      const isMoveActive = (isDragged && dragMode === 'move') || hoverHandle === 'body';
+
+      ctx.save();
+      // Move badge background
+      ctx.fillStyle = isMoveActive ? 'rgba(30, 41, 69, 0.95)' : 'rgba(15, 23, 42, 0.88)';
+      ctx.strokeStyle = isMoveActive ? '#ffd700' : 'rgba(56, 189, 248, 0.8)';
+      ctx.lineWidth = isMoveActive ? 2.0 : 1.4;
+
+      const badgeR = 13.5 * s;
+      ctx.beginPath();
+      ctx.arc(0, moveY, badgeR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Badge glow when active
+      if (isMoveActive) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.arc(0, moveY, badgeR + 2 * s, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 4-directional Move Arrows (✥) - Always upright
+      const arrowColor = isMoveActive ? '#ffd700' : '#38bdf8';
+      ctx.fillStyle = arrowColor;
+      ctx.strokeStyle = arrowColor;
+      ctx.lineWidth = 1.6;
+
+      const arm = 8 * s;
+      const arrowSize = 2.6 * s;
+
+      // Vertical line & arrowheads
+      ctx.beginPath();
+      ctx.moveTo(0, moveY - arm);
+      ctx.lineTo(0, moveY + arm);
+      ctx.stroke();
+
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(-arm, moveY);
+      ctx.lineTo(arm, moveY);
+      ctx.stroke();
+
+      // North arrow
+      ctx.beginPath();
+      ctx.moveTo(0, moveY - arm - 1);
+      ctx.lineTo(-arrowSize, moveY - arm + arrowSize);
+      ctx.lineTo(arrowSize, moveY - arm + arrowSize);
+      ctx.closePath();
+      ctx.fill();
+
+      // South arrow
+      ctx.beginPath();
+      ctx.moveTo(0, moveY + arm + 1);
+      ctx.lineTo(-arrowSize, moveY + arm - arrowSize);
+      ctx.lineTo(arrowSize, moveY + arm - arrowSize);
+      ctx.closePath();
+      ctx.fill();
+
+      // West arrow
+      ctx.beginPath();
+      ctx.moveTo(-arm - 1, moveY);
+      ctx.lineTo(-arm + arrowSize, moveY - arrowSize);
+      ctx.lineTo(-arm + arrowSize, moveY + arrowSize);
+      ctx.closePath();
+      ctx.fill();
+
+      // East arrow
+      ctx.beginPath();
+      ctx.moveTo(arm + 1, moveY);
+      ctx.lineTo(arm - arrowSize, moveY - arrowSize);
+      ctx.lineTo(arm - arrowSize, moveY + arrowSize);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
 
     // Center pivot indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';

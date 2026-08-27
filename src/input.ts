@@ -2,8 +2,6 @@ import { Vec2, Prism } from './types';
 import {
   v2,
   vDist,
-  vRotate,
-  vAdd,
   isPointInPolygon,
   getPrismVertices,
   clamp,
@@ -15,16 +13,21 @@ export interface DragState {
   mode: 'move' | 'rotate' | null;
   dragOffset: Vec2;
   rotOffset: number;
+  isTouch: boolean;
 }
+
+const TOUCH_DRAG_OFFSET_Y = 55; // World units offset upwards so finger does not cover pony & rays
 
 export class InputHandler {
   private canvas: HTMLCanvasElement;
   public mousePos: Vec2 = v2(0, 0);
+  public selectedPrismIndex: number | null = null;
   public dragState: DragState = {
     prismIndex: null,
     mode: null,
     dragOffset: v2(0, 0),
     rotOffset: 0,
+    isTouch: false,
   };
   public hoverPrismIndex: number | null = null;
   public hoverHandle: 'body' | 'rot' | null = null;
@@ -50,22 +53,30 @@ export class InputHandler {
 
   private initEvents(): void {
     // Mouse events
-    this.canvas.addEventListener('mousedown', (e) => this.handlePointerDown(this.getCanvasPos(e), e.button === 2));
-    window.addEventListener('mousemove', (e) => this.handlePointerMove(this.getCanvasPos(e)));
+    this.canvas.addEventListener('mousedown', (e) =>
+      this.handlePointerDown(this.getCanvasPos(e), e.button === 2, false)
+    );
+    window.addEventListener('mousemove', (e) =>
+      this.handlePointerMove(this.getCanvasPos(e), false)
+    );
     window.addEventListener('mouseup', () => this.handlePointerUp());
 
     // Context menu prevent for right-drag rotation
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Mouse wheel for fine rotation
+    // Mouse wheel for fine rotation of selected/hovered horn
     this.canvas.addEventListener(
       'wheel',
       (e) => {
         e.preventDefault();
         initAudio();
-        if (this.hoverPrismIndex !== null) {
+        const targetIdx =
+          this.hoverPrismIndex !== null
+            ? this.hoverPrismIndex
+            : this.selectedPrismIndex;
+        if (targetIdx !== null) {
           const delta = Math.sign(e.deltaY) * 0.04;
-          const prism = this.getPrisms()[this.hoverPrismIndex];
+          const prism = this.getPrisms()[targetIdx];
           if (prism && !prism.locked) {
             prism.rot += delta;
             if (prism.baseRot !== undefined) prism.baseRot = prism.rot;
@@ -77,20 +88,30 @@ export class InputHandler {
       { passive: false }
     );
 
-    // Touch events
-    this.canvas.addEventListener('touchstart', (e) => {
-      if (e.touches.length > 0) {
-        this.handlePointerDown(this.getCanvasPos(e.touches[0]), false);
-      }
-    });
+    // Touch events with passive: false to prevent scrolling during gameplay
+    this.canvas.addEventListener(
+      'touchstart',
+      (e) => {
+        e.preventDefault();
+        if (e.touches.length > 0) {
+          this.handlePointerDown(this.getCanvasPos(e.touches[0]), false, true);
+        }
+      },
+      { passive: false }
+    );
 
-    window.addEventListener('touchmove', (e) => {
-      if (e.touches.length > 0) {
-        this.handlePointerMove(this.getCanvasPos(e.touches[0]));
-      }
-    });
+    window.addEventListener(
+      'touchmove',
+      (e) => {
+        if (e.touches.length > 0) {
+          this.handlePointerMove(this.getCanvasPos(e.touches[0]), true);
+        }
+      },
+      { passive: false }
+    );
 
     window.addEventListener('touchend', () => this.handlePointerUp());
+    window.addEventListener('touchcancel', () => this.handlePointerUp());
   }
 
   // Delegate function to retrieve current active prisms from game
@@ -100,27 +121,47 @@ export class InputHandler {
     this.hoverPrismIndex = null;
     this.hoverHandle = null;
 
+    // Check selected prism first if available
+    if (this.selectedPrismIndex !== null && prisms[this.selectedPrismIndex]) {
+      const prism = prisms[this.selectedPrismIndex];
+      if (!prism.locked) {
+        const s = prism.scale || 1;
+        const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 55 * s };
+        const dMove = vDist(this.mousePos, moveHandlePos);
+        const dCenter = vDist(this.mousePos, prism.pos);
+
+        // 1. Move hit (bottom handle or center body)
+        if (dMove <= 24 * s || dCenter <= 38 * s || isPointInPolygon(this.mousePos, getPrismVertices(prism))) {
+          this.hoverPrismIndex = this.selectedPrismIndex;
+          this.hoverHandle = 'body';
+          this.canvas.style.cursor = 'move';
+          return;
+        }
+
+        // 2. Rotation Ring hit zone (outer halo band ~45*s to ~105*s)
+        if (dCenter >= 45 * s && dCenter <= 105 * s) {
+          this.hoverPrismIndex = this.selectedPrismIndex;
+          this.hoverHandle = 'rot';
+          this.canvas.style.cursor = 'grab';
+          return;
+        }
+      }
+    }
+
+    // Check other unselected prisms
     for (let i = prisms.length - 1; i >= 0; i--) {
       const prism = prisms[i];
       if (prism.locked) continue;
+      if (i === this.selectedPrismIndex) continue;
 
       const s = prism.scale || 1;
-      const rotGizmoPos = vAdd(prism.pos, vRotate({ x: 0, y: -50 * s }, prism.rot));
-
-      // Test rotation handle hit (generous 18px hit radius for easy grabbing)
-      if (vDist(this.mousePos, rotGizmoPos) <= 20) {
-        this.hoverPrismIndex = i;
-        this.hoverHandle = 'rot';
-        this.canvas.style.cursor = 'grab';
-        return;
-      }
-
-      // Test prism body hit
+      const d = vDist(this.mousePos, prism.pos);
       const verts = getPrismVertices(prism);
-      if (isPointInPolygon(this.mousePos, verts) || vDist(this.mousePos, prism.pos) <= 32 * s) {
+
+      if (d <= 75 * s || isPointInPolygon(this.mousePos, verts)) {
         this.hoverPrismIndex = i;
         this.hoverHandle = 'body';
-        this.canvas.style.cursor = 'move';
+        this.canvas.style.cursor = 'pointer';
         return;
       }
     }
@@ -128,38 +169,106 @@ export class InputHandler {
     this.canvas.style.cursor = 'default';
   }
 
-  private handlePointerDown(pos: Vec2, isRightClick: boolean): void {
+  private handlePointerDown(pos: Vec2, isRightClick: boolean, isTouch: boolean): void {
     initAudio();
     this.mousePos = pos;
     const prisms = this.getPrisms();
-    this.updateHover(prisms);
 
-    if (this.hoverPrismIndex !== null) {
-      const prism = prisms[this.hoverPrismIndex];
-      const isRotateMode = isRightClick || this.hoverHandle === 'rot';
+    let targetIdx: number | null = null;
+    let mode: 'move' | 'rotate' | null = null;
 
-      if (isRotateMode) {
-        const currentMouseAngle = Math.atan2(pos.y - prism.pos.y, pos.x - prism.pos.x);
+    // 1. Check if clicked within selected prism controls
+    if (
+      this.selectedPrismIndex !== null &&
+      prisms[this.selectedPrismIndex] &&
+      !prisms[this.selectedPrismIndex].locked
+    ) {
+      const prism = prisms[this.selectedPrismIndex];
+      const s = prism.scale || 1;
+      const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 55 * s };
+      const dMove = vDist(pos, moveHandlePos);
+      const dCenter = vDist(pos, prism.pos);
+
+      if (isRightClick) {
+        if (dCenter <= 115 * s) {
+          targetIdx = this.selectedPrismIndex;
+          mode = 'rotate';
+        }
+      } else if (dMove <= 24 * s || dCenter <= 38 * s || isPointInPolygon(pos, getPrismVertices(prism))) {
+        // Tapped move badge or center body
+        targetIdx = this.selectedPrismIndex;
+        mode = 'move';
+      } else if (dCenter >= 45 * s && dCenter <= 110 * s) {
+        // Tapped outer rotation ring
+        targetIdx = this.selectedPrismIndex;
+        mode = 'rotate';
+      }
+    }
+
+    // 2. If not hitting selected prism, check if tapping any other prism
+    if (targetIdx === null) {
+      for (let i = prisms.length - 1; i >= 0; i--) {
+        const prism = prisms[i];
+        if (prism.locked) continue;
+        const s = prism.scale || 1;
+        const d = vDist(pos, prism.pos);
+
+        if (d <= 75 * s || isPointInPolygon(pos, getPrismVertices(prism))) {
+          this.selectedPrismIndex = i;
+          targetIdx = i;
+          mode = isRightClick ? 'rotate' : 'move';
+          break;
+        }
+      }
+    }
+
+    // 3. If tapped empty space far away from any prism, deselect
+    if (targetIdx === null) {
+      let nearAny = false;
+      for (const p of prisms) {
+        if (vDist(pos, p.pos) <= 115 * (p.scale || 1)) {
+          nearAny = true;
+          break;
+        }
+      }
+      if (!nearAny) {
+        this.selectedPrismIndex = null;
+      }
+    }
+
+    // 4. Initialize drag state if an action was triggered
+    if (targetIdx !== null && mode !== null) {
+      const prism = prisms[targetIdx];
+      this.selectedPrismIndex = targetIdx;
+
+      if (mode === 'rotate') {
+        const currentAngle = Math.atan2(pos.y - prism.pos.y, pos.x - prism.pos.x);
         this.dragState = {
-          prismIndex: this.hoverPrismIndex,
+          prismIndex: targetIdx,
           mode: 'rotate',
           dragOffset: v2(0, 0),
-          rotOffset: currentMouseAngle - prism.rot,
+          rotOffset: currentAngle - prism.rot,
+          isTouch,
         };
         this.canvas.style.cursor = 'grabbing';
       } else {
+        const effectiveY = isTouch ? pos.y - TOUCH_DRAG_OFFSET_Y : pos.y;
         this.dragState = {
-          prismIndex: this.hoverPrismIndex,
+          prismIndex: targetIdx,
           mode: 'move',
-          dragOffset: { x: prism.pos.x - pos.x, y: prism.pos.y - pos.y },
+          dragOffset: { x: prism.pos.x - pos.x, y: prism.pos.y - effectiveY },
           rotOffset: 0,
+          isTouch,
         };
+        this.canvas.style.cursor = 'move';
       }
-      this.onStateChange?.();
     }
+
+    this.updateHover(prisms);
+    this.onStateChange?.();
   }
 
-  private handlePointerMove(pos: Vec2): void {
+  private handlePointerMove(pos: Vec2, isTouch: boolean): void {
     this.mousePos = pos;
     const prisms = this.getPrisms();
 
@@ -167,17 +276,20 @@ export class InputHandler {
       const prism = prisms[this.dragState.prismIndex];
       if (prism && !prism.locked) {
         if (this.dragState.mode === 'move') {
+          const effectiveY = this.dragState.isTouch
+            ? pos.y - TOUCH_DRAG_OFFSET_Y
+            : pos.y;
           prism.pos.x = clamp(pos.x + this.dragState.dragOffset.x, 60, 1000 - 60);
-          prism.pos.y = clamp(pos.y + this.dragState.dragOffset.y, 60, 1000 - 60);
+          prism.pos.y = clamp(effectiveY + this.dragState.dragOffset.y, 60, 1000 - 60);
           if (prism.basePos) {
             prism.basePos.x = prism.pos.x;
             prism.basePos.y = prism.pos.y;
           }
           playPrismRotate(0.2);
         } else if (this.dragState.mode === 'rotate') {
-          const currentMouseAngle = Math.atan2(pos.y - prism.pos.y, pos.x - prism.pos.x);
+          const currentAngle = Math.atan2(pos.y - prism.pos.y, pos.x - prism.pos.x);
           const oldRot = prism.rot;
-          prism.rot = currentMouseAngle - this.dragState.rotOffset;
+          prism.rot = currentAngle - this.dragState.rotOffset;
           if (prism.baseRot !== undefined) {
             prism.baseRot = prism.rot;
           }
@@ -197,6 +309,7 @@ export class InputHandler {
         mode: null,
         dragOffset: v2(0, 0),
         rotOffset: 0,
+        isTouch: false,
       };
       this.canvas.style.cursor = 'default';
       this.updateHover(this.getPrisms());
