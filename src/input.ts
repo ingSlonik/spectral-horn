@@ -6,7 +6,7 @@ import {
   getPrismVertices,
   clamp,
 } from './math';
-import { initAudio, playPrismRotate } from './audio';
+import { initAudio, playPrismRotate, playPrismMove } from './audio';
 
 export interface DragState {
   prismIndex: number | null;
@@ -285,7 +285,7 @@ export class InputHandler {
             prism.basePos.x = prism.pos.x;
             prism.basePos.y = prism.pos.y;
           }
-          playPrismRotate(0.2);
+          playPrismMove(0.2);
         } else if (this.dragState.mode === 'rotate') {
           const dFromCenter = vDist(pos, prism.pos);
           if (dFromCenter >= 10) {
