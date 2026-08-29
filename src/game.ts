@@ -5,7 +5,7 @@ import { GameRenderer } from './renderer';
 import { InputHandler } from './input';
 import { v2 } from './math';
 import { checkColorMatch, wavelengthToRGB } from './color';
-import { initAudio, playVictory, playSensorPulse, playClick, toggleMute, isMuted } from './audio';
+import { initAudio, playVictory, playSensorPulse, playClick, toggleMusic, toggleSfx, isMusicMuted, isSfxMuted } from './audio';
 
 const STORAGE_COMPLETED_KEY = 'spectral_horn_completed_levels';
 
@@ -49,7 +49,8 @@ export class Game {
   private elLevelHint: HTMLElement;
   private elLevelSelect: HTMLSelectElement;
   private elMenuBtn: HTMLButtonElement;
-  private elMuteBtn: HTMLButtonElement;
+  private elMusicBtn: HTMLButtonElement;
+  private elSfxBtn: HTMLButtonElement;
   private elResetBtn: HTMLButtonElement;
   private elWinModal: HTMLElement;
   private elNextBtn: HTMLButtonElement;
@@ -66,7 +67,8 @@ export class Game {
     this.elLevelHint = document.getElementById('lvl-hint')!;
     this.elLevelSelect = document.getElementById('lvl-select') as HTMLSelectElement;
     this.elMenuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
-    this.elMuteBtn = document.getElementById('mute-btn') as HTMLButtonElement;
+    this.elMusicBtn = document.getElementById('music-btn') as HTMLButtonElement;
+    this.elSfxBtn = document.getElementById('sfx-btn') as HTMLButtonElement;
     this.elResetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
     this.elWinModal = document.getElementById('win-modal')!;
     this.elNextBtn = document.getElementById('next-btn') as HTMLButtonElement;
@@ -127,7 +129,17 @@ export class Game {
   private setupUI(): void {
     this.populateLevelSelect();
 
+    // Auto-unlock Web Audio on first user interaction anywhere
+    const triggerAudio = () => {
+      initAudio();
+      window.removeEventListener('pointerdown', triggerAudio);
+      window.removeEventListener('keydown', triggerAudio);
+    };
+    window.addEventListener('pointerdown', triggerAudio, { once: true });
+    window.addEventListener('keydown', triggerAudio, { once: true });
+
     this.elLevelSelect.addEventListener('change', (e) => {
+      initAudio();
       playClick();
       this.isTitleScreen = false;
       this.elTitleScreen.classList.add('hidden');
@@ -135,6 +147,7 @@ export class Game {
     });
 
     this.elResetBtn.addEventListener('click', () => {
+      initAudio();
       playClick();
       if (this.isTitleScreen) {
         this.showTitleScreen();
@@ -144,6 +157,7 @@ export class Game {
     });
 
     this.elMenuBtn.addEventListener('click', () => {
+      initAudio();
       playClick();
       this.showTitleScreen();
     });
@@ -154,15 +168,26 @@ export class Game {
       this.startGame();
     });
 
-    this.elMuteBtn.addEventListener('click', () => {
+    this.elMusicBtn.addEventListener('click', () => {
+      initAudio();
       playClick();
-      const muted = toggleMute();
-      this.elMuteBtn.innerHTML = muted
-        ? '<span class="btn-icon">🔇</span><span class="btn-text"> Sound</span>'
-        : '<span class="btn-icon">🔊</span><span class="btn-text"> Sound</span>';
+      const muted = toggleMusic();
+      this.elMusicBtn.innerHTML = muted
+        ? '<span class="btn-icon">🔇</span><span class="btn-text"> Music</span>'
+        : '<span class="btn-icon">🎵</span><span class="btn-text"> Music</span>';
+    });
+
+    this.elSfxBtn.addEventListener('click', () => {
+      initAudio();
+      playClick();
+      const muted = toggleSfx();
+      this.elSfxBtn.innerHTML = muted
+        ? '<span class="btn-icon">🔇</span><span class="btn-text"> SFX</span>'
+        : '<span class="btn-icon">🔊</span><span class="btn-text"> SFX</span>';
     });
 
     this.elNextBtn.addEventListener('click', () => {
+      initAudio();
       playClick();
       this.elWinModal.classList.add('hidden');
       if (this.currentLevelIdx < LEVELS.length - 1) {
@@ -275,14 +300,14 @@ export class Game {
     ctx.translate(bounds.offsetX * dpr, bounds.offsetY * dpr);
     ctx.scale(bounds.scale * dpr, bounds.scale * dpr);
 
-    // 2. Clear entire canvas with cosmic background and grid spanning minX..maxX, minY..maxY
+    // 2. Clear entire canvas with cosmic background, canvas texture and subtle grid
     this.renderer.clear(bounds.minX, bounds.minY, bounds.width, bounds.height);
 
-    // 3. Subtle arena bounds for 1000x1000 play area
+    // 3. Subtle arena bounds for 1000x1000 play area (celestial rounded frame)
     this.renderer.renderSquareBounds(1000);
 
     if (this.isTitleScreen) {
-      // 1. Render 2 emitters
+      // 1. Render emitters
       this.renderer.renderEmitters(TITLE_SCENE.emitters, time);
 
       // 2. Render swaying unicorn prisms
@@ -304,7 +329,7 @@ export class Game {
         );
       }
 
-      // 3. Render rays on top of unicorns extending all the way to screen edges
+      // 3. Render rays extending all the way to screen edges
       const traceResult = traceScene(
         TITLE_SCENE.emitters,
         this.prisms,
