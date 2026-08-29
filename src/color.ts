@@ -135,11 +135,11 @@ export interface ColorMatchResult {
   targetHue: number;
 }
 
-// Compare canvas-sampled RGB (with background subtracted) to target RGB
+// Compare sampled RGB to target RGB
 export function checkColorMatch(
   sampledRgbRaw: [number, number, number],
   targetRgb: [number, number, number],
-  bgRgb: [number, number, number] = [8, 10, 20]
+  bgRgb: [number, number, number] = [0, 0, 0]
 ): ColorMatchResult {
   // 1. Subtract background light
   const r = Math.max(0, sampledRgbRaw[0] - bgRgb[0]);

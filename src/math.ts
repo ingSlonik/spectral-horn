@@ -50,7 +50,7 @@ export function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val));
 }
 
-// Ray-segment intersection
+// Ray-segment intersection (zero-alloc)
 // Returns distance t along ray, segment param u
 export function raySegmentIntersection(
   ro: Vec2,
@@ -58,15 +58,18 @@ export function raySegmentIntersection(
   p1: Vec2,
   p2: Vec2
 ): { t: number; u: number } | null {
-  const v1 = vSub(ro, p1);
-  const v2 = vSub(p2, p1);
-  const v3 = { x: -rd.y, y: rd.x }; // Perpendicular to ray
+  const v1x = ro.x - p1.x;
+  const v1y = ro.y - p1.y;
+  const v2x = p2.x - p1.x;
+  const v2y = p2.y - p1.y;
+  const v3x = -rd.y;
+  const v3y = rd.x;
 
-  const dot = vDot(v2, v3);
-  if (Math.abs(dot) < 1e-7) return null;
+  const dot = v2x * v3x + v2y * v3y;
+  if (dot > -1e-7 && dot < 1e-7) return null;
 
-  const t1 = vCross(v2, v1) / dot;
-  const t2 = vDot(v1, v3) / dot;
+  const t1 = (v2x * v1y - v2y * v1x) / dot;
+  const t2 = (v1x * v3x + v1y * v3y) / dot;
 
   // t1 is distance along ray (> 1e-4 to avoid self-intersection), t2 is parameter on segment [0, 1]
   if (t1 > 1e-4 && t2 >= 0 && t2 <= 1) {
@@ -74,6 +77,73 @@ export function raySegmentIntersection(
   }
 
   return null;
+}
+
+// Ray-Circle intersection (O(1) analytic)
+export function rayCircleIntersection(
+  ro: Vec2,
+  rd: Vec2,
+  center: Vec2,
+  radius: number,
+  isInside: boolean
+): { t: number; hitPoint: Vec2; normal: Vec2 } | null {
+  const ocX = ro.x - center.x;
+  const ocY = ro.y - center.y;
+  const b = 2 * (rd.x * ocX + rd.y * ocY);
+  const c = ocX * ocX + ocY * ocY - radius * radius;
+  const disc = b * b - 4 * c;
+  if (disc < 0) return null;
+
+  const sqrtDisc = Math.sqrt(disc);
+  const t1 = (-b - sqrtDisc) * 0.5;
+  const t2 = (-b + sqrtDisc) * 0.5;
+
+  let t = -1;
+  if (isInside) {
+    if (t2 > 1e-4) t = t2;
+    else if (t1 > 1e-4) t = t1;
+  } else {
+    if (t1 > 1e-4) t = t1;
+    else if (t2 > 1e-4) t = t2;
+  }
+
+  if (t <= 1e-4) return null;
+
+  const hx = ro.x + rd.x * t;
+  const hy = ro.y + rd.y * t;
+  const invR = 1 / radius;
+  const nx = (hx - center.x) * invR;
+  const ny = (hy - center.y) * invR;
+
+  return {
+    t,
+    hitPoint: { x: hx, y: hy },
+    normal: { x: nx, y: ny },
+  };
+}
+
+// Ray-AABB intersection check for fast polygon culling
+export function rayAABBCheck(
+  ro: Vec2,
+  rd: Vec2,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number
+): boolean {
+  const invDx = rd.x !== 0 ? 1 / rd.x : (rd.x >= 0 ? 1e9 : -1e9);
+  const invDy = rd.y !== 0 ? 1 / rd.y : (rd.y >= 0 ? 1e9 : -1e9);
+
+  let tmin = (minX - ro.x) * invDx;
+  let tmax = (maxX - ro.x) * invDx;
+  if (tmin > tmax) { const tmp = tmin; tmin = tmax; tmax = tmp; }
+
+  let tymin = (minY - ro.y) * invDy;
+  let tymax = (maxY - ro.y) * invDy;
+  if (tymin > tymax) { const tmp = tymin; tymin = tymax; tymax = tmp; }
+
+  if (tmin > tymax || tymin > tmax) return false;
+  return Math.min(tmax, tymax) > 1e-4;
 }
 
 // Computes outward normal for polygon edge (p1, p2) given polygon centroid
@@ -173,9 +243,9 @@ export function getPrismVertices(prism: Prism): Vec2[] {
       { x: -botW, y: h },
     ];
   } else if (prism.shape === 'orb') {
-    // Crystal orb / sphere (64-sided ultra-precise regular polygon for smooth optical focus & caustics)
+    // 16-point circle approximation for UI hitboxes
     localPoints = [];
-    const segments = 64;
+    const segments = 16;
     const r = 30 * s;
     for (let i = 0; i < segments; i++) {
       const a = (i / segments) * Math.PI * 2;
@@ -212,14 +282,17 @@ export function isPointInPolygon(point: Vec2, poly: Vec2[]): boolean {
   return inside;
 }
 
-// Distance from circle center to segment AB
+// Distance from circle center to segment AB (zero-alloc)
 export function distToSegment(center: Vec2, a: Vec2, b: Vec2): number {
-  const ab = vSub(b, a);
-  const ac = vSub(center, a);
-  const lenSq = vDot(ab, ab);
-  if (lenSq < 1e-7) return vDist(center, a);
+  const abX = b.x - a.x;
+  const abY = b.y - a.y;
+  const acX = center.x - a.x;
+  const acY = center.y - a.y;
+  const lenSq = abX * abX + abY * abY;
+  if (lenSq < 1e-7) return Math.hypot(acX, acY);
 
-  const t = clamp(vDot(ac, ab) / lenSq, 0, 1);
-  const proj = vAdd(a, vScale(ab, t));
-  return vDist(center, proj);
+  const t = Math.max(0, Math.min(1, (acX * abX + acY * abY) / lenSq));
+  const projX = a.x + abX * t;
+  const projY = a.y + abY * t;
+  return Math.hypot(center.x - projX, center.y - projY);
 }

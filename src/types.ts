@@ -20,6 +20,12 @@ export interface RaySegment {
   intensity: number;
 }
 
+export interface RayPath {
+  wavelength: number;
+  intensity: number;
+  points: Vec2[];
+}
+
 export interface Prism {
   id: number;
   pos: Vec2;

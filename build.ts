@@ -77,14 +77,8 @@ async function build() {
     `<style>${minifiedCss}</style>`
   );
 
-  // Replace module script tag with inline minified JS script tag
-  inlinedHtml = inlinedHtml.replace(
-    /<script\s+type="module"\s+src="[^"]*"><\/script>/i,
-    `<script>${minifiedJs}</script>`
-  );
-
-  // Minify HTML document with aggressive options for JS13k
-  const finalHtml = await minifyHtml(inlinedHtml, {
+  // Minify HTML skeleton document with aggressive options for JS13k
+  const minifiedSkeleton = await minifyHtml(inlinedHtml, {
     collapseWhitespace: true,
     removeAttributeQuotes: true,
     removeOptionalTags: true,
@@ -98,9 +92,15 @@ async function build() {
     sortAttributes: true,
     sortClassName: true,
     useShortDoctype: true,
-    minifyCSS: true,
-    minifyJS: true,
+    minifyCSS: false,
+    minifyJS: false,
   });
+
+  // Inject minified JS into the minified HTML skeleton
+  const finalHtml = minifiedSkeleton.replace(
+    /<script[^>]*src=[^>]*><\/script>/i,
+    `<script>${minifiedJs}</script>`
+  );
 
   const htmlDistPath = path.join(distDir, 'index.html');
   fs.writeFileSync(htmlDistPath, finalHtml, 'utf8');

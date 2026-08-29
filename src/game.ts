@@ -95,6 +95,19 @@ export class Game {
     requestAnimationFrame(loop);
   }
 
+  private cachedBounds = {
+    minX: 0,
+    minY: 0,
+    maxX: 1000,
+    maxY: 1000,
+    width: 1000,
+    height: 1000,
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+    dpr: 1,
+  };
+
   private resizeCanvas(): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = this.canvas.getBoundingClientRect();
@@ -104,7 +117,22 @@ export class Game {
     if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
       this.canvas.width = targetW;
       this.canvas.height = targetH;
+      this.renderer.resize(targetW, targetH);
     }
+
+    const side = Math.min(rect.width, rect.height) || 1000;
+    const offsetX = (rect.width - side) / 2;
+    const offsetY = (rect.height - side) / 2;
+    const scale = side / 1000;
+
+    const minX = -offsetX / scale;
+    const minY = -offsetY / scale;
+    const maxX = 1000 + offsetX / scale;
+    const maxY = 1000 + offsetY / scale;
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    this.cachedBounds = { minX, minY, maxX, maxY, width, height, scale, offsetX, offsetY, dpr };
   }
 
   private populateLevelSelect(): void {
@@ -265,6 +293,7 @@ export class Game {
 
   private update(dt: number, time: number): void {
     this.renderer.updateParticles();
+    this.renderer.updateDust(time);
 
     this.frameCount++;
     if (time - this.lastFpsTime >= 300) {
@@ -274,43 +303,47 @@ export class Game {
     }
 
     if (this.isTitleScreen) {
-      // Harmonic gentle swaying for title unicorn horns
+      // Harmonic gentle swaying for title unicorn horns & floating orb
       for (let i = 0; i < this.prisms.length; i++) {
         const prism = this.prisms[i];
         if (this.input.dragState.prismIndex !== i) {
           const phase = prism.swayPhase ?? (i * Math.PI);
           const baseRot = prism.baseRot ?? prism.rot;
           const baseY = prism.basePos ? prism.basePos.y : prism.pos.y;
-          prism.rot = baseRot + Math.sin(time * 0.0018 + phase) * 0.05;
-          prism.pos.y = baseY + Math.sin(time * 0.0022 + phase) * 3.5;
+          if (prism.shape === 'orb') {
+            prism.pos.y = baseY + Math.sin(time * 0.0024 + phase) * 4.0;
+          } else {
+            prism.rot = baseRot + Math.sin(time * 0.0018 + phase) * 0.05;
+            prism.pos.y = baseY + Math.sin(time * 0.0022 + phase) * 3.5;
+          }
         }
       }
     }
   }
 
   private render(dt: number, time: number): void {
-    this.resizeCanvas();
-
+    const frameStart = performance.now();
     const ctx = this.ctx;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const bounds = this.getViewportBounds();
+    const bounds = this.cachedBounds;
+    const dpr = bounds.dpr;
 
     // 1. Set centered 1:1 square virtual viewport [0..1000, 0..1000]
     ctx.save();
     ctx.translate(bounds.offsetX * dpr, bounds.offsetY * dpr);
     ctx.scale(bounds.scale * dpr, bounds.scale * dpr);
 
-    // 2. Clear entire canvas with cosmic background, canvas texture and subtle grid
+    // 2. Clear entire canvas
+    const tClearStart = performance.now();
     this.renderer.clear(bounds.minX, bounds.minY, bounds.width, bounds.height);
-
-    // 3. Subtle arena bounds for 1000x1000 play area (celestial rounded frame)
     this.renderer.renderSquareBounds(1000);
+    const clearTime = performance.now() - tClearStart;
 
     if (this.isTitleScreen) {
       // 1. Render emitters
       this.renderer.renderEmitters(TITLE_SCENE.emitters, time);
 
       // 2. Render swaying unicorn prisms
+      const tPrismStart = performance.now();
       for (let i = 0; i < this.prisms.length; i++) {
         const prism = this.prisms[i];
         const isSelected = this.input.selectedPrismIndex === i;
@@ -328,8 +361,10 @@ export class Game {
           dragMode
         );
       }
+      const prismTime = performance.now() - tPrismStart;
 
-      // 3. Render rays extending all the way to screen edges
+      // 3. Ray-tracing & rendering extending all the way to screen edges
+      const tTraceStart = performance.now();
       const traceResult = traceScene(
         TITLE_SCENE.emitters,
         this.prisms,
@@ -337,11 +372,32 @@ export class Game {
         [],
         bounds
       );
-      this.renderer.renderRays(traceResult.segments);
+      const traceTime = performance.now() - tTraceStart;
+
+      const tDustStart = performance.now();
+      this.renderer.renderDust(traceResult.segments);
+      const dustTime = performance.now() - tDustStart;
+
+      const tRaysStart = performance.now();
+      this.renderer.renderRays(traceResult.rays, bounds);
+      const raysTime = performance.now() - tRaysStart;
 
       // 4. Render particles
       this.renderer.renderParticles();
-      this.renderer.renderFPS(this.fps);
+
+      const totalTime = performance.now() - frameStart;
+      this.renderer.renderProfiler({
+        fps: this.fps,
+        traceTime,
+        raysTime,
+        dustTime,
+        prismTime,
+        clearTime,
+        totalTime,
+        rayCount: traceResult.rays.length,
+        segmentCount: traceResult.segments.length,
+      });
+
       ctx.restore();
       return;
     }
@@ -355,6 +411,7 @@ export class Game {
     this.renderer.renderEmitters(this.level.emitter, time);
 
     // 4. Prisms
+    const tPrismStart = performance.now();
     for (let i = 0; i < this.prisms.length; i++) {
       const prism = this.prisms[i];
       const isSelected = this.input.selectedPrismIndex === i;
@@ -372,8 +429,10 @@ export class Game {
         dragMode
       );
     }
+    const prismTime = performance.now() - tPrismStart;
 
     // 5. Ray-tracing & rendering extending all the way to browser window edges
+    const tTraceStart = performance.now();
     const traceResult = traceScene(
       this.level.emitter,
       this.prisms,
@@ -381,30 +440,37 @@ export class Game {
       this.targets,
       bounds
     );
-    this.renderer.renderRays(traceResult.segments);
+    const traceTime = performance.now() - tTraceStart;
 
-    // 6. Color Sampling from Canvas & Target Evaluation
+    const tDustStart = performance.now();
+    this.renderer.renderDust(traceResult.segments);
+    const dustTime = performance.now() - tDustStart;
+
+    const tRaysStart = performance.now();
+    this.renderer.renderRays(traceResult.rays, bounds);
+    const raysTime = performance.now() - tRaysStart;
+
+    // 6. Direct Target Evaluation from Raytracer Hits (Zero GPU readback)
     let allSatisfied = true;
 
     for (const target of this.targets) {
-      // Sample actual rendered color directly from the canvas at target position
-      const sampledRgb = this.renderer.sampleCanvasColorAt(target.pos, bounds, dpr);
-      const midWl = (target.minLambda + target.maxLambda) / 2;
-      const targetRgb = target.targetRgb || wavelengthToRGB(midWl);
-      const match = checkColorMatch(sampledRgb, targetRgb);
+      const hitStats = traceResult.targetHits.get(target.id);
+      const isMatch = !!hitStats?.isMatch;
+      const hasLight = !!hitStats?.hasLight;
+      const sampledRgb = hitStats?.sampledRgb || [0, 0, 0];
 
-      target.sampledRgb = match.sampledRgb;
-      target.isColorMatching = match.isMatch;
-      target.hasLight = match.hasLight;
+      target.sampledRgb = sampledRgb;
+      target.isColorMatching = isMatch;
+      target.hasLight = hasLight;
 
-      if (match.isMatch) {
+      if (isMatch) {
         // Matching light color hitting the sensor center!
         target.charge = Math.min(1.0, target.charge + dt * 1.5);
         if (target.charge >= 0.95) {
           target.isSatisfied = true;
         }
         playSensorPulse(target.charge);
-      } else if (match.hasLight) {
+      } else if (hasLight) {
         // Wrong color hitting the sensor center -> discharge faster
         target.charge = Math.max(0, target.charge - dt * 2.0);
         target.isSatisfied = false;
@@ -419,7 +485,7 @@ export class Game {
       }
     }
 
-    // 7. Render Targets (with central optical lens showing sampled color feedback)
+    // 7. Render Targets
     for (const target of this.targets) {
       this.renderer.renderTarget(target, time);
     }
@@ -441,8 +507,19 @@ export class Game {
     // 9. Particles
     this.renderer.renderParticles();
 
-    // 10. FPS display
-    this.renderer.renderFPS(this.fps);
+    // 10. Profiler HUD
+    const totalTime = performance.now() - frameStart;
+    this.renderer.renderProfiler({
+      fps: this.fps,
+      traceTime,
+      raysTime,
+      dustTime,
+      prismTime,
+      clearTime,
+      totalTime,
+      rayCount: traceResult.rays.length,
+      segmentCount: traceResult.segments.length,
+    });
 
     ctx.restore();
   }
