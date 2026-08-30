@@ -79,18 +79,18 @@ export class GameRenderer {
     if (typeof document === 'undefined') return;
     try {
       this.bgCanvas = document.createElement('canvas');
-      this.bgCanvas.width = 1000;
-      this.bgCanvas.height = 1000;
+      this.bgCanvas.width = 1024;
+      this.bgCanvas.height = 1024;
       const bctx = this.bgCanvas.getContext('2d');
       if (!bctx) return;
 
       // 1. Deep cosmic radial gradient
-      const bgGrad = bctx.createRadialGradient(500, 500, 40, 500, 500, 720);
+      const bgGrad = bctx.createRadialGradient(512, 512, 40, 512, 512, 720);
       bgGrad.addColorStop(0, '#0e1635');
-      bgGrad.addColorStop(0.5, '#070a1a');
+      bgGrad.addColorStop(0.55, '#070a1a');
       bgGrad.addColorStop(1, '#020309');
       bctx.fillStyle = bgGrad;
-      bctx.fillRect(0, 0, 1000, 1000);
+      bctx.fillRect(0, 0, 1024, 1024);
 
       // 2. Fine textured noise / wall projection grain
       const noiseCanvas = document.createElement('canvas');
@@ -112,7 +112,7 @@ export class GameRenderer {
         const pattern = bctx.createPattern(noiseCanvas, 'repeat');
         if (pattern) {
           bctx.fillStyle = pattern;
-          bctx.fillRect(0, 0, 1000, 1000);
+          bctx.fillRect(0, 0, 1024, 1024);
         }
       }
     } catch {}
@@ -168,13 +168,12 @@ export class GameRenderer {
   public clear(x: number = 0, y: number = 0, width: number = 1000, height: number = 1000): void {
     const ctx = this.ctx;
 
-    // 1. Fill extended screen edges with base dark cosmic color
-    ctx.fillStyle = '#020309';
-    ctx.fillRect(x, y, width, height);
-
-    // 2. Blit pre-rendered cosmic radial gradient + grain onto active 1000x1000 viewport (0.01ms GPU hardware blit!)
+    // Blit pre-rendered cosmic radial gradient + grain across the entire screen (0.01ms GPU hardware blit!)
     if (this.bgCanvas) {
-      ctx.drawImage(this.bgCanvas, 0, 0);
+      ctx.drawImage(this.bgCanvas, x, y, width, height);
+    } else {
+      ctx.fillStyle = '#060814';
+      ctx.fillRect(x, y, width, height);
     }
   }
 
