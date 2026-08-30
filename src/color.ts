@@ -160,12 +160,12 @@ export function checkColorMatch(
     // If target is colorful (high saturation), required light must also have sufficient saturation
     // and matching hue angle within tolerance
     if (tS > 0.4) {
-      const hueTolerance = 20; // 20 degrees tolerance
-      const isSaturatedEnough = sS >= 0.35;
+      const hueTolerance = 32; // Expanded tolerance (was 20) to accept slightly different hues/wavelengths
+      const isSaturatedEnough = sS >= 0.28; // Slightly lower saturation threshold (was 0.35)
       isMatch = isSaturatedEnough && hueDiff <= hueTolerance;
     } else {
       // For white/neutral targets
-      isMatch = sS < 0.35 && sV >= 0.2;
+      isMatch = sS < 0.40 && sV >= 0.2;
     }
   }
 

@@ -186,8 +186,8 @@ button:active {
   text-shadow: 0 0 6px rgba(148, 163, 184, 0.3);
 }
 
-/* Responsive Mobile Rules at 780px breakpoint */
-@media (max-width: 780px) {
+/* Responsive Mobile Rules at 850px breakpoint */
+@media (max-width: 850px) {
   #game-header {
     top: 8px;
     padding: 4px 8px;
@@ -323,23 +323,23 @@ body:not(.is-title) #title-screen {
 
 .title-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 18px;
   width: 100%;
-  max-width: 880px;
+  max-width: 1020px;
   pointer-events: auto;
 }
 
 .glass-card {
-  background: rgba(8, 14, 32, 0.52);
+  background: rgba(8, 14, 32, 0.68);
   backdrop-filter: blur(20px) saturate(200%);
   -webkit-backdrop-filter: blur(20px) saturate(200%);
   border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 18px;
-  padding: 16px 20px;
+  border-radius: 20px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   box-shadow: 0 0 24px rgba(56, 189, 248, 0.2), inset 0 0 16px rgba(56, 189, 248, 0.08), 0 12px 32px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
@@ -351,26 +351,25 @@ body:not(.is-title) #title-screen {
 }
 
 .card-header {
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   font-weight: 900;
   color: var(--neon-gold);
   display: flex;
   align-items: center;
-  gap: 6px;
-  text-transform: uppercase;
+  gap: 8px;
   letter-spacing: 0.8px;
   text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
 }
 
-.card-content {
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: #cbd5e1;
-}
-
-.card-content strong {
-  color: #f8fafc;
-  text-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+.card-diagram {
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  display: block;
+  border-radius: 12px;
+  background: rgba(3, 7, 18, 0.55);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.1);
 }
 
 /* Modal - Cyber-Magic Holographic Gateway */
@@ -405,6 +404,13 @@ body:not(.is-title) #title-screen {
   flex-direction: column;
   gap: 16px;
   max-width: min(90vw, 460px);
+}
+
+.modal-box-large {
+  max-width: min(94vw, 920px);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
 }
 
 .modal-title {

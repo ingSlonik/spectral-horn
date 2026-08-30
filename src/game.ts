@@ -49,10 +49,13 @@ export class Game {
   private elLevelHint: HTMLElement;
   private elLevelSelect: HTMLSelectElement;
   private elMenuBtn: HTMLButtonElement;
+  private elHelpBtn: HTMLButtonElement;
   private elMusicBtn: HTMLButtonElement;
   private elSfxBtn: HTMLButtonElement;
   private elResetBtn: HTMLButtonElement;
   private elWinModal: HTMLElement;
+  private elHelpModal: HTMLElement;
+  private elHelpCloseBtn: HTMLButtonElement;
   private elNextBtn: HTMLButtonElement;
   private elTitleScreen: HTMLElement;
   private elPlayBtn: HTMLButtonElement;
@@ -67,13 +70,23 @@ export class Game {
     this.elLevelHint = document.getElementById('lvl-hint')!;
     this.elLevelSelect = document.getElementById('lvl-select') as HTMLSelectElement;
     this.elMenuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
+    this.elHelpBtn = document.getElementById('help-btn') as HTMLButtonElement;
     this.elMusicBtn = document.getElementById('music-btn') as HTMLButtonElement;
     this.elSfxBtn = document.getElementById('sfx-btn') as HTMLButtonElement;
     this.elResetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
     this.elWinModal = document.getElementById('win-modal')!;
+    this.elHelpModal = document.getElementById('help-modal')!;
+    this.elHelpCloseBtn = document.getElementById('help-close-btn') as HTMLButtonElement;
     this.elNextBtn = document.getElementById('next-btn') as HTMLButtonElement;
     this.elTitleScreen = document.getElementById('title-screen')!;
     this.elPlayBtn = document.getElementById('play-btn') as HTMLButtonElement;
+
+    // Clone cards into help modal
+    const titleCards = this.elTitleScreen.querySelector('.title-cards');
+    const modalCardsContainer = document.getElementById('modal-cards-container');
+    if (titleCards && modalCardsContainer) {
+      modalCardsContainer.innerHTML = titleCards.innerHTML;
+    }
 
     this.input = new InputHandler(this.canvas);
     this.input.getPrisms = () => this.prisms;
@@ -214,6 +227,18 @@ export class Game {
         : '<span class="btn-icon">🔊</span><span class="btn-text"> SFX</span>';
     });
 
+    this.elHelpBtn.addEventListener('click', () => {
+      initAudio();
+      playClick();
+      this.elHelpModal.classList.remove('hidden');
+    });
+
+    this.elHelpCloseBtn.addEventListener('click', () => {
+      initAudio();
+      playClick();
+      this.elHelpModal.classList.add('hidden');
+    });
+
     this.elNextBtn.addEventListener('click', () => {
       initAudio();
       playClick();
@@ -237,6 +262,7 @@ export class Game {
 
     this.elTitleScreen.classList.remove('hidden');
     this.elWinModal.classList.add('hidden');
+    this.elHelpModal.classList.add('hidden');
 
     this.elLevelTitle.textContent = '✨ Cosmic Playground';
     this.elLevelHint.textContent = 'Rainbows cross at the center. Feel free to drag and twist the unicorn horns!';
@@ -247,6 +273,7 @@ export class Game {
     this.isTitleScreen = false;
     document.body.classList.remove('is-title');
     this.elTitleScreen.classList.add('hidden');
+    this.elHelpModal.classList.add('hidden');
     this.loadLevel(this.currentLevelIdx);
   }
 
@@ -254,6 +281,7 @@ export class Game {
     this.isTitleScreen = false;
     document.body.classList.remove('is-title');
     this.elTitleScreen.classList.add('hidden');
+    this.elHelpModal.classList.add('hidden');
     this.currentLevelIdx = Math.max(0, Math.min(LEVELS.length - 1, idx));
     this.level = LEVELS[this.currentLevelIdx];
 
@@ -471,8 +499,8 @@ export class Game {
         }
         playSensorPulse(target.charge);
       } else if (hasLight) {
-        // Wrong color hitting the sensor center -> discharge faster
-        target.charge = Math.max(0, target.charge - dt * 2.0);
+        // Wrong color hitting the sensor center -> discharge moderately
+        target.charge = Math.max(0, target.charge - dt * 1.2);
         target.isSatisfied = false;
       } else {
         // No light -> slow discharge

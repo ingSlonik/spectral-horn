@@ -10,7 +10,7 @@ import { initAudio, playPrismRotate, playPrismMove } from './audio';
 
 export interface DragState {
   prismIndex: number | null;
-  mode: 'move' | 'rotate' | null;
+  mode: 'move' | 'rotate' | 'step-ccw' | 'step-cw' | null;
   dragOffset: Vec2;
   lastAngle: number;
   isTouch: boolean;
@@ -30,8 +30,10 @@ export class InputHandler {
     isTouch: false,
   };
   public hoverPrismIndex: number | null = null;
-  public hoverHandle: 'body' | 'rot' | null = null;
+  public hoverHandle: 'body' | 'rot' | 'step-ccw' | 'step-cw' | null = null;
 
+  private repeatTimer: number | null = null;
+  private repeatDelayTimer: number | null = null;
   private onStateChange?: () => void;
 
   constructor(canvas: HTMLCanvasElement, onStateChange?: () => void) {
@@ -51,6 +53,31 @@ export class InputHandler {
     };
   }
 
+  private startStepAutoRepeat(deltaRad: number, prism: Prism): void {
+    this.stopStepAutoRepeat();
+    this.repeatDelayTimer = window.setTimeout(() => {
+      this.repeatTimer = window.setInterval(() => {
+        if (prism && !prism.locked) {
+          prism.rot += deltaRad;
+          if (prism.baseRot !== undefined) prism.baseRot = prism.rot;
+          playPrismRotate(0.25);
+          this.onStateChange?.();
+        }
+      }, 70);
+    }, 280);
+  }
+
+  private stopStepAutoRepeat(): void {
+    if (this.repeatDelayTimer !== null) {
+      clearTimeout(this.repeatDelayTimer);
+      this.repeatDelayTimer = null;
+    }
+    if (this.repeatTimer !== null) {
+      clearInterval(this.repeatTimer);
+      this.repeatTimer = null;
+    }
+  }
+
   private initEvents(): void {
     // Mouse events
     this.canvas.addEventListener('mousedown', (e) =>
@@ -64,6 +91,42 @@ export class InputHandler {
     // Context menu prevent for right-drag rotation
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    // Keyboard arrow keys for fine positioning/nudging of the selected unicorn
+    window.addEventListener('keydown', (e) => {
+      if (this.selectedPrismIndex === null) return;
+      const prisms = this.getPrisms();
+      const prism = prisms[this.selectedPrismIndex];
+      if (!prism || prism.locked) return;
+
+      const step = e.shiftKey ? 1 : (e.ctrlKey || e.metaKey ? 6 : 2);
+      let moved = false;
+
+      if (e.key === 'ArrowLeft') {
+        prism.pos.x = clamp(prism.pos.x - step, 60, 1000 - 60);
+        moved = true;
+      } else if (e.key === 'ArrowRight') {
+        prism.pos.x = clamp(prism.pos.x + step, 60, 1000 - 60);
+        moved = true;
+      } else if (e.key === 'ArrowUp') {
+        prism.pos.y = clamp(prism.pos.y - step, 60, 1000 - 60);
+        moved = true;
+      } else if (e.key === 'ArrowDown') {
+        prism.pos.y = clamp(prism.pos.y + step, 60, 1000 - 60);
+        moved = true;
+      }
+
+      if (moved) {
+        e.preventDefault();
+        initAudio();
+        if (prism.basePos) {
+          prism.basePos.x = prism.pos.x;
+          prism.basePos.y = prism.pos.y;
+        }
+        playPrismMove(0.15);
+        this.onStateChange?.();
+      }
+    });
+
     // Mouse wheel for fine rotation of selected/hovered horn
     this.canvas.addEventListener(
       'wheel',
@@ -75,7 +138,7 @@ export class InputHandler {
             ? this.hoverPrismIndex
             : this.selectedPrismIndex;
         if (targetIdx !== null) {
-          const delta = Math.sign(e.deltaY) * 0.04;
+          const delta = Math.sign(e.deltaY) * (Math.PI / 180) * 2; // 2 degrees per notch
           const prism = this.getPrisms()[targetIdx];
           if (prism && !prism.locked) {
             prism.rot += delta;
@@ -127,10 +190,29 @@ export class InputHandler {
       if (!prism.locked) {
         const s = prism.scale || 1;
         const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 82 * s };
+        const leftBtnPos = { x: prism.pos.x - 78 * s, y: prism.pos.y };
+        const rightBtnPos = { x: prism.pos.x + 78 * s, y: prism.pos.y };
+
+        const dLeft = vDist(this.mousePos, leftBtnPos);
+        const dRight = vDist(this.mousePos, rightBtnPos);
         const dMove = vDist(this.mousePos, moveHandlePos);
         const dCenter = vDist(this.mousePos, prism.pos);
 
-        // 1. Move hit (bottom handle with generous hit radius or center body)
+        // 1. Step rotation buttons (⟲ and ⟳)
+        if (dLeft <= 18 * s) {
+          this.hoverPrismIndex = this.selectedPrismIndex;
+          this.hoverHandle = 'step-ccw';
+          this.canvas.style.cursor = 'pointer';
+          return;
+        }
+        if (dRight <= 18 * s) {
+          this.hoverPrismIndex = this.selectedPrismIndex;
+          this.hoverHandle = 'step-cw';
+          this.canvas.style.cursor = 'pointer';
+          return;
+        }
+
+        // 2. Move hit (bottom handle with generous hit radius or center body)
         if (dMove <= 34 * s || dCenter <= 38 * s || isPointInPolygon(this.mousePos, getPrismVertices(prism))) {
           this.hoverPrismIndex = this.selectedPrismIndex;
           this.hoverHandle = 'body';
@@ -138,7 +220,7 @@ export class InputHandler {
           return;
         }
 
-        // 2. Rotation Ring hit zone (outer halo band ~45*s to ~105*s)
+        // 3. Rotation Ring hit zone (outer halo band ~45*s to ~105*s)
         if (dCenter >= 45 * s && dCenter <= 105 * s) {
           this.hoverPrismIndex = this.selectedPrismIndex;
           this.hoverHandle = 'rot';
@@ -175,7 +257,7 @@ export class InputHandler {
     const prisms = this.getPrisms();
 
     let targetIdx: number | null = null;
-    let mode: 'move' | 'rotate' | null = null;
+    let mode: 'move' | 'rotate' | 'step-ccw' | 'step-cw' | null = null;
 
     // 1. Check if clicked within selected prism controls
     if (
@@ -186,6 +268,11 @@ export class InputHandler {
       const prism = prisms[this.selectedPrismIndex];
       const s = prism.scale || 1;
       const moveHandlePos = { x: prism.pos.x, y: prism.pos.y + 82 * s };
+      const leftBtnPos = { x: prism.pos.x - 78 * s, y: prism.pos.y };
+      const rightBtnPos = { x: prism.pos.x + 78 * s, y: prism.pos.y };
+
+      const dLeft = vDist(pos, leftBtnPos);
+      const dRight = vDist(pos, rightBtnPos);
       const dMove = vDist(pos, moveHandlePos);
       const dCenter = vDist(pos, prism.pos);
 
@@ -194,6 +281,22 @@ export class InputHandler {
           targetIdx = this.selectedPrismIndex;
           mode = 'rotate';
         }
+      } else if (dLeft <= 18 * s) {
+        // Tapped Step-CCW button ⟲ (-1 degree)
+        targetIdx = this.selectedPrismIndex;
+        mode = 'step-ccw';
+        prism.rot -= (Math.PI / 180);
+        if (prism.baseRot !== undefined) prism.baseRot = prism.rot;
+        playPrismRotate(0.5);
+        this.startStepAutoRepeat(-(Math.PI / 180), prism);
+      } else if (dRight <= 18 * s) {
+        // Tapped Step-CW button ⟳ (+1 degree)
+        targetIdx = this.selectedPrismIndex;
+        mode = 'step-cw';
+        prism.rot += (Math.PI / 180);
+        if (prism.baseRot !== undefined) prism.baseRot = prism.rot;
+        playPrismRotate(0.5);
+        this.startStepAutoRepeat(+(Math.PI / 180), prism);
       } else if (dMove <= 34 * s || dCenter <= 38 * s || isPointInPolygon(pos, getPrismVertices(prism))) {
         // Tapped move badge or center body
         targetIdx = this.selectedPrismIndex;
@@ -251,7 +354,7 @@ export class InputHandler {
           isTouch,
         };
         this.canvas.style.cursor = 'grabbing';
-      } else {
+      } else if (mode === 'move') {
         const effectiveY = isTouch ? pos.y - TOUCH_DRAG_OFFSET_Y : pos.y;
         this.dragState = {
           prismIndex: targetIdx,
@@ -261,6 +364,16 @@ export class InputHandler {
           isTouch,
         };
         this.canvas.style.cursor = 'move';
+      } else {
+        // step-ccw or step-cw
+        this.dragState = {
+          prismIndex: targetIdx,
+          mode,
+          dragOffset: v2(0, 0),
+          lastAngle: 0,
+          isTouch,
+        };
+        this.canvas.style.cursor = 'pointer';
       }
     }
 
@@ -312,6 +425,7 @@ export class InputHandler {
   }
 
   private handlePointerUp(): void {
+    this.stopStepAutoRepeat();
     if (this.dragState.prismIndex !== null) {
       this.dragState = {
         prismIndex: null,
