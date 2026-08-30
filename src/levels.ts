@@ -60,8 +60,8 @@ export const LEVELS: LevelDef[] = [
   {
     id: 1,
     title: "1. The First Horn",
-    subtitle: "Double refraction: bending light with crystal power",
-    hint: "Rotate your horn to bend the celestial rainbow beam into the sensor.",
+    subtitle: "Double refraction: Snell's law meets celestial horn",
+    hint: "Rotate your unicorn horn into the white beam. Snell's law will bend the green photons straight into the sensor.",
     emitter: {
       pos: v2(90, 420),
       angle: 0,
@@ -97,9 +97,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 2,
-    title: "2. Rainbow Dispersion",
-    subtitle: "Cauchy dispersion: splitting white light into primary spectra",
-    hint: "Red bends gently, violet takes the sharpest dive. Position your horn to fan out the rainbow across all three sensors!",
+    title: "2. The Prismatic Party",
+    subtitle: "Cauchy dispersion: White light was a rainbow party all along",
+    hint: "Red bends gently, violet takes a sharp dive. Angle your horn so the fanned-out rainbow hits all three sensors simultaneously!",
     emitter: {
       pos: v2(90, 300),
       angle: 0,
@@ -156,8 +156,8 @@ export const LEVELS: LevelDef[] = [
   {
     id: 3,
     title: "3. The Obsidian Shield",
-    subtitle: "Upward refraction: slipping under the lowered barrier",
-    hint: "The sensor is tucked behind a lowered shield. Turn your horn upside down to bend light upward into the pocket!",
+    subtitle: "Upward refraction: Sneaking photons past dark barriers",
+    hint: "The sensor is hiding behind heavy obsidian. Flip your horn upside down to refract the beam upward into the pocket!",
     emitter: {
       pos: v2(90, 820),
       angle: 0,
@@ -198,9 +198,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 4,
-    title: "4. Total Internal Reflection",
-    subtitle: "Critical angles: 90° periscope turns inside crystal",
-    hint: "Refraction alone cannot make this sharp 90° turn. Rotate the horn into a steep angle for internal reflection!",
+    title: "4. The Periscope Trick",
+    subtitle: "Total Internal Reflection: Trapping light at critical angles",
+    hint: "Refraction alone can't make a sharp 90° turn. Tilt the horn past the critical angle to bounce light 100% internally!",
     emitter: {
       pos: v2(90, 240),
       angle: 0,
@@ -251,8 +251,8 @@ export const LEVELS: LevelDef[] = [
   {
     id: 5,
     title: "5. The Celestial Mirror",
-    subtitle: "Specular zig-zag: mirror reflection meets horn refraction",
-    hint: "Bounce the beam down between the barriers with the mirror, then use your horn to bend it back up into the sensor!",
+    subtitle: "Specular zig-zag: Polished chrome meets crystal refraction",
+    hint: "Bank the beam down with the mirror, then use your horn to scoop the photons back up into the amber sensor.",
     emitter: {
       pos: v2(90, 550),
       angle: -1.1,
@@ -303,9 +303,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 6,
-    title: "6. Chrome & Obsidian",
-    subtitle: "Bank shots in deep space: fixed mirrors meet moving horns",
-    hint: "Bounce the beam off the polished chrome floor before routing it through your prism.",
+    title: "6. Cosmic Trickshot",
+    subtitle: "Bank shots: Fixed mirrors, dark obstacles, and movable horns",
+    hint: "Bank the incoming beam off the mirror floor, then position your horn to split the rebound across both sensors.",
     emitter: {
       pos: v2(90, 220),
       angle: 1.05,
@@ -370,9 +370,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 7,
-    title: "7. Inverted Spectrum",
-    subtitle: "Spectral reflection: flipping 3-color order with a mirror",
-    hint: "The horn disperses Red on top and Blue below, but the three sensors are inverted! Bounce the rainbow off the mirror to reverse the spectrum.",
+    title: "7. Upside-Down Rainbow",
+    subtitle: "Spectral inversion: Mirrors flip the rainbow upside down",
+    hint: "The horn puts Red on top and Blue below, but the sensors want the exact opposite. Bounce the rainbow off the mirror to flip its order!",
     emitter: {
       pos: v2(90, 200),
       angle: 0,
@@ -442,9 +442,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 8,
-    title: "8. The Crystal Labyrinth",
-    subtitle: "Inverted N reflection: bouncing spectra across mirror blocks",
-    hint: "Direct the beam down to the floor mirror to bounce it up and back down into the green sensor, while illuminating the red sensor near the source!",
+    title: "8. Hall of Mirrors",
+    subtitle: "Multi-bounce pinball: Wrangling photons in a reflective maze",
+    hint: "Aim for the floor mirror to trigger a wild ricochet into the green sensor, while clipping the red sensor along the way!",
     emitter: {
       pos: v2(90, 200),
       angle: -0.2,
@@ -515,9 +515,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 9,
-    title: "9. Inverted Spectrum: The Dove Prism",
-    subtitle: "Image inversion: flipping spectra without angular deflection",
-    hint: "The colors are inverted inside the horizontal tunnel! A horn will deflect into the walls — only the Dove prism can flip the colors horizontally.",
+    title: "9. Enter the Dove Prism",
+    subtitle: "Dove mechanics: Flipping beam order without deflecting the path",
+    hint: "The colors are upside down in a narrow tunnel! A horn will steer into the walls—only the Dove prism flips order without bending the beam.",
     emitter: [
       {
         pos: v2(90, 485),
@@ -582,9 +582,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 10,
-    title: "10. Rainbow Inversion: Dove & Horn",
-    subtitle: "Spectral inversion: flipping the Cauchy rainbow with a Dove prism",
-    hint: "Disperse the white beam into a rainbow with your horn, then use the Dove prism to flip the color order into the sensors!",
+    title: "10. The Prismatic Inversion",
+    subtitle: "Double optical combo: Cauchy dispersion plus Dove inversion",
+    hint: "Fan out the white beam into a full rainbow with your horn, then send it through the Dove prism to reverse the color stack.",
     emitter: {
       pos: v2(90, 480),
       angle: 0,
@@ -659,8 +659,8 @@ export const LEVELS: LevelDef[] = [
   {
     id: 11,
     title: "11. The Crystal Orb",
-    subtitle: "Spherical refraction: focusing full rainbow through the needle’s eye",
-    hint: "A broad rainbow beam cannot pass through the narrow slit. Focus it with the Crystal Orb, then bend it to the target with your horn!",
+    subtitle: "Spherical refraction: Threading photons through the needle's eye",
+    hint: "That beam is way too fat for the slit! Focus it to a sharp point with the Crystal Orb, then steer the exit ray with your horn.",
     emitter: {
       pos: v2(90, 300),
       angle: 0,
@@ -718,9 +718,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 12,
-    title: "12. Focus & Disperse",
-    subtitle: "Harmonic pairing: spherical lens meets dispersive crystal",
-    hint: "First focus the broad beam through the keyhole with the Orb, then place the Horn to split the focused beam into Green and Cyan sensors!",
+    title: "12. Squeeze & Scatter",
+    subtitle: "Optical tag-team: Spherical focusing into crystalline dispersion",
+    hint: "Squeeze the wide beam through the keyhole with the Orb, then catch the focal point with your horn to split Green and Cyan.",
     emitter: {
       pos: v2(90, 500),
       angle: 0,
@@ -785,8 +785,8 @@ export const LEVELS: LevelDef[] = [
   {
     id: 13,
     title: "13. Additive Alchemy: Yellow",
-    subtitle: "RGB synthesis: Red + Green = Golden Glow",
-    hint: "Single colors won't satisfy this sensor. Intersect both beams right inside its lens!",
+    subtitle: "Color synthesis: Red + Green = 100% Golden Yellow",
+    hint: "Single wavelengths won't satisfy this picky sensor. Intersect both Red and Green beams right inside its lens!",
     emitter: [
       {
         pos: v2(90, 240),
@@ -855,9 +855,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 14,
-    title: "14. Dual Synthesis: Cyan & Magenta",
-    subtitle: "Secondary harmonics: mixing Green, Blue, and Red across distance",
-    hint: "Blue is in high demand! Use the Orb to expand Blue light so it combines with Red at the top and Green at the bottom.",
+    title: "14. Dual Synthesis",
+    subtitle: "Photon cocktail: Mixing Cyan and Magenta on demand",
+    hint: "Blue is in high demand! Use the Orb to broaden the Blue beam so it pairs with Red at the top and Green at the bottom.",
     emitter: [
       {
         pos: v2(90, 180),
@@ -949,9 +949,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 15,
-    title: "15. Recombining White",
-    subtitle: "Newton's reverse trick: putting the rainbow back together",
-    hint: "Individual spectral colors are too saturated. Converge the whole rainbow back into pure white light!",
+    title: "15. The Great Recombination",
+    subtitle: "Additive recombination: Merging the rainbow back to white",
+    hint: "Single colors are too moody for this sensor. Use the second horn to re-converge the dispersed rainbow into pure white light!",
     emitter: {
       pos: v2(90, 500),
       angle: 0,
@@ -1006,9 +1006,9 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 16,
-    title: "16. The Prismatic Web",
-    subtitle: "Geometric synthesis: Horn, Mirror, and Orb in full harmony",
-    hint: "Bend the beam upward with the Horn, bounce it off the Mirror, and focus the spectrum into the sensors with your Orb!",
+    title: "16. The Prismatic Ensemble",
+    subtitle: "Three-way synergy: Horn, Mirror, and Orb in concert",
+    hint: "Send photons on a grand tour: bend up with the horn, bank off the mirror, and focus into both sensors with the Orb.",
     emitter: {
       pos: v2(90, 750),
       angle: 0,
@@ -1078,8 +1078,8 @@ export const LEVELS: LevelDef[] = [
   {
     id: 17,
     title: "17. The Grand Optical Symphony",
-    subtitle: "Master of photons: the ultimate celestial harmony",
-    hint: "Your entire optical toolkit is unlocked. Orchestrate all four artifacts (Horn, Mirror, Orb, Dove) to illuminate every sensor!",
+    subtitle: "Master of photons: The ultimate multi-spectral finale",
+    hint: "The complete optical laboratory is yours. Orchestrate Horns, Mirrors, Orb, and Dove prism to illuminate every sensor—including the central White core!",
     emitter: [
       {
         pos: v2(90, 240),
@@ -1145,12 +1145,21 @@ export const LEVELS: LevelDef[] = [
       },
       {
         id: 5,
-        pos: v2(460, 500),
+        pos: v2(380, 640),
         rot: 0,
         scale: 1.4,
         baseIndex: 1.53,
         dispersionB: 8000,
         shape: "dove"
+      },
+      {
+        id: 6,
+        pos: v2(560, 160),
+        rot: 0,
+        scale: 1.4,
+        baseIndex: 1,
+        dispersionB: 0,
+        shape: "mirror"
       }
     ],
     targets: [
@@ -1203,6 +1212,21 @@ export const LEVELS: LevelDef[] = [
         charge: 0,
         isSatisfied: false,
         name: "Blue Sensor 2"
+      },
+      {
+        id: 6,
+        pos: v2(500, 500),
+        radius: 35,
+        targetRgb: [
+          255,
+          255,
+          255
+        ],
+        minLambda: 400,
+        maxLambda: 700,
+        charge: 0,
+        isSatisfied: false,
+        name: "White Sensor (Core)"
       }
     ],
     obstacles: [
