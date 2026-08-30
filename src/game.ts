@@ -31,6 +31,13 @@ const markCleared = (idx: number) => {
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
+const updateViewport = () => {
+  const m = $<HTMLMetaElement>('vpmeta');
+  if (m && window.screen) {
+    m['content'] = screen.width >= 700 ? 'width=device-width,initial-scale=1' : 'width=700';
+  }
+};
+
 export class Game {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -70,6 +77,7 @@ export class Game {
   };
 
   constructor() {
+    updateViewport();
     this.canvas = $<HTMLCanvasElement>('c');
     this.ctx = this.canvas.getContext('2d')!;
     this.renderer = new GameRenderer(this.ctx);
@@ -84,7 +92,14 @@ export class Game {
     this.setupUI();
     this.showTitleScreen();
     this.resizeCanvas();
-    window.addEventListener('resize', () => this.resizeCanvas());
+    window.addEventListener('resize', () => {
+      updateViewport();
+      this.resizeCanvas();
+    });
+    window.addEventListener('orientationchange', () => {
+      updateViewport();
+      this.resizeCanvas();
+    });
 
     let lastTime = performance.now();
     const loop = (time: number) => {
