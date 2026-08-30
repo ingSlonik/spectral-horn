@@ -232,10 +232,10 @@ export function getPrismVertices(prism: Prism): Vec2[] {
       { x: -w, y: h },
     ];
   } else if (prism.shape === 'dove') {
-    // Dove prism trapezoid (45 deg entry/exit faces)
+    // Dove prism trapezoid (exact 45 deg entry/exit faces for 0 deg net deflection)
     const topW = 20 * s;
-    const botW = 44 * s;
     const h = 24 * s;
+    const botW = topW + 2 * h; // (20 + 48 = 68) gives dx = 2h over dy = 2h => exactly 45 deg!
     localPoints = [
       { x: -topW, y: -h },
       { x: topW, y: -h },
