@@ -27,7 +27,7 @@ async function build() {
     bundle: true,
     write: false,
     format: 'iife',
-    target: 'es2020',
+    target: 'esnext',
     minify: false,
   });
 
@@ -67,12 +67,16 @@ async function build() {
   const terserResult = await minifyJs(bundledJs, {
     ecma: 2020,
     compress: {
-      passes: 6,
+      passes: 10,
       unsafe: true,
       unsafe_math: true,
       unsafe_arrows: true,
       unsafe_methods: true,
       unsafe_proto: true,
+      unsafe_comps: true,
+      unsafe_Function: true,
+      unsafe_symbols: true,
+      unsafe_undefined: true,
       pure_getters: true,
       drop_console: true,
       booleans_as_integers: true,
@@ -134,10 +138,11 @@ async function build() {
     minifyJS: false,
   });
 
+  fs.writeFileSync(path.resolve("dist", 'index_skeletone.html'), minifiedSkeleton + "<script>" + minifiedJs + "</script>");
+
   // 5. Roadroller Unified Crusher (Compresses HTML + CSS + JavaScript in a single JS payload)
   console.log('\n🛞 Step 5: Crushing HTML + CSS + JavaScript with Roadroller...');
   const combinedJs = `document.write(${JSON.stringify(minifiedSkeleton)});\n${minifiedJs}`;
-
   const roadrollerStart = Date.now();
   const packer = new Packer(
     [
