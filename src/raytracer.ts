@@ -278,10 +278,11 @@ export function traceScene(
         });
         rayPoints.push(segEnd);
 
-        // Test Target Sensor Hits along this segment
+        // Test Target Sensor Hits along this segment (measured inside central lens circle)
         for (const target of targets) {
+          const sensorRadius = target.radius * 0.85 * 0.44;
           const d = distToSegment(target.pos, segStart, segEnd);
-          if (d <= target.radius) {
+          if (d <= sensorRadius) {
             const stats = targetStatsMap.get(target.id)!;
             stats.total++;
             stats.sumWl += currentRay.wavelength;

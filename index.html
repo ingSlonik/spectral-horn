@@ -58,54 +58,60 @@
           </defs>
 
           <!-- LEFT: Horn & Controls (centered at 85, 92) -->
-          <circle cx="85" cy="92" r="58" fill="url(#ringGlow1)"/>
+          <circle cx="85" cy="92" r="46" fill="url(#ringGlow1)"/>
 
           <!-- Rotation Ring -->
-          <circle cx="85" cy="92" r="48" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="5,4" stroke-opacity="0.65"/>
+          <circle cx="85" cy="92" r="38" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="4,3" stroke-opacity="0.65"/>
 
           <!-- Crystal Horn -->
           <g transform="translate(85, 92)">
-            <polygon points="0,-40 20,20 -20,20" fill="url(#hornGrad1)" stroke="rgba(210, 235, 255, 0.95)" stroke-width="1.8"/>
-            <path d="M -7 -20 Q 0 -24 7 -20" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.8"/>
-            <path d="M -13 0 Q 0 -6 13 0" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.8"/>
-            <circle cx="0" cy="0" r="2.5" fill="#ffffff" opacity="0.6"/>
+            <polygon points="0,-30 15,15 -15,15" fill="url(#hornGrad1)" stroke="rgba(210, 235, 255, 0.95)" stroke-width="1.5"/>
+            <path d="M -5 -15 Q 0 -18 5 -15" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.8"/>
+            <path d="M -10 0 Q 0 -4 10 0" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.8"/>
+            <circle cx="0" cy="0" r="2" fill="#ffffff" opacity="0.6"/>
           </g>
 
           <!-- Top Knob -->
-          <circle cx="85" cy="44" r="6.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5"/>
-          <circle cx="85" cy="44" r="2" fill="#030611"/>
+          <circle cx="85" cy="54" r="5.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.3"/>
+          <circle cx="85" cy="54" r="1.8" fill="#030611"/>
 
-          <!-- Left Button ⟲ -1° -->
-          <circle cx="37" cy="92" r="13" fill="#0b132b" stroke="#38bdf8" stroke-width="1.6"/>
-          <path d="M 40 97 A 5.5 5.5 0 1 0 34 89" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round"/>
-          <polygon points="31,89 35,86 36,91" fill="#38bdf8"/>
-          <text x="37" y="95" font-size="7.5" font-weight="900" fill="#ffd700" text-anchor="middle" font-family="sans-serif">-1°</text>
+          <!-- Left Button ↺ (Counter-Clockwise - Mirrored) -->
+          <g transform="translate(47, 92)">
+            <circle cx="0" cy="0" r="11" fill="#0b132b" stroke="#38bdf8" stroke-width="1.5"/>
+            <g transform="scale(-1, 1)">
+              <path d="M 5 1.2 A 5.2 5.2 0 1 1 0 -5.2" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+              <polygon points="2.2,-5.2 -1.8,-7.8 -1.8,-2.6" fill="#38bdf8"/>
+            </g>
+          </g>
 
-          <!-- Right Button ⟳ +1° -->
-          <circle cx="133" cy="92" r="13" fill="#0b132b" stroke="#38bdf8" stroke-width="1.6"/>
-          <path d="M 130 97 A 5.5 5.5 0 1 1 136 89" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round"/>
-          <polygon points="139,89 135,86 134,91" fill="#38bdf8"/>
-          <text x="133" y="95" font-size="7.5" font-weight="900" fill="#ffd700" text-anchor="middle" font-family="sans-serif">+1°</text>
+          <!-- Right Button ↻ (Clockwise) -->
+          <g transform="translate(123, 92)">
+            <circle cx="0" cy="0" r="11" fill="#0b132b" stroke="#38bdf8" stroke-width="1.5"/>
+            <path d="M 5 1.2 A 5.2 5.2 0 1 1 0 -5.2" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+            <polygon points="2.2,-5.2 -1.8,-7.8 -1.8,-2.6" fill="#38bdf8"/>
+          </g>
 
           <!-- Bottom Move Badge ✥ -->
-          <circle cx="85" cy="142" r="12" fill="#0b132b" stroke="#ffd700" stroke-width="1.6"/>
-          <path d="M 85 135 L 85 149 M 78 142 L 92 142" stroke="#ffd700" stroke-width="1.5"/>
-          <polygon points="85,133 83,136 87,136" fill="#ffd700"/>
-          <polygon points="85,151 83,148 87,148" fill="#ffd700"/>
-          <polygon points="76,142 79,140 79,144" fill="#ffd700"/>
-          <polygon points="94,142 91,140 91,144" fill="#ffd700"/>
+          <g transform="translate(85, 132)">
+            <circle cx="0" cy="0" r="10.5" fill="#0b132b" stroke="#ffd700" stroke-width="1.5"/>
+            <path d="M 0 -6 L 0 6 M -6 0 L 6 0" stroke="#ffd700" stroke-width="1.3"/>
+            <polygon points="0,-8 -2.5,-5 2.5,-5" fill="#ffd700"/>
+            <polygon points="0,8 -2.5,5 2.5,5" fill="#ffd700"/>
+            <polygon points="-8,0 -5,-2.5 -5,2.5" fill="#ffd700"/>
+            <polygon points="8,0 5,-2.5 5,2.5" fill="#ffd700"/>
+          </g>
 
           <!-- LEADER LINES -->
-          <path d="M 91 44 L 168 37" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="91" cy="44" r="2.5" fill="#38bdf8"/>
+          <path d="M 91 54 L 168 37" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3,3"/>
+          <circle cx="91" cy="54" r="2.5" fill="#38bdf8"/>
           <circle cx="168" cy="37" r="2.5" fill="#38bdf8"/>
 
-          <path d="M 146 92 L 168 92" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="146" cy="92" r="2.5" fill="#ffd700"/>
+          <path d="M 134 92 L 168 92" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,3"/>
+          <circle cx="134" cy="92" r="2.5" fill="#ffd700"/>
           <circle cx="168" cy="92" r="2.5" fill="#ffd700"/>
 
-          <path d="M 97 142 L 168 147" fill="none" stroke="#4ade80" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="97" cy="142" r="2.5" fill="#4ade80"/>
+          <path d="M 96 132 L 168 147" fill="none" stroke="#4ade80" stroke-width="1.2" stroke-dasharray="3,3"/>
+          <circle cx="96" cy="132" r="2.5" fill="#4ade80"/>
           <circle cx="168" cy="147" r="2.5" fill="#4ade80"/>
 
           <!-- RIGHT LABELS -->
@@ -114,7 +120,7 @@
           <text x="184" y="49" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Smooth rotation to steer the rainbow</text>
 
           <rect x="174" y="69" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#ffd700" stroke-width="1"/>
-          <text x="184" y="87" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">⟲ ⟳ Step Buttons (-1° / +1°)</text>
+          <text x="184" y="87" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">↺ ↻ Step Buttons</text>
           <text x="184" y="104" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Fine micro-step angle (click or hold)</text>
 
           <rect x="174" y="124" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#4ade80" stroke-width="1"/>

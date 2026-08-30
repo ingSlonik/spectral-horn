@@ -282,21 +282,21 @@ export class InputHandler {
           mode = 'rotate';
         }
       } else if (dLeft <= 18 * s) {
-        // Tapped Step-CCW button ⟲ (-1 degree)
+        // Tapped Step-CCW button ⟲ (-0.5 degree)
         targetIdx = this.selectedPrismIndex;
         mode = 'step-ccw';
-        prism.rot -= (Math.PI / 180);
+        prism.rot -= (Math.PI / 180) * 0.5;
         if (prism.baseRot !== undefined) prism.baseRot = prism.rot;
         playPrismRotate(0.5);
-        this.startStepAutoRepeat(-(Math.PI / 180), prism);
+        this.startStepAutoRepeat(-(Math.PI / 180) * 0.5, prism);
       } else if (dRight <= 18 * s) {
-        // Tapped Step-CW button ⟳ (+1 degree)
+        // Tapped Step-CW button ⟳ (+0.5 degree)
         targetIdx = this.selectedPrismIndex;
         mode = 'step-cw';
-        prism.rot += (Math.PI / 180);
+        prism.rot += (Math.PI / 180) * 0.5;
         if (prism.baseRot !== undefined) prism.baseRot = prism.rot;
         playPrismRotate(0.5);
-        this.startStepAutoRepeat(+(Math.PI / 180), prism);
+        this.startStepAutoRepeat(+(Math.PI / 180) * 0.5, prism);
       } else if (dMove <= 34 * s || dCenter <= 38 * s || isPointInPolygon(pos, getPrismVertices(prism))) {
         // Tapped move badge or center body
         targetIdx = this.selectedPrismIndex;
