@@ -374,13 +374,13 @@ export class Game {
       );
       const traceTime = performance.now() - tTraceStart;
 
-      const tDustStart = performance.now();
-      this.renderer.renderDust(traceResult.segments);
-      const dustTime = performance.now() - tDustStart;
-
       const tRaysStart = performance.now();
       this.renderer.renderRays(traceResult.rays, bounds);
       const raysTime = performance.now() - tRaysStart;
+
+      const tDustStart = performance.now();
+      this.renderer.renderDust(traceResult.segments, time);
+      const dustTime = performance.now() - tDustStart;
 
       // 4. Render particles
       this.renderer.renderParticles();
@@ -442,13 +442,13 @@ export class Game {
     );
     const traceTime = performance.now() - tTraceStart;
 
-    const tDustStart = performance.now();
-    this.renderer.renderDust(traceResult.segments);
-    const dustTime = performance.now() - tDustStart;
-
     const tRaysStart = performance.now();
     this.renderer.renderRays(traceResult.rays, bounds);
     const raysTime = performance.now() - tRaysStart;
+
+    const tDustStart = performance.now();
+    this.renderer.renderDust(traceResult.segments, time);
+    const dustTime = performance.now() - tDustStart;
 
     // 6. Direct Target Evaluation from Raytracer Hits (Zero GPU readback)
     let allSatisfied = true;
