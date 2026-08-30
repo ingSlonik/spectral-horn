@@ -24,11 +24,11 @@ import {
 // Pre-computed lookup tables for zero-allocation, 100% continuous smooth rainbow colors
 const COLOR_TABLE_GLOW: string[] = [];
 const COLOR_TABLE_CORE: string[] = [];
-const COLOR_TABLE_RGB: [number, number, number][] = [];
+const COLOR_TABLE_FLASH: string[] = [];
 for (let wl = 380; wl <= 750; wl++) {
   COLOR_TABLE_GLOW[wl] = wavelengthToRGBA(wl, 0.045);
   COLOR_TABLE_CORE[wl] = wavelengthToRGBA(wl, 0.12);
-  COLOR_TABLE_RGB[wl] = wavelengthToRGB(wl);
+  COLOR_TABLE_FLASH[wl] = wavelengthToRGBA(wl, 0.95);
 }
 
 export interface Particle {
@@ -48,11 +48,9 @@ export interface DustParticle {
   vx: number;
   vy: number;
   size: number;
-  baseAlpha: number;
-  twinkleSpeed: number;
-  twinklePhase: number;
-  glowWl: number;
-  glowAlpha: number;
+  glintWl: number;
+  glintAlpha: number;
+  nextFlashTime: number;
 }
 
 export class GameRenderer {
@@ -61,7 +59,6 @@ export class GameRenderer {
   private dust: DustParticle[] = [];
   private rayCanvas: HTMLCanvasElement;
   private rayCtx: CanvasRenderingContext2D;
-  private noisePattern: CanvasPattern | null = null;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -69,47 +66,21 @@ export class GameRenderer {
     this.rayCanvas.width = 1000;
     this.rayCanvas.height = 1000;
     this.rayCtx = this.rayCanvas.getContext('2d')!;
-    this.initNoisePattern();
     this.initDust();
   }
 
-  private initNoisePattern(): void {
-    if (typeof document === 'undefined') return;
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 128;
-      canvas.height = 128;
-      const nctx = canvas.getContext('2d');
-      if (!nctx) return;
-
-      const imgData = nctx.createImageData(128, 128);
-      const buf = imgData.data;
-      for (let i = 0; i < buf.length; i += 4) {
-        const v = Math.floor(Math.random() * 255);
-        buf[i] = v;
-        buf[i + 1] = v;
-        buf[i + 2] = v;
-        buf[i + 3] = Math.floor(Math.random() * 18 + 8); // 8-26 alpha for distinct yet elegant projection wall/canvas grain
-      }
-      nctx.putImageData(imgData, 0, 0);
-      this.noisePattern = this.ctx.createPattern(canvas, 'repeat');
-    } catch {}
-  }
-
-  private initDust(count: number = 160): void {
+  private initDust(count: number = 45): void {
     this.dust = [];
     for (let i = 0; i < count; i++) {
       this.dust.push({
         x: Math.random() * 1000,
         y: Math.random() * 1000,
-        vx: (Math.random() - 0.5) * 0.28,
-        vy: (Math.random() - 0.5) * 0.28 - 0.04,
-        size: 0.9 + Math.random() * 2.2,
-        baseAlpha: 0.14 + Math.random() * 0.22,
-        twinkleSpeed: 0.0018 + Math.random() * 0.003,
-        twinklePhase: Math.random() * Math.PI * 2,
-        glowWl: 550,
-        glowAlpha: 0,
+        vx: (Math.random() - 0.5) * 0.18,
+        vy: (Math.random() - 0.5) * 0.18 - 0.02,
+        size: 0.8 + Math.random() * 1.2,
+        glintWl: 550,
+        glintAlpha: 0,
+        nextFlashTime: Math.random() * 1500,
       });
     }
   }
@@ -148,25 +119,13 @@ export class GameRenderer {
   public clear(x: number = 0, y: number = 0, width: number = 1000, height: number = 1000): void {
     const ctx = this.ctx;
 
-    // 1. Deep cosmic radial gradient (dark center with subtle starry blue aura)
-    const bgGrad = ctx.createRadialGradient(500, 500, 50, 500, 500, 750);
-    bgGrad.addColorStop(0, '#0a0e24');
-    bgGrad.addColorStop(0.5, '#060917');
-    bgGrad.addColorStop(1, '#02030a');
-    ctx.fillStyle = bgGrad;
+    // 1. Deep cosmic space background (instant single-fill, 0.01ms on all browsers)
+    ctx.fillStyle = '#060814';
     ctx.fillRect(x, y, width, height);
 
-    // 2. High-DPI fine projection wall / linen canvas texture pattern
-    if (this.noisePattern) {
-      ctx.save();
-      ctx.fillStyle = this.noisePattern;
-      ctx.fillRect(x, y, width, height);
-      ctx.restore();
-    }
-
-    // 3. Ultra-subtle ethereal coordinate grid
+    // 2. Ultra-subtle ethereal coordinate grid
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.018)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.015)';
     ctx.lineWidth = 1;
     const step = 50;
     const startX = Math.floor(x / step) * step;
@@ -243,100 +202,81 @@ export class GameRenderer {
   public updateDust(time: number): void {
     for (let i = 0; i < this.dust.length; i++) {
       const d = this.dust[i];
-      d.x += d.vx + Math.sin(time * 0.0012 + i * 0.7) * 0.16;
-      d.y += d.vy + Math.cos(time * 0.0015 + i * 1.1) * 0.14;
+      d.x += d.vx;
+      d.y += d.vy;
       if (d.x < 0) d.x += 1000;
       else if (d.x > 1000) d.x -= 1000;
       if (d.y < 0) d.y += 1000;
       else if (d.y > 1000) d.y -= 1000;
-      d.glowAlpha *= 0.93;
+      d.glintAlpha *= 0.88; // Fast natural spark fade
     }
   }
 
   public renderDust(segments: RaySegment[], time: number = performance.now()): void {
     const ctx = this.ctx;
-    if (this.dust.length === 0) return;
-
-    // Detect light ray illumination for each dust particle
     const segCount = segments.length;
-    if (segCount > 0) {
-      for (let i = 0; i < this.dust.length; i++) {
-        const d = this.dust[i];
-        for (let s = 0; s < segCount; s++) {
-          const seg = segments[s];
-          const minX = (seg.p1.x < seg.p2.x ? seg.p1.x : seg.p2.x) - 18;
-          const maxX = (seg.p1.x > seg.p2.x ? seg.p1.x : seg.p2.x) + 18;
-          const minY = (seg.p1.y < seg.p2.y ? seg.p1.y : seg.p2.y) - 18;
-          const maxY = (seg.p1.y > seg.p2.y ? seg.p1.y : seg.p2.y) + 18;
-          if (d.x < minX || d.x > maxX || d.y < minY || d.y > maxY) continue;
+    if (this.dust.length === 0 || segCount === 0) return;
 
-          const dist = distToSegment(d, seg.p1, seg.p2);
-          if (dist <= 18) {
-            d.glowWl = seg.wavelength;
-            d.glowAlpha = Math.min(1.0, d.glowAlpha + 0.55);
-            break;
-          }
+    // Check if particles in beams occasionally sparkle/glint
+    for (let i = 0; i < this.dust.length; i++) {
+      const d = this.dust[i];
+      if (time < d.nextFlashTime) continue;
+
+      for (let s = 0; s < segCount; s++) {
+        const seg = segments[s];
+        const minX = (seg.p1.x < seg.p2.x ? seg.p1.x : seg.p2.x) - 12;
+        const maxX = (seg.p1.x > seg.p2.x ? seg.p1.x : seg.p2.x) + 12;
+        const minY = (seg.p1.y < seg.p2.y ? seg.p1.y : seg.p2.y) - 12;
+        const maxY = (seg.p1.y > seg.p2.y ? seg.p1.y : seg.p2.y) + 12;
+        if (d.x < minX || d.x > maxX || d.y < minY || d.y > maxY) continue;
+
+        const dist = distToSegment(d, seg.p1, seg.p2);
+        if (dist <= 12) {
+          // Dust particle caught the beam angle and flashes momentarily!
+          d.glintWl = seg.wavelength;
+          d.glintAlpha = 1.0;
+          d.nextFlashTime = time + 1200 + Math.random() * 2800;
+          break;
         }
       }
     }
+
+    // Fast check: skip if no active glints
+    let hasGlints = false;
+    for (let i = 0; i < this.dust.length; i++) {
+      if (this.dust[i].glintAlpha > 0.05) {
+        hasGlints = true;
+        break;
+      }
+    }
+    if (!hasGlints) return;
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
 
     for (let i = 0; i < this.dust.length; i++) {
       const d = this.dust[i];
-      const twinkle = 0.7 + 0.3 * Math.sin(time * d.twinkleSpeed + d.twinklePhase);
+      if (d.glintAlpha <= 0.05) continue;
 
-      // 1. Ambient Stardust Mote (always softly floating and glowing in space)
-      const ambientAlpha = d.baseAlpha * twinkle;
-      ctx.fillStyle = `rgba(180, 220, 255, ${ambientAlpha * 0.35})`;
+      const wl = Math.max(380, Math.min(750, Math.round(d.glintWl)));
+      const alpha = d.glintAlpha;
+      const flareLen = (2.2 + d.size * 1.8) * alpha;
+
+      // 1. Colored micro-sparkle cross
+      ctx.strokeStyle = COLOR_TABLE_FLASH[wl] || '#ffffff';
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.arc(d.x, d.y, d.size * 2.2, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.moveTo(d.x - flareLen, d.y);
+      ctx.lineTo(d.x + flareLen, d.y);
+      ctx.moveTo(d.x, d.y - flareLen);
+      ctx.lineTo(d.x, d.y + flareLen);
+      ctx.stroke();
 
-      ctx.fillStyle = `rgba(240, 248, 255, ${ambientAlpha * 0.85})`;
+      // 2. White-hot pinpoint core
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(d.x, d.y, d.size * 0.7, 0, Math.PI * 2);
+      ctx.arc(d.x, d.y, 0.9 * alpha, 0, Math.PI * 2);
       ctx.fill();
-
-      // 2. Volumetric Tyndall Light-Struck Flare (When light beam hits dust)
-      if (d.glowAlpha > 0.02) {
-        const wl = Math.max(380, Math.min(750, Math.round(d.glowWl)));
-        const rgb = COLOR_TABLE_RGB[wl] || [255, 255, 255];
-        const [r, g, b] = rgb;
-        const intensity = d.glowAlpha * twinkle;
-
-        // Soft chromatic bloom aura
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.4 * intensity})`;
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, d.size * (4.5 + intensity * 4.0), 0, Math.PI * 2);
-        ctx.fill();
-
-        // Saturated chromatic inner corona
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.85 * intensity})`;
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, d.size * 2.0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Radiant white-hot core speck
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.95 * intensity})`;
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, d.size * 1.0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Sparkling micro-cross flare (✦) for bright lit specks
-        if (intensity > 0.6 && d.size > 1.8) {
-          const flareLen = d.size * 3.5 * intensity;
-          ctx.strokeStyle = `rgba(255, 255, 255, ${0.75 * intensity})`;
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.moveTo(d.x - flareLen, d.y);
-          ctx.lineTo(d.x + flareLen, d.y);
-          ctx.moveTo(d.x, d.y - flareLen);
-          ctx.lineTo(d.x, d.y + flareLen);
-          ctx.stroke();
-        }
-      }
     }
 
     ctx.restore();
