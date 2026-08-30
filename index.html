@@ -16,11 +16,16 @@
   <div id="game-header">
     <div class="logo"><span class="logo-icon">✨</span><span class="logo-text"> SPECTRAL HORN</span></div>
     <select id="lvl-select"></select>
-    <button id="help-btn" title="Controls &amp; Help"><span class="btn-icon">❓</span><span class="btn-text"> Help</span></button>
-    <button id="menu-btn" title="Return to Title Screen"><span class="btn-icon">🏠</span><span class="btn-text"> Menu</span></button>
-    <button id="reset-btn" title="Reset Horn Positions"><span class="btn-icon">🔄</span><span class="btn-text"> Reset</span></button>
-    <button id="music-btn" title="Toggle Music"><span class="btn-icon">🎵</span><span class="btn-text"> Music</span></button>
-    <button id="sfx-btn" title="Toggle Sound FX"><span class="btn-icon">🔊</span><span class="btn-text"> SFX</span></button>
+    <button id="menu-btn" title="Return to Title Screen"><span class="btn-icon">🏠</span><span class="btn-text">
+        Menu</span></button>
+    <button id="reset-btn" title="Reset Horn Positions"><span class="btn-icon">🔄</span><span class="btn-text">
+        Reset</span></button>
+    <button id="help-btn" title="Controls &amp; Help"><span class="btn-icon">❓</span><span class="btn-text">
+        Help</span></button>
+    <button id="music-btn" title="Toggle Music"><span class="btn-icon">🎵</span><span class="btn-text">
+        Music</span></button>
+    <button id="sfx-btn" title="Toggle Sound FX"><span class="btn-icon">🔊</span><span class="btn-text">
+        SFX</span></button>
   </div>
 
   <!-- Floating Hint Bar (Visible during gameplay) -->
@@ -34,7 +39,7 @@
   <div id="title-screen">
     <div class="title-hero">
       <div class="title-main">✨ SPECTRAL HORN ✨</div>
-      <div class="title-sub">Awaken ancient spectral sensors through crystalline unicorn horns</div>
+      <div class="title-sub">Updating the laws of optics with crystalline unicorn horns. As science intended.</div>
     </div>
 
     <div class="title-action">
@@ -48,166 +53,191 @@
         <svg class="card-diagram" viewBox="0 0 450 185" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="ringGlow1" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3"/>
-              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
             </radialGradient>
             <linearGradient id="hornGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.35"/>
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.35" />
             </linearGradient>
           </defs>
 
           <!-- LEFT: Horn & Controls (centered at 85, 92) -->
-          <circle cx="85" cy="92" r="46" fill="url(#ringGlow1)"/>
+          <circle cx="85" cy="92" r="46" fill="url(#ringGlow1)" />
 
           <!-- Rotation Ring -->
-          <circle cx="85" cy="92" r="38" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="4,3" stroke-opacity="0.65"/>
+          <circle cx="85" cy="92" r="38" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="4,3"
+            stroke-opacity="0.65" />
 
           <!-- Crystal Horn -->
           <g transform="translate(85, 92)">
-            <polygon points="0,-30 15,15 -15,15" fill="url(#hornGrad1)" stroke="rgba(210, 235, 255, 0.95)" stroke-width="1.5"/>
-            <path d="M -5 -15 Q 0 -18 5 -15" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.8"/>
-            <path d="M -10 0 Q 0 -4 10 0" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.8"/>
-            <circle cx="0" cy="0" r="2" fill="#ffffff" opacity="0.6"/>
+            <polygon points="0,-30 15,15 -15,15" fill="url(#hornGrad1)" stroke="rgba(210, 235, 255, 0.95)"
+              stroke-width="1.5" />
+            <path d="M -5 -15 Q 0 -18 5 -15" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.8" />
+            <path d="M -10 0 Q 0 -4 10 0" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.8" />
+            <circle cx="0" cy="0" r="2" fill="#ffffff" opacity="0.6" />
           </g>
 
           <!-- Top Knob -->
-          <circle cx="85" cy="54" r="5.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.3"/>
-          <circle cx="85" cy="54" r="1.8" fill="#030611"/>
+          <circle cx="85" cy="54" r="5.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.3" />
+          <circle cx="85" cy="54" r="1.8" fill="#030611" />
 
           <!-- Left Button ↺ (Counter-Clockwise - Mirrored) -->
           <g transform="translate(47, 92)">
-            <circle cx="0" cy="0" r="11" fill="#0b132b" stroke="#38bdf8" stroke-width="1.5"/>
+            <circle cx="0" cy="0" r="11" fill="#0b132b" stroke="#38bdf8" stroke-width="1.5" />
             <g transform="scale(-1, 1)">
-              <path d="M 5 1.2 A 5.2 5.2 0 1 1 0 -5.2" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
-              <polygon points="2.2,-5.2 -1.8,-7.8 -1.8,-2.6" fill="#38bdf8"/>
+              <path d="M 5 1.2 A 5.2 5.2 0 1 1 0 -5.2" fill="none" stroke="#38bdf8" stroke-width="1.5"
+                stroke-linecap="round" />
+              <polygon points="2.2,-5.2 -1.8,-7.8 -1.8,-2.6" fill="#38bdf8" />
             </g>
           </g>
 
           <!-- Right Button ↻ (Clockwise) -->
           <g transform="translate(123, 92)">
-            <circle cx="0" cy="0" r="11" fill="#0b132b" stroke="#38bdf8" stroke-width="1.5"/>
-            <path d="M 5 1.2 A 5.2 5.2 0 1 1 0 -5.2" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
-            <polygon points="2.2,-5.2 -1.8,-7.8 -1.8,-2.6" fill="#38bdf8"/>
+            <circle cx="0" cy="0" r="11" fill="#0b132b" stroke="#38bdf8" stroke-width="1.5" />
+            <path d="M 5 1.2 A 5.2 5.2 0 1 1 0 -5.2" fill="none" stroke="#38bdf8" stroke-width="1.5"
+                stroke-linecap="round" />
+            <polygon points="2.2,-5.2 -1.8,-7.8 -1.8,-2.6" fill="#38bdf8" />
           </g>
 
           <!-- Bottom Move Badge ✥ -->
           <g transform="translate(85, 132)">
-            <circle cx="0" cy="0" r="10.5" fill="#0b132b" stroke="#ffd700" stroke-width="1.5"/>
-            <path d="M 0 -6 L 0 6 M -6 0 L 6 0" stroke="#ffd700" stroke-width="1.3"/>
-            <polygon points="0,-8 -2.5,-5 2.5,-5" fill="#ffd700"/>
-            <polygon points="0,8 -2.5,5 2.5,5" fill="#ffd700"/>
-            <polygon points="-8,0 -5,-2.5 -5,2.5" fill="#ffd700"/>
-            <polygon points="8,0 5,-2.5 5,2.5" fill="#ffd700"/>
+            <circle cx="0" cy="0" r="10.5" fill="#0b132b" stroke="#ffd700" stroke-width="1.5" />
+            <path d="M 0 -6 L 0 6 M -6 0 L 6 0" stroke="#ffd700" stroke-width="1.3" />
+            <polygon points="0,-8 -2.5,-5 2.5,-5" fill="#ffd700" />
+            <polygon points="0,8 -2.5,5 2.5,5" fill="#ffd700" />
+            <polygon points="-8,0 -5,-2.5 -5,2.5" fill="#ffd700" />
+            <polygon points="8,0 5,-2.5 5,2.5" fill="#ffd700" />
           </g>
 
           <!-- LEADER LINES -->
-          <path d="M 91 54 L 168 37" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="91" cy="54" r="2.5" fill="#38bdf8"/>
-          <circle cx="168" cy="37" r="2.5" fill="#38bdf8"/>
+          <path d="M 91 54 L 168 37" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3,3" />
+          <circle cx="91" cy="54" r="2.5" fill="#38bdf8" />
+          <circle cx="168" cy="37" r="2.5" fill="#38bdf8" />
 
-          <path d="M 134 92 L 168 92" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="134" cy="92" r="2.5" fill="#ffd700"/>
-          <circle cx="168" cy="92" r="2.5" fill="#ffd700"/>
+          <path d="M 134 92 L 168 92" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,3" />
+          <circle cx="134" cy="92" r="2.5" fill="#ffd700" />
+          <circle cx="168" cy="92" r="2.5" fill="#ffd700" />
 
-          <path d="M 96 132 L 168 147" fill="none" stroke="#4ade80" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="96" cy="132" r="2.5" fill="#4ade80"/>
-          <circle cx="168" cy="147" r="2.5" fill="#4ade80"/>
+          <path d="M 96 132 L 168 147" fill="none" stroke="#4ade80" stroke-width="1.2" stroke-dasharray="3,3" />
+          <circle cx="96" cy="132" r="2.5" fill="#4ade80" />
+          <circle cx="168" cy="147" r="2.5" fill="#4ade80" />
 
           <!-- RIGHT LABELS -->
-          <rect x="174" y="14" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#38bdf8" stroke-width="1"/>
-          <text x="184" y="32" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">💫 Orbit Ring / Mouse Wheel</text>
-          <text x="184" y="49" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Smooth rotation to steer the rainbow</text>
+          <rect x="174" y="14" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#38bdf8"
+            stroke-width="1" />
+          <text x="184" y="32" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">💫 Orbit Ring
+            / Mouse Wheel</text>
+          <text x="184" y="49" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Smooth rotation to steer the
+            rainbow</text>
 
-          <rect x="174" y="69" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#ffd700" stroke-width="1"/>
-          <text x="184" y="87" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">↺ ↻ Step Buttons</text>
-          <text x="184" y="104" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Fine micro-step angle (click or hold)</text>
+          <rect x="174" y="69" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#ffd700"
+            stroke-width="1" />
+          <text x="184" y="87" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">↺ ↻ Step
+            Buttons</text>
+          <text x="184" y="104" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Micro-stepping when angle is
+            off by 0.1°</text>
 
-          <rect x="174" y="124" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#4ade80" stroke-width="1"/>
-          <text x="184" y="142" font-size="13.5" font-weight="900" fill="#4ade80" font-family="sans-serif">✥ Move / Arrow Keys ◀▲▼▶</text>
-          <text x="184" y="159" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Drag body or nudge (Shift = 1px)</text>
+          <rect x="174" y="124" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#4ade80"
+            stroke-width="1" />
+          <text x="184" y="142" font-size="13.5" font-weight="900" fill="#4ade80" font-family="sans-serif">✥ Move /
+            Arrow Keys ◀▲▼▶</text>
+          <text x="184" y="159" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Drag unicorn body (Shift =
+            1px precision)</text>
         </svg>
       </div>
 
       <!-- Card 2: Target Sensor Diagram -->
       <div class="glass-card">
-        <div class="card-header">🎯 Target Sensor &amp; Goal</div>
+        <div class="card-header">🎯 Target Sensors: Hungry for Photons</div>
         <svg class="card-diagram" viewBox="0 0 450 185" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="sensorGlow2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#22c55e" stop-opacity="0.45"/>
-              <stop offset="60%" stop-color="#22c55e" stop-opacity="0.12"/>
-              <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+              <stop offset="0%" stop-color="#22c55e" stop-opacity="0.45" />
+              <stop offset="60%" stop-color="#22c55e" stop-opacity="0.12" />
+              <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
             </radialGradient>
             <radialGradient id="lensGlow2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-              <stop offset="50%" stop-color="#4ade80" stop-opacity="0.85"/>
-              <stop offset="100%" stop-color="#15803d" stop-opacity="0.6"/>
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+              <stop offset="50%" stop-color="#4ade80" stop-opacity="0.85" />
+              <stop offset="100%" stop-color="#15803d" stop-opacity="0.6" />
             </radialGradient>
           </defs>
 
           <!-- LEFT: Real In-game Target (centered at 85, 78) -->
-          <circle cx="85" cy="78" r="56" fill="url(#sensorGlow2)"/>
+          <circle cx="85" cy="78" r="56" fill="url(#sensorGlow2)" />
 
           <!-- Mounting Brackets -->
           <g transform="translate(85, 78)" stroke="#64748b" stroke-width="2">
-            <line x1="-24" y1="-24" x2="-30" y2="-30"/>
-            <line x1="24" y1="-24" x2="30" y2="-30"/>
-            <line x1="-24" y1="24" x2="-30" y2="30"/>
-            <line x1="24" y1="24" x2="30" y2="30"/>
+            <line x1="-24" y1="-24" x2="-30" y2="-30" />
+            <line x1="24" y1="-24" x2="30" y2="-30" />
+            <line x1="-24" y1="24" x2="-30" y2="30" />
+            <line x1="24" y1="24" x2="30" y2="30" />
           </g>
 
           <!-- Sensor Chassis Base -->
-          <circle cx="85" cy="78" r="30" fill="#070d1e" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+          <circle cx="85" cy="78" r="30" fill="#070d1e" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" />
 
           <!-- Target Color Band -->
-          <circle cx="85" cy="78" r="26" fill="none" stroke="#22c55e" stroke-width="3.8" stroke-opacity="0.95"/>
+          <circle cx="85" cy="78" r="26" fill="none" stroke="#22c55e" stroke-width="3.8" stroke-opacity="0.95" />
 
           <!-- Charge Progress Ring at 75% -->
-          <path d="M 85 52 A 26 26 0 1 1 59 78" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M 85 52 A 26 26 0 1 1 59 78" fill="none" stroke="#ffffff" stroke-width="4.5"
+            stroke-linecap="round" />
 
           <!-- Inner Ring -->
-          <circle cx="85" cy="78" r="18" fill="#030611" stroke="#334155" stroke-width="1.2"/>
+          <circle cx="85" cy="78" r="18" fill="#030611" stroke="#334155" stroke-width="1.2" />
 
           <!-- Central Lens Aperture -->
-          <circle cx="85" cy="78" r="11.5" fill="url(#lensGlow2)" stroke="#ffffff" stroke-width="1.8"/>
+          <circle cx="85" cy="78" r="11.5" fill="url(#lensGlow2)" stroke="#ffffff" stroke-width="1.8" />
           <g stroke="#ffffff" stroke-width="0.85" opacity="0.85">
-            <line x1="85" y1="65" x2="85" y2="70"/>
-            <line x1="85" y1="86" x2="85" y2="91"/>
-            <line x1="72" y1="78" x2="77" y2="78"/>
-            <line x1="93" y1="78" x2="98" y2="78"/>
+            <line x1="85" y1="65" x2="85" y2="70" />
+            <line x1="85" y1="86" x2="85" y2="91" />
+            <line x1="72" y1="78" x2="77" y2="78" />
+            <line x1="93" y1="78" x2="98" y2="78" />
           </g>
-          <circle cx="85" cy="78" r="2.2" fill="#ffffff"/>
+          <circle cx="85" cy="78" r="2.2" fill="#ffffff" />
 
           <!-- Text Below Target: Green Sensor & 75% -->
-          <text x="85" y="125" font-size="11" font-weight="900" fill="#22c55e" text-anchor="middle" font-family="sans-serif">Green Sensor</text>
-          <text x="85" y="142" font-size="13" font-weight="900" fill="#ffffff" text-anchor="middle" font-family="sans-serif">75%</text>
+          <text x="85" y="125" font-size="11" font-weight="900" fill="#22c55e" text-anchor="middle"
+            font-family="sans-serif">Green Sensor</text>
+          <text x="85" y="142" font-size="13" font-weight="900" fill="#ffffff" text-anchor="middle"
+            font-family="sans-serif">75%</text>
 
           <!-- LEADER LINES -->
-          <path d="M 104 57 L 168 37" fill="none" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="104" cy="57" r="2.5" fill="#22c55e"/>
-          <circle cx="168" cy="37" r="2.5" fill="#22c55e"/>
+          <path d="M 104 57 L 168 37" fill="none" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="3,3" />
+          <circle cx="104" cy="57" r="2.5" fill="#22c55e" />
+          <circle cx="168" cy="37" r="2.5" fill="#22c55e" />
 
-          <path d="M 97 78 L 168 92" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="97" cy="78" r="2.5" fill="#38bdf8"/>
-          <circle cx="168" cy="92" r="2.5" fill="#38bdf8"/>
+          <path d="M 97 78 L 168 92" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3,3" />
+          <circle cx="97" cy="78" r="2.5" fill="#38bdf8" />
+          <circle cx="168" cy="92" r="2.5" fill="#38bdf8" />
 
-          <path d="M 105 137 L 168 147" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,3"/>
-          <circle cx="105" cy="137" r="2.5" fill="#ffd700"/>
-          <circle cx="168" cy="147" r="2.5" fill="#ffd700"/>
+          <path d="M 105 137 L 168 147" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,3" />
+          <circle cx="105" cy="137" r="2.5" fill="#ffd700" />
+          <circle cx="168" cy="147" r="2.5" fill="#ffd700" />
 
           <!-- RIGHT LABELS -->
-          <rect x="174" y="14" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#22c55e" stroke-width="1"/>
-          <text x="184" y="32" font-size="13.5" font-weight="900" fill="#4ade80" font-family="sans-serif">🎯 Target Spectrum (λ)</text>
-          <text x="184" y="49" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Required wavelength (e.g. Green 540nm)</text>
+          <rect x="174" y="14" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#22c55e"
+            stroke-width="1" />
+          <text x="184" y="32" font-size="13.5" font-weight="900" fill="#4ade80" font-family="sans-serif">🎯 Target
+            Spectrum (λ)</text>
+          <text x="184" y="49" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Required wavelength (e.g. Green
+            540nm)</text>
 
-          <rect x="174" y="69" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#38bdf8" stroke-width="1"/>
-          <text x="184" y="87" font-size="13.5" font-weight="900" fill="#38bdf8" font-family="sans-serif">⚡ Sensor Aperture Lens</text>
-          <text x="184" y="104" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Detects photons &amp; color mixing</text>
+          <rect x="174" y="69" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#38bdf8"
+            stroke-width="1" />
+          <text x="184" y="87" font-size="13.5" font-weight="900" fill="#38bdf8" font-family="sans-serif">⚡ Sensor
+            Aperture Lens</text>
+          <text x="184" y="104" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Absorbs photons &amp; tests
+            spectral purity</text>
 
-          <rect x="174" y="124" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#ffd700" stroke-width="1"/>
-          <text x="184" y="142" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">🔄 Charge (75% ➔ 100%)</text>
-          <text x="184" y="159" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Reaching 100% locks it. Charge all to win!</text>
+          <rect x="174" y="124" width="266" height="46" rx="7" fill="rgba(10, 18, 42, 0.85)" stroke="#ffd700"
+            stroke-width="1" />
+          <text x="184" y="142" font-size="13.5" font-weight="900" fill="#ffd700" font-family="sans-serif">🔄 Charge
+            (75% ➔ 100%)</text>
+          <text x="184" y="159" font-size="11.5" fill="#cbd5e1" font-family="sans-serif">Reaching 100% locks it. Satisfy
+            all to win!</text>
         </svg>
       </div>
     </div>
@@ -220,16 +250,17 @@
       <div class="title-cards" id="modal-cards-container">
         <!-- Reuses exact same cards structure -->
       </div>
-      <button id="help-close-btn" class="btn-primary" style="padding: 10px 36px; font-size: 1.05rem; align-self: center;">✕ Got it!</button>
+      <button id="help-close-btn" class="btn-primary"
+        style="padding: 10px 36px; font-size: 1.05rem; align-self: center;">✕ Got it!</button>
     </div>
   </div>
 
   <!-- Win Modal -->
   <div id="win-modal" class="modal hidden">
     <div class="modal-box">
-      <div class="modal-title">✨ LEVEL COMPLETE! ✨</div>
-      <p style="color: #cbd5e1;">All spectral sensors are fully charged and harmonized.</p>
-      <button id="next-btn" class="btn-primary" style="padding: 10px 24px; font-size: 1rem;">Next Level ➔</button>
+      <div class="modal-title" id="win-title">✨ LEVEL COMPLETE! ✨</div>
+      <p id="win-desc" style="color: #cbd5e1;">All spectral sensors are fully charged. Photons behave themselves... for now.</p>
+      <button id="next-btn" class="btn-primary" style="padding: 10px 24px; font-size: 1rem;">Next Experiment ➔</button>
     </div>
   </div>
 

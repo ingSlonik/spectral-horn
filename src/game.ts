@@ -54,6 +54,8 @@ export class Game {
   private elSfxBtn: HTMLButtonElement;
   private elResetBtn: HTMLButtonElement;
   private elWinModal: HTMLElement;
+  private elWinTitle: HTMLElement;
+  private elWinDesc: HTMLElement;
   private elHelpModal: HTMLElement;
   private elHelpCloseBtn: HTMLButtonElement;
   private elNextBtn: HTMLButtonElement;
@@ -75,6 +77,8 @@ export class Game {
     this.elSfxBtn = document.getElementById('sfx-btn') as HTMLButtonElement;
     this.elResetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
     this.elWinModal = document.getElementById('win-modal')!;
+    this.elWinTitle = document.getElementById('win-title')!;
+    this.elWinDesc = document.getElementById('win-desc')!;
     this.elHelpModal = document.getElementById('help-modal')!;
     this.elHelpCloseBtn = document.getElementById('help-close-btn') as HTMLButtonElement;
     this.elNextBtn = document.getElementById('next-btn') as HTMLButtonElement;
@@ -264,8 +268,8 @@ export class Game {
     this.elWinModal.classList.add('hidden');
     this.elHelpModal.classList.add('hidden');
 
-    this.elLevelTitle.textContent = '✨ Cosmic Playground';
-    this.elLevelHint.textContent = 'Rainbows cross at the center. Feel free to drag and twist the unicorn horns!';
+    this.elLevelTitle.textContent = '✨ Cosmic Sandbox';
+    this.elLevelHint.textContent = 'Where photons collide and unicorns test theoretical optics. Drag and twist freely!';
     this.populateLevelSelect();
   }
 
@@ -413,18 +417,18 @@ export class Game {
       // 4. Render particles
       this.renderer.renderParticles();
 
-      const totalTime = performance.now() - frameStart;
-      this.renderer.renderProfiler({
-        fps: this.fps,
-        traceTime,
-        raysTime,
-        dustTime,
-        prismTime,
-        clearTime,
-        totalTime,
-        rayCount: traceResult.rays.length,
-        segmentCount: traceResult.segments.length,
-      });
+      // const totalTime = performance.now() - frameStart;
+      // this.renderer.renderProfiler({
+      //   fps: this.fps,
+      //   traceTime,
+      //   raysTime,
+      //   dustTime,
+      //   prismTime,
+      //   clearTime,
+      //   totalTime,
+      //   rayCount: traceResult.rays.length,
+      //   segmentCount: traceResult.segments.length,
+      // });
 
       ctx.restore();
       return;
@@ -526,6 +530,18 @@ export class Game {
         markLevelCompleted(this.currentLevelIdx);
         this.populateLevelSelect();
         playVictory();
+        const isLastLevel = this.currentLevelIdx === LEVELS.length - 1;
+        if (isLastLevel) {
+          this.elWinTitle.textContent = '✨ MASTER OF PHOTONS! ✨';
+          this.elWinDesc.textContent =
+            'You have bent, dispersed, reflected, and synthesized every wavelength in the cosmos. The laws of optics have been officially updated!';
+          this.elNextBtn.textContent = 'Play Again ↺';
+        } else {
+          this.elWinTitle.textContent = '✨ LEVEL COMPLETE! ✨';
+          this.elWinDesc.textContent =
+            'All spectral sensors are fully charged. Photons behave themselves... for now.';
+          this.elNextBtn.textContent = 'Next Experiment ➔';
+        }
         this.elWinModal.classList.remove('hidden');
       }
     } else if (!allSatisfied) {
@@ -536,18 +552,18 @@ export class Game {
     this.renderer.renderParticles();
 
     // 10. Profiler HUD
-    const totalTime = performance.now() - frameStart;
-    this.renderer.renderProfiler({
-      fps: this.fps,
-      traceTime,
-      raysTime,
-      dustTime,
-      prismTime,
-      clearTime,
-      totalTime,
-      rayCount: traceResult.rays.length,
-      segmentCount: traceResult.segments.length,
-    });
+    // const totalTime = performance.now() - frameStart;
+    // this.renderer.renderProfiler({
+    //   fps: this.fps,
+    //   traceTime,
+    //   raysTime,
+    //   dustTime,
+    //   prismTime,
+    //   clearTime,
+    //   totalTime,
+    //   rayCount: traceResult.rays.length,
+    //   segmentCount: traceResult.segments.length,
+    // });
 
     ctx.restore();
   }
