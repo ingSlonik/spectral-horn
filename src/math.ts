@@ -1,57 +1,24 @@
 import { Vec2, Prism } from './types';
 
-export function v2(x: number, y: number): Vec2 {
-  return { x, y };
-}
+export const v2 = (x: number, y: number): Vec2 => ({ x, y });
+export const vAdd = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x + b.x, y: a.y + b.y });
+export const vSub = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x - b.x, y: a.y - b.y });
+export const vScale = (v: Vec2, s: number): Vec2 => ({ x: v.x * s, y: v.y * s });
+export const vDot = (a: Vec2, b: Vec2): number => a.x * b.x + a.y * b.y;
+export const vDist = (a: Vec2, b: Vec2): number => Math.hypot(a.x - b.x, a.y - b.y);
 
-export function vAdd(a: Vec2, b: Vec2): Vec2 {
-  return { x: a.x + b.x, y: a.y + b.y };
-}
-
-export function vSub(a: Vec2, b: Vec2): Vec2 {
-  return { x: a.x - b.x, y: a.y - b.y };
-}
-
-export function vScale(v: Vec2, s: number): Vec2 {
-  return { x: v.x * s, y: v.y * s };
-}
-
-export function vDot(a: Vec2, b: Vec2): number {
-  return a.x * b.x + a.y * b.y;
-}
-
-export function vCross(a: Vec2, b: Vec2): number {
-  return a.x * b.y - a.y * b.x;
-}
-
-export function vLen(v: Vec2): number {
-  return Math.hypot(v.x, v.y);
-}
-
-export function vDist(a: Vec2, b: Vec2): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-export function vNorm(v: Vec2): Vec2 {
+export const vNorm = (v: Vec2): Vec2 => {
   const l = Math.hypot(v.x, v.y);
   return l > 1e-7 ? { x: v.x / l, y: v.y / l } : { x: 1, y: 0 };
-}
+};
 
-export function vRotate(v: Vec2, rad: number): Vec2 {
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-  return {
-    x: v.x * cos - v.y * sin,
-    y: v.x * sin + v.y * cos,
-  };
-}
+export const vRotate = (v: Vec2, rad: number): Vec2 => {
+  const c = Math.cos(rad), s = Math.sin(rad);
+  return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
+};
 
-export function clamp(val: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, val));
-}
+export const clamp = (val: number, min: number, max: number): number => Math.max(min, Math.min(max, val));
 
-// Ray-segment intersection (zero-alloc)
-// Returns distance t along ray, segment param u
 export function raySegmentIntersection(
   ro: Vec2,
   rd: Vec2,
@@ -62,24 +29,18 @@ export function raySegmentIntersection(
   const v1y = ro.y - p1.y;
   const v2x = p2.x - p1.x;
   const v2y = p2.y - p1.y;
-  const v3x = -rd.y;
-  const v3y = rd.x;
-
-  const dot = v2x * v3x + v2y * v3y;
-  if (dot > -1e-7 && dot < 1e-7) return null;
+  const dot = v2x * -rd.y + v2y * rd.x;
+  if (Math.abs(dot) < 1e-7) return null;
 
   const t1 = (v2x * v1y - v2y * v1x) / dot;
-  const t2 = (v1x * v3x + v1y * v3y) / dot;
+  const t2 = (v1x * -rd.y + v1y * rd.x) / dot;
 
-  // t1 is distance along ray (> 1e-4 to avoid self-intersection), t2 is parameter on segment [0, 1]
   if (t1 > 1e-4 && t2 >= 0 && t2 <= 1) {
     return { t: t1, u: t2 };
   }
-
   return null;
 }
 
-// Ray-Circle intersection (O(1) analytic)
 export function rayCircleIntersection(
   ro: Vec2,
   rd: Vec2,
@@ -100,69 +61,30 @@ export function rayCircleIntersection(
 
   let t = -1;
   if (isInside) {
-    if (t2 > 1e-4) t = t2;
-    else if (t1 > 1e-4) t = t1;
+    t = t2 > 1e-4 ? t2 : t1 > 1e-4 ? t1 : -1;
   } else {
-    if (t1 > 1e-4) t = t1;
-    else if (t2 > 1e-4) t = t2;
+    t = t1 > 1e-4 ? t1 : t2 > 1e-4 ? t2 : -1;
   }
-
   if (t <= 1e-4) return null;
 
   const hx = ro.x + rd.x * t;
   const hy = ro.y + rd.y * t;
-  const invR = 1 / radius;
-  const nx = (hx - center.x) * invR;
-  const ny = (hy - center.y) * invR;
-
   return {
     t,
     hitPoint: { x: hx, y: hy },
-    normal: { x: nx, y: ny },
+    normal: { x: (hx - center.x) / radius, y: (hy - center.y) / radius },
   };
 }
 
-// Ray-AABB intersection check for fast polygon culling
-export function rayAABBCheck(
-  ro: Vec2,
-  rd: Vec2,
-  minX: number,
-  minY: number,
-  maxX: number,
-  maxY: number
-): boolean {
-  const invDx = rd.x !== 0 ? 1 / rd.x : (rd.x >= 0 ? 1e9 : -1e9);
-  const invDy = rd.y !== 0 ? 1 / rd.y : (rd.y >= 0 ? 1e9 : -1e9);
-
-  let tmin = (minX - ro.x) * invDx;
-  let tmax = (maxX - ro.x) * invDx;
-  if (tmin > tmax) { const tmp = tmin; tmin = tmax; tmax = tmp; }
-
-  let tymin = (minY - ro.y) * invDy;
-  let tymax = (maxY - ro.y) * invDy;
-  if (tymin > tymax) { const tmp = tymin; tymin = tymax; tymax = tmp; }
-
-  if (tmin > tymax || tymin > tmax) return false;
-  return Math.min(tmax, tymax) > 1e-4;
-}
-
-// Computes outward normal for polygon edge (p1, p2) given polygon centroid
 export function getOutwardNormal(p1: Vec2, p2: Vec2, centroid: Vec2): Vec2 {
   const edge = vSub(p2, p1);
-  // Perpendicular vector (-dy, dx)
   let n = vNorm({ x: -edge.y, y: edge.x });
-  const mid = vScale(vAdd(p1, p2), 0.5);
-  const toCentroid = vSub(centroid, mid);
-
-  // Outward normal must point AWAY from centroid (dot product < 0)
-  if (vDot(n, toCentroid) > 0) {
+  if (vDot(n, vSub(centroid, vScale(vAdd(p1, p2), 0.5))) > 0) {
     n = vScale(n, -1);
   }
   return n;
 }
 
-// Refraction at boundary with known outward normal nOut
-// isEntering: true if ray enters from air (n1=1 -> n2=prismN), false if exiting (n1=prismN -> n2=1)
 export function refractRay(
   rayDir: Vec2,
   nOut: Vec2,
@@ -174,125 +96,65 @@ export function refractRay(
   const eta = n1 / n2;
 
   if (isEntering) {
-    // Ray in air entering prism: normal pointing against ray is nOut
     const c1 = -vDot(v, nOut);
-    if (c1 <= 0) {
-      // Ray grazing or wrong side
-      return { dir: v, isTIR: false };
-    }
+    if (c1 <= 0) return { dir: v, isTIR: false };
     const sin2_theta2 = eta * eta * (1 - c1 * c1);
     if (sin2_theta2 > 1.0) {
-      // Exterior reflection
-      const refl = vAdd(v, vScale(nOut, 2 * c1));
-      return { dir: vNorm(refl), isTIR: true };
+      return { dir: vNorm(vAdd(v, vScale(nOut, 2 * c1))), isTIR: true };
     }
     const c2 = Math.sqrt(Math.max(0, 1 - sin2_theta2));
-    const refr = vAdd(vScale(v, eta), vScale(nOut, eta * c1 - c2));
-    return { dir: vNorm(refr), isTIR: false };
+    return { dir: vNorm(vAdd(vScale(v, eta), vScale(nOut, eta * c1 - c2))), isTIR: false };
   } else {
-    // Ray inside prism exiting to air: normal pointing against ray is -nOut (inward)
     const nIn = vScale(nOut, -1);
-    const c1 = -vDot(v, nIn); // = vDot(v, nOut) > 0
-    if (c1 <= 0) {
-      return { dir: v, isTIR: false };
-    }
+    const c1 = -vDot(v, nIn);
+    if (c1 <= 0) return { dir: v, isTIR: false };
     const sin2_theta2 = eta * eta * (1 - c1 * c1);
     if (sin2_theta2 > 1.0) {
-      // Total Internal Reflection (TIR) inside prism!
-      const refl = vSub(v, vScale(nOut, 2 * (vDot(v, nOut))));
-      return { dir: vNorm(refl), isTIR: true };
+      return { dir: vNorm(vSub(v, vScale(nOut, 2 * vDot(v, nOut)))), isTIR: true };
     }
-    // Refraction into air
     const c2 = Math.sqrt(Math.max(0, 1 - sin2_theta2));
-    const refr = vAdd(vScale(v, eta), vScale(nIn, eta * c1 - c2));
-    return { dir: vNorm(refr), isTIR: false };
+    return { dir: vNorm(vAdd(vScale(v, eta), vScale(nIn, eta * c1 - c2))), isTIR: false };
   }
 }
 
-// Get world-space vertices of a prism (sleeker, compact unicorn horn)
 export function getPrismVertices(prism: Prism): Vec2[] {
-  let localPoints: Vec2[];
-
+  let pts: Vec2[];
   const s = prism.scale || 1;
   if (prism.shape === 'horn') {
-    // Sleek, elegant unicorn horn crystal triangle
-    localPoints = [
-      { x: 0, y: -38 * s },     // Tip
-      { x: 22 * s, y: 22 * s },  // Right base
-      { x: -22 * s, y: 22 * s }, // Left base
-    ];
+    pts = [{ x: 0, y: -38 * s }, { x: 22 * s, y: 22 * s }, { x: -22 * s, y: 22 * s }];
   } else if (prism.shape === 'mirror') {
-    // Polished flat mirror bar
-    const w = 36 * s;
-    const h = 6 * s;
-    localPoints = [
-      { x: -w, y: -h },
-      { x: w, y: -h },
-      { x: w, y: h },
-      { x: -w, y: h },
-    ];
+    pts = [{ x: -36 * s, y: -6 * s }, { x: 36 * s, y: -6 * s }, { x: 36 * s, y: 6 * s }, { x: -36 * s, y: 6 * s }];
   } else if (prism.shape === 'dove') {
-    // Dove prism trapezoid (exact 45 deg entry/exit faces for 0 deg net deflection)
-    const topW = 30 * s;
-    const h = 16 * s;
-    const botW = 62 * s; // topW + 2 * h (exact 45 deg)
-    localPoints = [
-      { x: -topW, y: -h },
-      { x: topW, y: -h },
-      { x: botW, y: h },
-      { x: -botW, y: h },
-    ];
+    pts = [{ x: -30 * s, y: -16 * s }, { x: 30 * s, y: -16 * s }, { x: 62 * s, y: 16 * s }, { x: -62 * s, y: 16 * s }];
   } else if (prism.shape === 'orb') {
-    // 16-point circle approximation for UI hitboxes
-    localPoints = [];
-    const segments = 16;
-    const r = 30 * s;
-    for (let i = 0; i < segments; i++) {
-      const a = (i / segments) * Math.PI * 2;
-      localPoints.push({
-        x: Math.cos(a) * r,
-        y: Math.sin(a) * r,
-      });
+    pts = [];
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      pts.push({ x: Math.cos(a) * 30 * s, y: Math.sin(a) * 30 * s });
     }
   } else {
-    // Default fallback
-    localPoints = [
-      { x: 0, y: -38 * s },
-      { x: 22 * s, y: 22 * s },
-      { x: -22 * s, y: 22 * s },
-    ];
+    pts = [{ x: 0, y: -38 * s }, { x: 22 * s, y: 22 * s }, { x: -22 * s, y: 22 * s }];
   }
-
-  return localPoints.map((p) => {
-    const rot = vRotate(p, prism.rot);
-    return vAdd(rot, prism.pos);
-  });
+  return pts.map((p) => vAdd(vRotate(p, prism.rot), prism.pos));
 }
 
-// Check if point is inside a polygon
 export function isPointInPolygon(point: Vec2, poly: Vec2[]): boolean {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const xi = poly[i].x, yi = poly[i].y;
     const xj = poly[j].x, yj = poly[j].y;
-    const intersect = yi > point.y !== yj > point.y &&
-      point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
+    if ((yi > point.y !== yj > point.y) && (point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
   }
   return inside;
 }
 
-// Distance from circle center to segment AB (zero-alloc)
 export function distToSegment(center: Vec2, a: Vec2, b: Vec2): number {
-  const abX = b.x - a.x;
-  const abY = b.y - a.y;
-  const acX = center.x - a.x;
-  const acY = center.y - a.y;
+  const abX = b.x - a.x, abY = b.y - a.y;
+  const acX = center.x - a.x, acY = center.y - a.y;
   const lenSq = abX * abX + abY * abY;
   if (lenSq < 1e-7) return Math.hypot(acX, acY);
-
   const t = Math.max(0, Math.min(1, (acX * abX + acY * abY) / lenSq));
-  const projX = a.x + abX * t;
-  const projY = a.y + abY * t;
-  return Math.hypot(center.x - projX, center.y - projY);
+  return Math.hypot(center.x - (a.x + abX * t), center.y - (a.y + abY * t));
 }

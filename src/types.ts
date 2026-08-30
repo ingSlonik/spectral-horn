@@ -74,7 +74,7 @@ export interface Obstacle {
 export interface LevelDef {
   id: number;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   hint: string;
   emitter: Emitter | Emitter[];
   prisms: Prism[];
