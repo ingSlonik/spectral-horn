@@ -102,11 +102,13 @@ export class InputHandler {
       if (!p || p.locked) return;
 
       const step = e.shiftKey ? 1 : e.ctrlKey || e.metaKey ? 6 : 2;
-      let moved = false;
-      if (e.key === 'ArrowLeft') { p.pos.x = clamp(p.pos.x - step, 60, 940); moved = true; }
-      else if (e.key === 'ArrowRight') { p.pos.x = clamp(p.pos.x + step, 60, 940); moved = true; }
-      else if (e.key === 'ArrowUp') { p.pos.y = clamp(p.pos.y - step, 60, 940); moved = true; }
-      else if (e.key === 'ArrowDown') { p.pos.y = clamp(p.pos.y + step, 60, 940); moved = true; }
+      const k = e.key;
+      let moved = true;
+      if (k === 'ArrowLeft') p.pos.x = clamp(p.pos.x - step, 60, 940);
+      else if (k === 'ArrowRight') p.pos.x = clamp(p.pos.x + step, 60, 940);
+      else if (k === 'ArrowUp') p.pos.y = clamp(p.pos.y - step, 60, 940);
+      else if (k === 'ArrowDown') p.pos.y = clamp(p.pos.y + step, 60, 940);
+      else moved = false;
 
       if (moved) {
         e.preventDefault();

@@ -12,7 +12,7 @@ import {
   toggleSfx,
 } from './audio';
 
-const STORAGE_KEY = 'spectral_horn_cleared';
+const STORAGE_KEY = 'spectral_horn';
 const getCleared = (): number[] => {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -26,7 +26,7 @@ const markCleared = (idx: number) => {
     const s = new Set(getCleared());
     s.add(idx);
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...s]));
-  } catch {}
+  } catch { }
 };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -130,16 +130,9 @@ export class Game {
 
   private populateLevelSelect(): void {
     const cleared = new Set(getCleared());
-    this.elLevelSelect.innerHTML = '';
-    LEVELS.forEach((lvl, idx) => {
-      const opt = document.createElement('option');
-      opt.value = `${idx}`;
-      const done = cleared.has(idx);
-      opt.textContent = `${done ? '✓' : '○'} ${lvl.title}`;
-      opt.style.color = done ? '#4ade80' : '#cbd5e1';
-      if (done) opt.style.fontWeight = 'bold';
-      this.elLevelSelect.appendChild(opt);
-    });
+    this.elLevelSelect.innerHTML = LEVELS.map(
+      (lvl, idx) => `<option value="${idx}" style="color:${cleared.has(idx) ? '#4ade80' : '#cbd5e1'}">${cleared.has(idx) ? '✓' : '○'} ${lvl.title}</option>`
+    ).join('');
     this.elLevelSelect.value = `${this.currentLevelIdx}`;
   }
 
@@ -348,18 +341,11 @@ export class Game {
       target.isColorMatching = isMatch;
       target.hasLight = hasLight;
 
-      if (isMatch) {
-        target.charge = Math.min(1.0, target.charge + dt * 1.5);
-        if (target.charge >= 0.95) target.isSatisfied = true;
-        playSensorPulse(target.charge);
-      } else if (hasLight) {
-        target.charge = Math.max(0, target.charge - dt * 1.2);
-        target.isSatisfied = false;
-      } else {
-        target.charge = Math.max(0, target.charge - dt * 0.7);
-        target.isSatisfied = false;
-      }
-
+      target.charge = isMatch
+        ? Math.min(1.0, target.charge + dt * 1.5)
+        : Math.max(0, target.charge - dt * (hasLight ? 1.2 : 0.7));
+      target.isSatisfied = isMatch && target.charge >= 0.95;
+      if (isMatch) playSensorPulse(target.charge);
       if (!target.isSatisfied) allSatisfied = false;
     }
 
