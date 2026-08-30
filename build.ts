@@ -1,5 +1,6 @@
 import * as esbuild from 'esbuild';
 import { minify as minifyJs } from 'terser';
+import { Packer } from 'roadroller';
 import * as csso from 'csso';
 import { minify as minifyHtml } from 'html-minifier-terser';
 import ect from 'ect-bin';
@@ -33,20 +34,62 @@ async function build() {
   const bundledJs = bundleResult.outputFiles[0].text;
   console.log(`   Bundle size: ${(bundledJs.length / 1024).toFixed(2)} KB (${bundledJs.length} bytes)`);
 
-  // 2. Minify JavaScript with Terser
-  console.log('\n⚡ Step 2: Minifying JavaScript with Terser...');
+  // 2. Minify JavaScript with Terser (with property mangling)
+  console.log('\n⚡ Step 2: Minifying JavaScript with Terser & Property Mangling...');
+  const DOM_PROPERTIES = [
+    // Canvas 2D
+    'addColorStop', 'arc', 'beginPath', 'bezierCurveTo', 'clearRect', 'clip', 'closePath',
+    'createImageData', 'createLinearGradient', 'createPattern', 'createRadialGradient',
+    'drawImage', 'ellipse', 'fill', 'fillRect', 'fillStyle', 'fillText', 'font', 'getImageData',
+    'globalAlpha', 'globalCompositeOperation', 'lineCap', 'lineJoin', 'lineTo', 'lineWidth',
+    'measureText', 'moveTo', 'putImageData', 'quadraticCurveTo', 'rect', 'restore', 'rotate',
+    'roundRect', 'save', 'scale', 'setLineDash', 'setTransform', 'shadowBlur', 'shadowColor',
+    'stroke', 'strokeRect', 'strokeStyle', 'textAlign', 'textBaseline', 'transform', 'translate',
+    'canvas', 'getContext', 'width', 'height', 'data',
+    // Audio
+    'AudioContext', 'webkitAudioContext', 'destination', 'currentTime', 'state', 'resume',
+    'createOscillator', 'createGain', 'createBiquadFilter', 'setValueAtTime', 'setTargetAtTime',
+    'exponentialRampToValueAtTime', 'linearRampToValueAtTime', 'cancelScheduledValues',
+    'connect', 'disconnect', 'start', 'stop', 'type', 'frequency', 'gain', 'Q',
+    // DOM & Window
+    'document', 'window', 'addEventListener', 'removeEventListener', 'getElementById',
+    'querySelector', 'querySelectorAll', 'createElement', 'appendChild', 'removeChild',
+    'classList', 'add', 'remove', 'toggle', 'contains', 'style', 'dataset', 'innerHTML',
+    'textContent', 'value', 'selectedIndex', 'options', 'disabled', 'checked', 'focus',
+    'blur', 'click', 'getBoundingClientRect', 'clientX', 'clientY', 'pageX', 'pageY',
+    'offsetX', 'offsetY', 'touches', 'changedTouches', 'target', 'preventDefault',
+    'stopPropagation', 'key', 'code', 'shiftKey', 'ctrlKey', 'altKey', 'metaKey',
+    'localStorage', 'getItem', 'setItem', 'removeItem', 'clear',
+    'requestAnimationFrame', 'cancelAnimationFrame', 'performance', 'now', 'setTimeout',
+    'clearTimeout', 'setInterval', 'clearInterval', 'body',
+  ];
+
   const terserResult = await minifyJs(bundledJs, {
     ecma: 2020,
     compress: {
-      passes: 3,
+      passes: 6,
       unsafe: true,
       unsafe_math: true,
       unsafe_arrows: true,
+      unsafe_methods: true,
+      unsafe_proto: true,
       pure_getters: true,
       drop_console: true,
+      booleans_as_integers: true,
+      collapse_vars: true,
+      reduce_vars: true,
+      evaluate: true,
+      hoist_funs: true,
+      hoist_vars: true,
+      inline: 3,
+      loops: true,
+      toplevel: true,
     },
     mangle: {
       toplevel: true,
+      properties: {
+        reserved: DOM_PROPERTIES,
+      },
     },
     format: {
       comments: false,
@@ -61,23 +104,18 @@ async function build() {
   const rawCss = fs.readFileSync('src/style.css', 'utf8');
   const cssoResult = csso.minify(rawCss, {
     restructure: true,
-    // forceMediaMerging: true,
     comments: false,
   });
   const minifiedCss = cssoResult.css;
   console.log(`   CSS size: ${(rawCss.length / 1024).toFixed(2)} KB -> ${(minifiedCss.length / 1024).toFixed(2)} KB (${minifiedCss.length} bytes)`);
 
-  // 4. Inline CSS & JS into HTML and minify with html-minifier-terser
-  console.log('\n📄 Step 4: Inlining and Minifying HTML with html-minifier-terser...');
+  // 4. Minify HTML skeleton (without JS)
+  console.log('\n📄 Step 4: Minifying HTML skeleton with html-minifier-terser...');
   const rawHtml = fs.readFileSync('index.html', 'utf8');
+  const inlinedHtml = rawHtml
+    .replace(/<link\s+rel="stylesheet"\s+href="[^"]*">/i, `<style>${minifiedCss}</style>`)
+    .replace(/<script[^>]*src=[^>]*><\/script>/i, '');
 
-  // Replace external CSS link with inline minified style tag
-  let inlinedHtml = rawHtml.replace(
-    /<link\s+rel="stylesheet"\s+href="[^"]*">/i,
-    `<style>${minifiedCss}</style>`
-  );
-
-  // Minify HTML skeleton document with aggressive options for JS13k
   const minifiedSkeleton = await minifyHtml(inlinedHtml, {
     collapseWhitespace: true,
     removeAttributeQuotes: true,
@@ -96,12 +134,31 @@ async function build() {
     minifyJS: false,
   });
 
-  // Inject minified JS into the minified HTML skeleton
-  const finalHtml = minifiedSkeleton.replace(
-    /<script[^>]*src=[^>]*><\/script>/i,
-    `<script>${minifiedJs}</script>`
+  // 5. Roadroller Unified Crusher (Compresses HTML + CSS + JavaScript in a single JS payload)
+  console.log('\n🛞 Step 5: Crushing HTML + CSS + JavaScript with Roadroller...');
+  const combinedJs = `document.write(${JSON.stringify(minifiedSkeleton)});\n${minifiedJs}`;
+
+  const roadrollerStart = Date.now();
+  const packer = new Packer(
+    [
+      {
+        data: combinedJs,
+        type: 'js' as any,
+        action: 'eval' as any,
+      },
+    ],
+    {
+      allowFreeVars: true,
+    }
+  );
+  await packer.optimize(2);
+  const { firstLine, secondLine } = packer.makeDecoder();
+  const roadrolledJs = firstLine + secondLine;
+  console.log(
+    `   Roadroller output size: ${(roadrolledJs.length / 1024).toFixed(2)} KB (${roadrolledJs.length} bytes) [took ${Date.now() - roadrollerStart}ms]`
   );
 
+  const finalHtml = `<script>${roadrolledJs}</script>`;
   const htmlDistPath = path.join(distDir, 'index.html');
   fs.writeFileSync(htmlDistPath, finalHtml, 'utf8');
   const htmlSize = fs.statSync(htmlDistPath).size;
