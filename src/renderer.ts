@@ -17,7 +17,6 @@ import {
   wavelengthToRGBA,
   wavelengthToHex,
   wavelengthToRGB,
-  getSpectrumName,
   rgbToHex,
 } from './color';
 
@@ -59,7 +58,7 @@ export class GameRenderer {
   private dust: DustParticle[] = [];
   private rayCanvas: HTMLCanvasElement;
   private rayCtx: CanvasRenderingContext2D;
-  private bgCanvas: HTMLCanvasElement | null = null;
+  private noisePattern: CanvasPattern | null = null;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -67,32 +66,14 @@ export class GameRenderer {
     this.rayCanvas.width = 1000;
     this.rayCanvas.height = 1000;
     this.rayCtx = this.rayCanvas.getContext('2d')!;
+
     this.initBackground();
     this.initDust();
   }
 
-  /**
-   * Pre-renders the textured cosmic radial gradient and wall projection grain
-   * onto an offscreen canvas ONCE at startup for 0.01ms hardware GPU blitting.
-   */
   private initBackground(): void {
     if (typeof document === 'undefined') return;
     try {
-      this.bgCanvas = document.createElement('canvas');
-      this.bgCanvas.width = 1024;
-      this.bgCanvas.height = 1024;
-      const bctx = this.bgCanvas.getContext('2d');
-      if (!bctx) return;
-
-      // 1. Deep cosmic radial gradient
-      const bgGrad = bctx.createRadialGradient(512, 512, 40, 512, 512, 720);
-      bgGrad.addColorStop(0, '#0e1635');
-      bgGrad.addColorStop(0.55, '#070a1a');
-      bgGrad.addColorStop(1, '#020309');
-      bctx.fillStyle = bgGrad;
-      bctx.fillRect(0, 0, 1024, 1024);
-
-      // 2. Fine textured noise / wall projection grain
       const noiseCanvas = document.createElement('canvas');
       noiseCanvas.width = 128;
       noiseCanvas.height = 128;
@@ -105,15 +86,10 @@ export class GameRenderer {
           buf[i] = v;
           buf[i + 1] = v;
           buf[i + 2] = v;
-          buf[i + 3] = Math.floor(Math.random() * 16 + 6); // Subtle 6-22 alpha grain
+          buf[i + 3] = Math.floor(Math.random() * 16 + 6);
         }
         nctx.putImageData(imgData, 0, 0);
-
-        const pattern = bctx.createPattern(noiseCanvas, 'repeat');
-        if (pattern) {
-          bctx.fillStyle = pattern;
-          bctx.fillRect(0, 0, 1024, 1024);
-        }
+        this.noisePattern = this.ctx.createPattern(noiseCanvas, 'repeat');
       }
     } catch {}
   }
@@ -165,15 +141,113 @@ export class GameRenderer {
     }
   }
 
-  public clear(x: number = 0, y: number = 0, width: number = 1000, height: number = 1000): void {
+  public clear(width: number = this.ctx.canvas.width, height: number = this.ctx.canvas.height): void {
     const ctx = this.ctx;
+    const cx = width / 2;
+    const cy = height / 2;
+    const bgGrad = ctx.createRadialGradient(cx, cy, 40, cx, cy, Math.max(cx, cy, 500));
+    bgGrad.addColorStop(0, '#0e1635');
+    bgGrad.addColorStop(0.55, '#070a1a');
+    bgGrad.addColorStop(1, '#020309');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
 
-    // Blit pre-rendered cosmic radial gradient + grain across the entire screen (0.01ms GPU hardware blit!)
-    if (this.bgCanvas) {
-      ctx.drawImage(this.bgCanvas, x, y, width, height);
-    } else {
-      ctx.fillStyle = '#060814';
-      ctx.fillRect(x, y, width, height);
+    if (this.noisePattern) {
+      ctx.fillStyle = this.noisePattern;
+      ctx.fillRect(0, 0, width, height);
+    }
+  }
+
+  public renderCardPreview(time: number): void {
+    const hornCanvases = document.querySelectorAll<HTMLCanvasElement>('#card-horn-c');
+    const sensorCanvases = document.querySelectorAll<HTMLCanvasElement>('#card-sensor-c');
+
+    const drawLeader = (
+      c: CanvasRenderingContext2D,
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number,
+      color: string
+    ) => {
+      c.save();
+      c.strokeStyle = color;
+      c.lineWidth = 1.3;
+      c.setLineDash([3, 3]);
+
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      c.beginPath();
+      c.moveTo(x1, y1);
+      c.bezierCurveTo(x1 + dx * 0.45, y1 + dy * 0.45, x2 - dx * 0.35, y2, x2, y2);
+      c.stroke();
+
+      c.fillStyle = color;
+      c.beginPath();
+      c.arc(x1, y1, 2.2, 0, Math.PI * 2);
+      c.fill();
+      c.beginPath();
+      c.arc(x2, y2, 2.2, 0, Math.PI * 2);
+      c.fill();
+      c.restore();
+    };
+
+    if (hornCanvases.length > 0) {
+      const oldCtx = this.ctx;
+      hornCanvases.forEach((c) => {
+        const ctx = c.getContext('2d');
+        if (ctx) {
+          this.ctx = ctx;
+          this.clear(160, 175);
+          const p: Prism = {
+            id: 99,
+            pos: { x: 66, y: 88 },
+            rot: 0,
+            scale: 0.62,
+            baseIndex: 1.52,
+            dispersionB: 22000,
+            shape: 'horn',
+            basePos: { x: 66, y: 88 },
+            baseRot: 0,
+          };
+          this.renderPrism(p, true, false, 'rot', time, true);
+
+          drawLeader(ctx, 72, 40, 158, 28, '#38bdf8');
+          drawLeader(ctx, 124, 88, 158, 88, '#ffd700');
+          drawLeader(ctx, 78, 139, 158, 146, '#4ade80');
+        }
+      });
+      this.ctx = oldCtx;
+    }
+
+    if (sensorCanvases.length > 0) {
+      const oldCtx = this.ctx;
+      sensorCanvases.forEach((c) => {
+        const ctx = c.getContext('2d');
+        if (ctx) {
+          this.ctx = ctx;
+          this.clear(160, 175);
+          const t: Target = {
+            id: 99,
+            pos: { x: 66, y: 80 },
+            radius: 26,
+            minLambda: 520,
+            maxLambda: 565,
+            charge: 0.75,
+            isSatisfied: false,
+            isColorMatching: true,
+            hasLight: true,
+            sampledRgb: [50, 240, 90],
+            name: 'Green Sensor',
+          };
+          this.renderTarget(t, time);
+
+          drawLeader(ctx, 84, 56, 158, 28, '#4ade80');
+          drawLeader(ctx, 78, 80, 158, 88, '#38bdf8');
+          drawLeader(ctx, 90, 122, 158, 146, '#ffd700');
+        }
+      });
+      this.ctx = oldCtx;
     }
   }
 
@@ -1155,7 +1229,7 @@ export class GameRenderer {
     ctx.arc(0, 0, glowRad, 0, Math.PI * 2);
     ctx.fill();
 
-    if (isMatch && Math.random() < 0.35) {
+    if (target.id !== 99 && isMatch && Math.random() < 0.35) {
       this.addSpark(target.pos.x, target.pos.y, targetHex, 1);
     }
 
@@ -1267,7 +1341,7 @@ export class GameRenderer {
     ctx.font = 'bold 10px sans-serif';
     ctx.textAlign = 'center';
 
-    const spectrumName = target.name || `${getSpectrumName(midWl)} Sensor`;
+    const spectrumName = target.name || `${Math.round(midWl)}nm Sensor`;
     ctx.fillStyle = targetHex;
     ctx.fillText(spectrumName, 0, r + 14);
 
