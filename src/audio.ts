@@ -63,8 +63,6 @@ export function initAudio(): void {
   if (!musicPlaying) startAmbientMusic();
 }
 
-export const isMusicMuted = () => musicMuted;
-export const isSfxMuted = () => sfxMuted;
 
 export function toggleMusic(): boolean {
   musicMuted = !musicMuted;
@@ -125,90 +123,61 @@ export function startAmbientMusic(): void {
   musicSchedulerTimer = window.setInterval(scheduleMusic, 2000);
 }
 
-export function stopAmbientMusic(): void {
-  musicPlaying = false;
-  if (musicSchedulerTimer !== null) {
-    clearInterval(musicSchedulerTimer);
-    musicSchedulerTimer = null;
-  }
+
+function playTone(
+  f: number,
+  dur = 0.15,
+  gVal = 0.04,
+  type: OscillatorType = 'sine',
+  rampF?: number,
+  delay = 0,
+  outNode?: AudioNode
+): void {
+  if (sfxMuted || !audioCtx || !sfxGain) return;
+  try {
+    const t = audioCtx.currentTime + delay;
+    const g = gain(gVal, t, outNode || sfxGain);
+    g.gain.exponentialRampToValueAtTime(0.0004, t + dur);
+    const o = osc(type, f, t, t + dur + 0.02, g);
+    if (rampF) o.frequency.exponentialRampToValueAtTime(rampF, t + dur * 0.9);
+  } catch {}
 }
 
 export function playPrismRotate(rotSpeed = 1): void {
-  if (sfxMuted || !audioCtx || !sfxGain) return;
   const now = performance.now();
   if (now - lastRotateSound < 70) return;
   lastRotateSound = now;
-  try {
-    const t = audioCtx.currentTime;
-    rotateNoteIdx = (rotateNoteIdx + Math.max(1, Math.floor(Math.abs(rotSpeed) * 2))) % BELL_SCALE.length;
-    const f = BELL_SCALE[rotateNoteIdx];
-    const g = gain(0.024, t, sfxGain);
-    g.gain.exponentialRampToValueAtTime(0.0003, t + 0.16);
-    osc('sine', f, t, t + 0.18, g);
-    osc('sine', f * 2.76, t, t + 0.18, g);
-  } catch {}
+  rotateNoteIdx = (rotateNoteIdx + Math.max(1, Math.floor(Math.abs(rotSpeed) * 2))) % BELL_SCALE.length;
+  const f = BELL_SCALE[rotateNoteIdx];
+  playTone(f, 0.16, 0.024);
+  playTone(f * 2.76, 0.16, 0.024);
 }
 
-export function playPrismMove(speed = 1): void {
-  if (sfxMuted || !audioCtx || !sfxGain) return;
+export function playPrismMove(_speed = 1): void {
   const now = performance.now();
   if (now - lastMoveSound < 65) return;
   lastMoveSound = now;
-  try {
-    const t = audioCtx.currentTime;
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(750, t);
-    filter.frequency.exponentialRampToValueAtTime(1400, t + 0.1);
-    filter.Q.setValueAtTime(2.0, t);
-    const g = gain(0.085, t, sfxGain);
-    g.gain.exponentialRampToValueAtTime(0.0005, t + 0.18);
-    filter.connect(g);
-    const base = 260 + Math.sin(now * 0.005) * 60;
-    const o1 = osc('triangle', base, t, t + 0.2, filter);
-    o1.frequency.exponentialRampToValueAtTime(base * 1.2, t + 0.16);
-    const o2 = osc('sine', base * 1.5, t, t + 0.2, filter);
-    o2.frequency.exponentialRampToValueAtTime(base * 1.8, t + 0.16);
-  } catch {}
+  const base = 260 + Math.sin(now * 0.005) * 60;
+  playTone(base, 0.18, 0.06, 'triangle', base * 1.2);
+  playTone(base * 1.5, 0.18, 0.06, 'sine', base * 1.8);
 }
 
 export function playSensorPulse(progress: number): void {
-  if (sfxMuted || !audioCtx || !sfxGain) return;
   const now = performance.now();
   if (now - lastChargeSound < 110) return;
   lastChargeSound = now;
-  try {
-    const t = audioCtx.currentTime;
-    const g = gain(0.04 + progress * 0.03, t, sfxGain);
-    g.gain.exponentialRampToValueAtTime(0.0005, t + 0.14);
-    const f = 440 + progress * 440;
-    const o = osc('sine', f, t, t + 0.15, g);
-    o.frequency.exponentialRampToValueAtTime(f * 1.05, t + 0.12);
-    osc('triangle', f / 2, t, t + 0.15, g);
-  } catch {}
+  const f = 440 + progress * 440;
+  playTone(f, 0.14, 0.04 + progress * 0.03, 'sine', f * 1.05);
+  playTone(f / 2, 0.14, 0.03, 'triangle');
 }
 
 export function playVictory(): void {
-  if (sfxMuted || !audioCtx || !sfxGain) return;
-  try {
-    const t0 = audioCtx.currentTime;
-    [587.33, 739.99, 880, 1108.73, 1174.66, 1479.98].forEach((f, idx) => {
-      const t = t0 + idx * 0.09;
-      const g = gain(0.08, t, sfxGain!);
-      g.gain.exponentialRampToValueAtTime(0.0005, t + 0.65);
-      osc('sine', f, t, t + 0.7, g);
-      osc('sine', f * 2, t, t + 0.7, g);
-    });
-  } catch {}
+  [587.33, 739.99, 880, 1108.73, 1174.66, 1479.98].forEach((f, idx) => {
+    playTone(f, 0.65, 0.08, 'sine', undefined, idx * 0.09);
+    playTone(f * 2, 0.65, 0.08, 'sine', undefined, idx * 0.09);
+  });
 }
 
 export function playClick(): void {
-  if (sfxMuted || !audioCtx || !sfxGain) return;
-  try {
-    const t = audioCtx.currentTime;
-    const g = gain(0.04, t, sfxGain);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
-    const o = osc('sine', 1046.5, t, t + 0.05, g);
-    o.frequency.exponentialRampToValueAtTime(523.25, t + 0.04);
-  } catch {}
+  playTone(1046.5, 0.05, 0.04, 'sine', 523.25);
 }
