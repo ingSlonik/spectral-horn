@@ -199,9 +199,9 @@ export class GameRenderer {
     ctx.roundRect(pad, pad, innerSize, innerSize, radius);
     ctx.stroke();
 
-    // 3. Crisp optical reticle crosshairs (+) in the 4 corners
-    const margin = 28;
-    const arm = 7;
+    // 3. Crisp optical celestial star markings in the 4 corners (positioned inward towards center)
+    const margin = 44;
+    const arm = 7.5;
     const corners = [
       { x: margin, y: margin },
       { x: size - margin, y: margin },
@@ -209,9 +209,9 @@ export class GameRenderer {
       { x: margin, y: size - margin },
     ];
 
-    ctx.strokeStyle = 'rgba(255, 215, 0, 0.55)';
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
     ctx.lineWidth = 1.2;
-    ctx.lineCap = 'butt';
+    ctx.lineCap = 'round';
 
     for (const pt of corners) {
       // Horizontal bar
@@ -227,9 +227,9 @@ export class GameRenderer {
       ctx.stroke();
 
       // Central micro-pinpoint
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 1.2, 0, Math.PI * 2);
+      ctx.arc(pt.x, pt.y, 1.4, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -991,49 +991,40 @@ export class GameRenderer {
           : isBtnHovered
           ? '#ffffff'
           : '#38bdf8';
-        ctx.strokeStyle = iconColor;
-        ctx.fillStyle = iconColor;
-        ctx.lineWidth = 1.6 * s;
-        ctx.lineCap = 'round';
 
-        const arcR = 7.0 * s;
-        ctx.beginPath();
+        ctx.save();
+        ctx.translate(bx, by);
         if (isCCW) {
-          // Counter-Clockwise arc
-          ctx.arc(bx, by, arcR, Math.PI * 0.25, Math.PI * 1.55, false);
-          ctx.stroke();
-
-          // Arrowhead
-          const ax = bx + Math.cos(Math.PI * 1.55) * arcR;
-          const ay = by + Math.sin(Math.PI * 1.55) * arcR;
-          ctx.beginPath();
-          ctx.moveTo(ax - 3.5 * s, ay + 1.0 * s);
-          ctx.lineTo(ax + 1.0 * s, ay - 3.5 * s);
-          ctx.lineTo(ax + 2.0 * s, ay + 2.5 * s);
-          ctx.closePath();
-          ctx.fill();
-        } else {
-          // Clockwise arc
-          ctx.arc(bx, by, arcR, Math.PI * 0.75, Math.PI * 2.45, false);
-          ctx.stroke();
-
-          // Arrowhead
-          const ax = bx + Math.cos(Math.PI * 2.45) * arcR;
-          const ay = by + Math.sin(Math.PI * 2.45) * arcR;
-          ctx.beginPath();
-          ctx.moveTo(ax + 3.5 * s, ay + 1.0 * s);
-          ctx.lineTo(ax - 1.0 * s, ay - 3.5 * s);
-          ctx.lineTo(ax - 2.0 * s, ay + 2.5 * s);
-          ctx.closePath();
-          ctx.fill();
+          ctx.scale(-1, 1);
         }
 
-        // Text label 1°
-        ctx.font = `bold ${7.5 * s}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = iconColor;
         ctx.fillStyle = iconColor;
-        ctx.fillText(isCCW ? '-1°' : '+1°', bx, by + 1.0 * s);
+        ctx.lineWidth = 1.8 * s;
+        ctx.lineCap = 'round';
+
+        const arcR = 6.0 * s;
+        const headLen = 4.6 * s;
+        const headWidth = 3.2 * s;
+
+        // Large ~260° circular tail (from ~3:15 o'clock around bottom & left to 12 o'clock)
+        ctx.beginPath();
+        ctx.arc(0, 0, arcR, Math.PI * 0.08, Math.PI * 1.50, false);
+        ctx.stroke();
+
+        // Prominent horizontal arrowhead at top (12 o'clock) pointing straight right (CW) / left (CCW)
+        const tipX = 2.4 * s;
+        const tipY = -arcR;
+        const baseX = tipX - headLen;
+
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(baseX, tipY - headWidth);
+        ctx.lineTo(baseX, tipY + headWidth);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
 
         ctx.restore();
       };
