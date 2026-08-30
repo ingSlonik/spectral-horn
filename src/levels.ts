@@ -11,7 +11,7 @@ export const TITLE_SCENE: { emitters: Emitter[]; prisms: Prism[] } = {
       pos: v2(80, 260),      // Left emitter position [X, Y]
       angle: 0.22,           // Beam angle in radians (aimed down-right)
       width: 7,              // Beam width
-      rayCount: 128,          // Spectrum ray density
+      rayCount: 64,          // Spectrum ray density
       minLambda: 400,        // 400 nm (violet)
       maxLambda: 700,        // 700 nm (red)
     },
@@ -19,7 +19,7 @@ export const TITLE_SCENE: { emitters: Emitter[]; prisms: Prism[] } = {
       pos: v2(920, 260),     // Right emitter position [X, Y]
       angle: 3,              // Beam angle in radians (aimed up-left)
       width: 7,
-      rayCount: 128,
+      rayCount: 64,
       minLambda: 400,
       maxLambda: 700,
     },
