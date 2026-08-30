@@ -14,20 +14,18 @@ import {
   distToSegment,
 } from './math';
 import {
-  wavelengthToRGBA,
   wavelengthToHex,
   wavelengthToRGB,
   rgbToHex,
 } from './color';
 
 // Pre-computed lookup tables for zero-allocation, 100% continuous smooth rainbow colors
-const COLOR_TABLE_GLOW: string[] = [];
 const COLOR_TABLE_CORE: string[] = [];
 const COLOR_TABLE_FLASH: string[] = [];
 for (let wl = 380; wl <= 750; wl++) {
-  COLOR_TABLE_GLOW[wl] = wavelengthToRGBA(wl, 0.045);
-  COLOR_TABLE_CORE[wl] = wavelengthToRGBA(wl, 0.12);
-  COLOR_TABLE_FLASH[wl] = wavelengthToRGBA(wl, 0.95);
+  const [r, g, b] = wavelengthToRGB(wl);
+  COLOR_TABLE_CORE[wl] = `rgba(${r},${g},${b},0.12)`;
+  COLOR_TABLE_FLASH[wl] = `rgba(${r},${g},${b},0.95)`;
 }
 
 export interface Particle {
@@ -159,154 +157,78 @@ export class GameRenderer {
   }
 
   public renderCardPreview(time: number): void {
-    const hornCanvases = document.querySelectorAll<HTMLCanvasElement>('#card-horn-c');
-    const sensorCanvases = document.querySelectorAll<HTMLCanvasElement>('#card-sensor-c');
-
-    const drawLeader = (
-      c: CanvasRenderingContext2D,
-      x1: number,
-      y1: number,
-      x2: number,
-      y2: number,
-      color: string
-    ) => {
+    const drawLeader = (c: CanvasRenderingContext2D, x1: number, y1: number, y2: number, color: string) => {
       c.save();
       c.strokeStyle = color;
       c.lineWidth = 1.3;
       c.setLineDash([3, 3]);
-
-      const dx = x2 - x1;
-      const dy = y2 - y1;
+      const dx = 158 - x1, dy = y2 - y1;
       c.beginPath();
       c.moveTo(x1, y1);
-      c.bezierCurveTo(x1 + dx * 0.45, y1 + dy * 0.45, x2 - dx * 0.35, y2, x2, y2);
+      c.bezierCurveTo(x1 + dx * 0.45, y1 + dy * 0.45, 158 - dx * 0.35, y2, 158, y2);
       c.stroke();
 
       c.fillStyle = color;
       c.beginPath();
       c.arc(x1, y1, 2.2, 0, Math.PI * 2);
-      c.fill();
-      c.beginPath();
-      c.arc(x2, y2, 2.2, 0, Math.PI * 2);
+      c.arc(158, y2, 2.2, 0, Math.PI * 2);
       c.fill();
       c.restore();
     };
 
-    if (hornCanvases.length > 0) {
-      const oldCtx = this.ctx;
-      hornCanvases.forEach((c) => {
-        const ctx = c.getContext('2d');
-        if (ctx) {
-          this.ctx = ctx;
-          this.clear(160, 175);
-          const p: Prism = {
-            id: 99,
-            pos: { x: 66, y: 88 },
-            rot: 0,
-            scale: 0.62,
-            baseIndex: 1.52,
-            dispersionB: 22000,
-            shape: 'horn',
-            basePos: { x: 66, y: 88 },
-            baseRot: 0,
-          };
-          this.renderPrism(p, true, false, 'rot', time, true);
+    const oldCtx = this.ctx;
+    document.querySelectorAll<HTMLCanvasElement>('#card-horn-c').forEach((c) => {
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        this.ctx = ctx;
+        this.clear(160, 175);
+        this.renderPrism({ id: 99, pos: { x: 66, y: 88 }, rot: 0, scale: 0.62, baseIndex: 1.52, dispersionB: 22000, shape: 'horn', basePos: { x: 66, y: 88 }, baseRot: 0 }, true, false, 'rot', time, true);
+        ([[72, 40, 28, '#38bdf8'], [124, 88, 88, '#ffd700'], [78, 139, 146, '#4ade80']] as const).forEach(([x, y, y2, col]) => drawLeader(ctx, x, y, y2, col));
+      }
+    });
 
-          drawLeader(ctx, 72, 40, 158, 28, '#38bdf8');
-          drawLeader(ctx, 124, 88, 158, 88, '#ffd700');
-          drawLeader(ctx, 78, 139, 158, 146, '#4ade80');
-        }
-      });
-      this.ctx = oldCtx;
-    }
-
-    if (sensorCanvases.length > 0) {
-      const oldCtx = this.ctx;
-      sensorCanvases.forEach((c) => {
-        const ctx = c.getContext('2d');
-        if (ctx) {
-          this.ctx = ctx;
-          this.clear(160, 175);
-          const t: Target = {
-            id: 99,
-            pos: { x: 66, y: 80 },
-            radius: 26,
-            minLambda: 520,
-            maxLambda: 565,
-            charge: 0.75,
-            isSatisfied: false,
-            isColorMatching: true,
-            hasLight: true,
-            sampledRgb: [50, 240, 90],
-            name: 'Green Sensor',
-          };
-          this.renderTarget(t, time);
-
-          drawLeader(ctx, 84, 56, 158, 28, '#4ade80');
-          drawLeader(ctx, 78, 80, 158, 88, '#38bdf8');
-          drawLeader(ctx, 90, 122, 158, 146, '#ffd700');
-        }
-      });
-      this.ctx = oldCtx;
-    }
+    document.querySelectorAll<HTMLCanvasElement>('#card-sensor-c').forEach((c) => {
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        this.ctx = ctx;
+        this.clear(160, 175);
+        this.renderTarget({ id: 99, pos: { x: 66, y: 80 }, radius: 26, minLambda: 520, maxLambda: 565, charge: 0.75, isSatisfied: false, isColorMatching: true, hasLight: true, sampledRgb: [50, 240, 90], name: 'Green Sensor' }, time);
+        ([[84, 56, 28, '#4ade80'], [78, 80, 88, '#38bdf8'], [90, 122, 146, '#ffd700']] as const).forEach(([x, y, y2, col]) => drawLeader(ctx, x, y, y2, col));
+      }
+    });
+    this.ctx = oldCtx;
   }
 
   public renderSquareBounds(size: number = 1000): void {
     const ctx = this.ctx;
     ctx.save();
-
     const pad = 12;
     const innerSize = size - pad * 2;
     const radius = 24;
 
-    // 1. Soft ambient glow aura around play area
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.roundRect(pad, pad, innerSize, innerSize, radius);
-    ctx.stroke();
+    for (const [col, lw] of [['rgba(56, 189, 248, 0.06)', 6], ['rgba(255, 255, 255, 0.09)', 1.4]] as const) {
+      ctx.strokeStyle = col;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.roundRect(pad, pad, innerSize, innerSize, radius);
+      ctx.stroke();
+    }
 
-    // 2. Elegant celestial boundary frame
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.roundRect(pad, pad, innerSize, innerSize, radius);
-    ctx.stroke();
-
-    // 3. Crisp optical celestial star markings in the 4 corners (positioned inward towards center)
-    const margin = 44;
-    const arm = 7.5;
-    const corners = [
-      { x: margin, y: margin },
-      { x: size - margin, y: margin },
-      { x: size - margin, y: size - margin },
-      { x: margin, y: size - margin },
-    ];
-
+    const margin = 44, arm = 7.5;
     ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.lineWidth = 1.2;
     ctx.lineCap = 'round';
 
-    for (const pt of corners) {
-      // Horizontal bar
+    for (const pt of [{ x: margin, y: margin }, { x: size - margin, y: margin }, { x: size - margin, y: size - margin }, { x: margin, y: size - margin }]) {
       ctx.beginPath();
-      ctx.moveTo(pt.x - arm, pt.y);
-      ctx.lineTo(pt.x + arm, pt.y);
+      ctx.moveTo(pt.x - arm, pt.y); ctx.lineTo(pt.x + arm, pt.y);
+      ctx.moveTo(pt.x, pt.y - arm); ctx.lineTo(pt.x, pt.y + arm);
       ctx.stroke();
-
-      // Vertical bar
-      ctx.beginPath();
-      ctx.moveTo(pt.x, pt.y - arm);
-      ctx.lineTo(pt.x, pt.y + arm);
-      ctx.stroke();
-
-      // Central micro-pinpoint
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 1.4, 0, Math.PI * 2);
       ctx.fill();
     }
-
     ctx.restore();
   }
 
@@ -502,6 +424,32 @@ export class GameRenderer {
     }
   }
 
+  private drawCurve(
+    s: number,
+    start: [number, number],
+    segs: number[][],
+    fill?: string,
+    stroke?: string,
+    lineWidth = 1.4,
+    close = true
+  ): void {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.moveTo(start[0] * s, start[1] * s);
+    for (const seg of segs) {
+      if (seg.length === 6) {
+        ctx.bezierCurveTo(seg[0] * s, seg[1] * s, seg[2] * s, seg[3] * s, seg[4] * s, seg[5] * s);
+      } else if (seg.length === 4) {
+        ctx.quadraticCurveTo(seg[0] * s, seg[1] * s, seg[2] * s, seg[3] * s);
+      } else {
+        ctx.lineTo(seg[0] * s, seg[1] * s);
+      }
+    }
+    if (close) ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth; ctx.stroke(); }
+  }
+
   /**
    * Renders the cute, kawaii chibi celestial unicorn with floppy drooping ears,
    * a round chubby body, slowly paddling little legs, and flowing animated mane.
@@ -529,42 +477,30 @@ export class GameRenderer {
       : 'rgba(160, 180, 235, 0.55)';
 
     // 2. Fluffy Floating Celestial Tail (at rear of chubby body)
-    const tailSway = Math.sin(time * 0.003 + 2.2) * 6 * s;
-    ctx.fillStyle = 'rgba(192, 132, 252, 0.4)';
-    ctx.strokeStyle = isDragged ? 'rgba(255, 215, 0, 0.7)' : 'rgba(192, 132, 252, 0.6)';
-    ctx.lineWidth = 1.4;
+    const tailSway = Math.sin(time * 0.003 + 2.2) * 6;
+    this.drawCurve(
+      s,
+      [38, 82],
+      [
+        [55 + tailSway, 72, 68 + tailSway, 92, 54 + tailSway, 112],
+        [46, 106, 40, 94, 36, 90],
+      ],
+      'rgba(192, 132, 252, 0.4)',
+      isDragged ? 'rgba(255, 215, 0, 0.7)' : 'rgba(192, 132, 252, 0.6)',
+      1.4
+    );
 
-    ctx.beginPath();
-    ctx.moveTo(38 * s, 82 * s);
-    ctx.bezierCurveTo(55 * s + tailSway, 72 * s, 68 * s + tailSway, 92 * s, 54 * s + tailSway, 112 * s);
-    ctx.bezierCurveTo(46 * s, 106 * s, 40 * s, 94 * s, 36 * s, 90 * s);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 3. Four Slowly Paddling / Fluttering Stubby Little Legs (Floating in cosmic space)
-    // When upside down (rot ~ PI), the unicorn splays / spreads its legs apart cute starfish style!
+    // 3. Four Slowly Paddling / Fluttering Stubby Little Legs
     const upsideDownRaw = Math.max(0, -Math.cos(rot));
-    const upsideDown = upsideDownRaw * upsideDownRaw * (3 - 2 * upsideDownRaw); // smoothstep blend
+    const upsideDown = upsideDownRaw * upsideDownRaw * (3 - 2 * upsideDownRaw);
 
     const swimSpeed = 0.0035;
     const flutterSpeed = 0.007;
 
-    const idleSwingFrontL = Math.sin(time * swimSpeed) * 0.35;
-    const idleSwingFrontR = Math.sin(time * swimSpeed + Math.PI) * 0.35;
-    const idleSwingBackL = Math.sin(time * swimSpeed + 1.2) * 0.35;
-    const idleSwingBackR = Math.sin(time * swimSpeed + Math.PI + 1.2) * 0.35;
-
-    const upsideFlutterFrontL = Math.sin(time * flutterSpeed) * 0.15;
-    const upsideFlutterFrontR = Math.sin(time * flutterSpeed + Math.PI) * 0.15;
-    const upsideFlutterBackL = Math.sin(time * flutterSpeed + 1.2) * 0.15;
-    const upsideFlutterBackR = Math.sin(time * flutterSpeed + Math.PI + 1.2) * 0.15;
-
-    // Front legs angle outward/forward (positive in canvas), back legs angle outward/backward (negative in canvas) when upside down
-    const legAngleFrontL = (1 - upsideDown) * idleSwingFrontL + 0.95 * upsideDown + upsideDown * upsideFlutterFrontL;
-    const legAngleFrontR = (1 - upsideDown) * idleSwingFrontR + 0.75 * upsideDown + upsideDown * upsideFlutterFrontR;
-    const legAngleBackL = (1 - upsideDown) * idleSwingBackL - 0.95 * upsideDown + upsideDown * upsideFlutterBackL;
-    const legAngleBackR = (1 - upsideDown) * idleSwingBackR - 0.75 * upsideDown + upsideDown * upsideFlutterBackR;
+    const [swingFL, swingFR, swingBL, swingBR] = [0, Math.PI, 1.2, Math.PI + 1.2].map((ph, idx) => {
+      const baseOffset = idx === 0 ? 0.95 : idx === 1 ? 0.75 : idx === 2 ? -0.95 : -0.75;
+      return (1 - upsideDown) * Math.sin(time * 0.0035 + ph) * 0.35 + baseOffset * upsideDown + upsideDown * Math.sin(time * 0.007 + ph) * 0.15;
+    });
 
     const drawLittleLeg = (pivotX: number, pivotY: number, swing: number, isFar: boolean) => {
       ctx.save();
@@ -574,7 +510,6 @@ export class GameRenderer {
       const legLength = (isFar ? 14 : 17) * s;
       const legWidth = 7 * s;
 
-      // Leg body
       ctx.beginPath();
       ctx.roundRect(-legWidth / 2, 0, legWidth, legLength, 3.5 * s);
       ctx.fillStyle = isFar
@@ -587,7 +522,6 @@ export class GameRenderer {
       ctx.lineWidth = isFar ? 1.0 : 1.4;
       ctx.stroke();
 
-      // Cute glowing hoof tip
       ctx.beginPath();
       ctx.roundRect(-legWidth / 2, legLength - 5 * s, legWidth, 5 * s, [0, 0, 3.5 * s, 3.5 * s]);
       ctx.fillStyle = isDragged ? '#ffd700' : '#38bdf8';
@@ -596,126 +530,76 @@ export class GameRenderer {
       ctx.restore();
     };
 
-    // Draw Far legs (behind body) - with pivots splaying slightly outward when upside down
-    drawLittleLeg((16 - 3 * upsideDown) * s, (102 - 3 * upsideDown) * s, legAngleFrontR, true);
-    drawLittleLeg((36 + 5 * upsideDown) * s, (98 - 3 * upsideDown) * s, legAngleBackR, true);
+    // Far legs
+    drawLittleLeg((16 - 3 * upsideDown) * s, (102 - 3 * upsideDown) * s, swingFR, true);
+    drawLittleLeg((36 + 5 * upsideDown) * s, (98 - 3 * upsideDown) * s, swingBR, true);
 
-    // 4. Flowing Multi-Layered Twilight Mane (Layered waves behind neck)
-    const maneSway1 = Math.sin(time * 0.003 + 0.4) * 4.5 * s;
-    const maneSway2 = Math.sin(time * 0.0036 + 1.2) * 5.5 * s;
-    const maneSway3 = Math.sin(time * 0.0028 + 2.0) * 4.0 * s;
+    // 4. Flowing Multi-Layered Twilight Mane
+    const maneSway1 = Math.sin(time * 0.003 + 0.4) * 4.5;
+    const maneSway2 = Math.sin(time * 0.0036 + 1.2) * 5.5;
+    const maneSway3 = Math.sin(time * 0.0028 + 2.0) * 4.0;
 
-    // Mane Lock 1
-    ctx.fillStyle = isDragged ? 'rgba(255, 215, 0, 0.35)' : 'rgba(192, 132, 252, 0.38)';
-    ctx.strokeStyle = isDragged ? 'rgba(255, 215, 0, 0.75)' : 'rgba(192, 132, 252, 0.65)';
-    ctx.lineWidth = 1.4;
+    const manes: [[number, number], number[][], string, string, number][] = [
+      [[10, 22], [[34 + maneSway1, 26, 42 + maneSway1, 56, 34 + maneSway1, 84], [24, 70, 20, 48, 14, 32]], isDragged ? 'rgba(255, 215, 0, 0.35)' : 'rgba(192, 132, 252, 0.38)', isDragged ? 'rgba(255, 215, 0, 0.75)' : 'rgba(192, 132, 252, 0.65)', 1.4],
+      [[14, 36], [[44 + maneSway2, 48, 48 + maneSway2, 82, 28 + maneSway2, 104], [22, 86, 18, 64, 10, 48]], isDragged ? 'rgba(255, 215, 0, 0.25)' : 'rgba(56, 189, 248, 0.35)', isDragged ? 'rgba(255, 215, 0, 0.65)' : 'rgba(56, 189, 248, 0.6)', 1.4],
+      [[16, 54], [[38 + maneSway3, 68, 40 + maneSway3, 98, 22 + maneSway3, 118], [16, 102, 14, 80, 8, 66]], 'rgba(251, 191, 36, 0.3)', 'rgba(251, 191, 36, 0.55)', 1.2],
+    ];
+    for (const m of manes) {
+      this.drawCurve(s, m[0], m[1], m[2], m[3], m[4]);
+    }
 
-    ctx.beginPath();
-    ctx.moveTo(10 * s, 22 * s);
-    ctx.bezierCurveTo(34 * s + maneSway1, 26 * s, 42 * s + maneSway1, 56 * s, 34 * s + maneSway1, 84 * s);
-    ctx.bezierCurveTo(24 * s, 70 * s, 20 * s, 48 * s, 14 * s, 32 * s);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // 5. Silhouette
+    this.drawCurve(
+      s,
+      [-20, 21],
+      [
+        [-25, 28, -35, 38, -36, 48],
+        [-37, 56, -30, 62, -21, 60],
+        [-14, 59, -10, 54, -6, 50],
+        [-4, 64, -6, 82, -2, 96],
+        [2, 112, 18, 118, 34, 114],
+        [46, 110, 48, 92, 42, 80],
+        [36, 68, 26, 44, 20, 21],
+      ],
+      isDragged ? 'rgba(38, 52, 94, 0.6)' : 'rgba(24, 34, 66, 0.48)',
+      strokeColor,
+      isDragged ? 2.0 : 1.5
+    );
 
-    // Mane Lock 2
-    ctx.fillStyle = isDragged ? 'rgba(255, 215, 0, 0.25)' : 'rgba(56, 189, 248, 0.35)';
-    ctx.strokeStyle = isDragged ? 'rgba(255, 215, 0, 0.65)' : 'rgba(56, 189, 248, 0.6)';
-    ctx.lineWidth = 1.4;
+    // Near legs
+    drawLittleLeg((4 - 4 * upsideDown) * s, (106 - 3 * upsideDown) * s, swingFL, false);
+    drawLittleLeg((26 + 4 * upsideDown) * s, (104 - 3 * upsideDown) * s, swingBL, false);
 
-    ctx.beginPath();
-    ctx.moveTo(14 * s, 36 * s);
-    ctx.bezierCurveTo(44 * s + maneSway2, 48 * s, 48 * s + maneSway2, 82 * s, 28 * s + maneSway2, 104 * s);
-    ctx.bezierCurveTo(22 * s, 86 * s, 18 * s, 64 * s, 10 * s, 48 * s);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Mane Lock 3
-    ctx.fillStyle = 'rgba(251, 191, 36, 0.3)';
-    ctx.strokeStyle = 'rgba(251, 191, 36, 0.55)';
-    ctx.lineWidth = 1.2;
-
-    ctx.beginPath();
-    ctx.moveTo(16 * s, 54 * s);
-    ctx.bezierCurveTo(38 * s + maneSway3, 68 * s, 40 * s + maneSway3, 98 * s, 22 * s + maneSway3, 118 * s);
-    ctx.bezierCurveTo(16 * s, 102 * s, 14 * s, 80 * s, 8 * s, 66 * s);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 5. Kawaii Head, Neck & Plump Chubby Body Silhouette
-    ctx.beginPath();
-    ctx.moveTo(-20 * s, 21 * s);
-    ctx.bezierCurveTo(-25 * s, 28 * s, -35 * s, 38 * s, -36 * s, 48 * s);
-    ctx.bezierCurveTo(-37 * s, 56 * s, -30 * s, 62 * s, -21 * s, 60 * s);
-    ctx.bezierCurveTo(-14 * s, 59 * s, -10 * s, 54 * s, -6 * s, 50 * s);
-    ctx.bezierCurveTo(-4 * s, 64 * s, -6 * s, 82 * s, -2 * s, 96 * s);
-    ctx.bezierCurveTo(2 * s, 112 * s, 18 * s, 118 * s, 34 * s, 114 * s);
-    ctx.bezierCurveTo(46 * s, 110 * s, 48 * s, 92 * s, 42 * s, 80 * s);
-    ctx.bezierCurveTo(36 * s, 68 * s, 26 * s, 44 * s, 20 * s, 21 * s);
-    ctx.closePath();
-
-    ctx.fillStyle = isDragged ? 'rgba(38, 52, 94, 0.6)' : 'rgba(24, 34, 66, 0.48)';
-    ctx.fill();
-
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = isDragged ? 2.0 : 1.5;
-    ctx.stroke();
-
-    // Draw Near legs (in front of body) - with pivots splaying slightly outward when upside down
-    drawLittleLeg((4 - 4 * upsideDown) * s, (106 - 3 * upsideDown) * s, legAngleFrontL, false);
-    drawLittleLeg((26 + 4 * upsideDown) * s, (104 - 3 * upsideDown) * s, legAngleBackL, false);
-
-    // 6. Cute Soft Pink Cheek Blush
-    const blushX = -18 * s;
-    const blushY = 50 * s;
+    // 6. Cheek blush
     ctx.fillStyle = 'rgba(244, 114, 182, 0.35)';
     ctx.beginPath();
-    ctx.arc(blushX, blushY, 6 * s, 0, Math.PI * 2);
+    ctx.arc(-18 * s, 50 * s, 6 * s, 0, Math.PI * 2);
     ctx.fill();
 
-    // 7. Cute Floppy Downward-Angled Ear
-    const earDroop = Math.sin(time * 0.003) * 1.5 * s;
+    // 7. Ear
+    const earDroop = Math.sin(time * 0.003) * 1.5;
     ctx.save();
     ctx.translate(14 * s, 24 * s);
     ctx.rotate(0.6 + earDroop * 0.04);
-
-    ctx.beginPath();
-    ctx.moveTo(-6 * s, 0);
-    ctx.quadraticCurveTo(-4 * s, 16 * s, 2 * s, 26 * s);
-    ctx.quadraticCurveTo(8 * s, 18 * s, 8 * s, 0);
-    ctx.closePath();
-    ctx.fillStyle = isDragged ? 'rgba(36, 48, 86, 0.65)' : 'rgba(22, 30, 58, 0.52)';
-    ctx.fill();
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Inner ear blush
-    ctx.beginPath();
-    ctx.moveTo(-3 * s, 2 * s);
-    ctx.quadraticCurveTo(-1 * s, 12 * s, 2 * s, 19 * s);
-    ctx.quadraticCurveTo(5 * s, 12 * s, 5 * s, 2 * s);
-    ctx.closePath();
-    ctx.fillStyle = isDragged ? 'rgba(255, 215, 0, 0.45)' : 'rgba(244, 114, 182, 0.35)';
-    ctx.fill();
+    this.drawCurve(s, [-6, 0], [[-4, 16, 2, 26], [8, 18, 8, 0]], isDragged ? 'rgba(36, 48, 86, 0.65)' : 'rgba(22, 30, 58, 0.52)', strokeColor, 1.5);
+    this.drawCurve(s, [-3, 2], [[-1, 12, 2, 19], [5, 12, 5, 2]], isDragged ? 'rgba(255, 215, 0, 0.45)' : 'rgba(244, 114, 182, 0.35)');
     ctx.restore();
 
-    // 8. Cute Forehead Forelock
-    const forelockSway = Math.sin(time * 0.0032) * 2 * s;
-    ctx.beginPath();
-    ctx.moveTo(-16 * s, 20 * s);
-    ctx.bezierCurveTo(-26 * s + forelockSway, 24 * s, -28 * s + forelockSway, 32 * s, -22 * s + forelockSway, 36 * s);
-    ctx.bezierCurveTo(-18 * s, 32 * s, -14 * s, 26 * s, -12 * s, 20 * s);
-    ctx.closePath();
-    ctx.fillStyle = isDragged ? 'rgba(255, 215, 0, 0.4)' : 'rgba(192, 132, 252, 0.38)';
-    ctx.fill();
-    ctx.strokeStyle = isDragged ? 'rgba(255, 215, 0, 0.7)' : 'rgba(192, 132, 252, 0.6)';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
+    // 8. Forelock
+    const forelockSway = Math.sin(time * 0.0032) * 2;
+    this.drawCurve(
+      s,
+      [-16, 20],
+      [
+        [-26 + forelockSway, 24, -28 + forelockSway, 32, -22 + forelockSway, 36],
+        [-18, 32, -14, 26, -12, 20],
+      ],
+      isDragged ? 'rgba(255, 215, 0, 0.4)' : 'rgba(192, 132, 252, 0.38)',
+      isDragged ? 'rgba(255, 215, 0, 0.7)' : 'rgba(192, 132, 252, 0.6)',
+      1.2
+    );
 
-    // 9. Golden Celestial Diadem & Horn Gem Mount
+    // 9. Diadem
     ctx.save();
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
@@ -725,111 +609,63 @@ export class GameRenderer {
     ctx.lineWidth = 0.9;
     ctx.stroke();
 
-    // Center faceted celestial gem
     const gemPulse = 0.8 + Math.sin(time * 0.005) * 0.2;
-    const gemX = 0;
     const gemY = 20.5 * s;
-    ctx.fillStyle = isDragged ? '#fef08a' : '#38bdf8';
-    ctx.beginPath();
-    ctx.moveTo(gemX, gemY - 3.5 * s);
-    ctx.lineTo(gemX + 3.5 * s, gemY);
-    ctx.lineTo(gemX, gemY + 3.5 * s);
-    ctx.lineTo(gemX - 3.5 * s, gemY);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.0;
-    ctx.stroke();
-
-    // Soft gem aura
+    this.drawCurve(s, [0, 20.5 - 3.5], [[3.5, 20.5], [0, 20.5 + 3.5], [-3.5, 20.5]], isDragged ? '#fef08a' : '#38bdf8', '#ffffff', 1.0);
     ctx.fillStyle = `rgba(56, 189, 248, ${0.4 * gemPulse})`;
     ctx.beginPath();
-    ctx.arc(gemX, gemY, 7 * s, 0, Math.PI * 2);
+    ctx.arc(0, gemY, 7 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // 10. Expressive Kawaii Celestial Eye with Blinking Animation
+    // 10. Eye
     const eyeX = -16 * s;
     const eyeY = 38 * s;
-
-    // Periodic blinking cycle
     const blinkCycle = (time * 0.001) % 3.6;
     const isBlinking = blinkCycle > 3.42;
     const blinkProgress = isBlinking ? Math.sin(((blinkCycle - 3.42) / 0.18) * Math.PI) : 0;
 
     if (blinkProgress > 0.75) {
-      // Closed smiling eye
       ctx.strokeStyle = isDragged ? '#ffd700' : '#e0f2fe';
       ctx.lineWidth = 2.4;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.arc(eyeX, eyeY + 1 * s, 4.5 * s, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(eyeX - 4 * s, eyeY + 2 * s);
-      ctx.lineTo(eyeX - 6.5 * s, eyeY + 0.5 * s);
-      ctx.moveTo(eyeX + 4 * s, eyeY + 2 * s);
-      ctx.lineTo(eyeX + 6.5 * s, eyeY + 0.5 * s);
+      ctx.moveTo(eyeX - 4 * s, eyeY + 2 * s); ctx.lineTo(eyeX - 6.5 * s, eyeY + 0.5 * s);
+      ctx.moveTo(eyeX + 4 * s, eyeY + 2 * s); ctx.lineTo(eyeX + 6.5 * s, eyeY + 0.5 * s);
       ctx.stroke();
     } else {
-      // Open radiant eye
       const eyeHeightScale = Math.max(0.2, 1 - blinkProgress);
-
       ctx.save();
       ctx.translate(eyeX, eyeY);
       ctx.scale(1, eyeHeightScale);
 
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 5.5 * s, 7.5 * s, 0.05, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(240, 249, 255, 0.95)';
-      ctx.fill();
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 1.0;
-      ctx.stroke();
+      for (const [rw, rh, col, str, lw] of [
+        [5.5, 7.5, 'rgba(240, 249, 255, 0.95)', strokeColor, 1.0],
+        [4.2, 6.0, isDragged ? '#f59e0b' : '#38bdf8'],
+        [2.5, 3.8, '#0f172a']
+      ] as const) {
+        ctx.fillStyle = col as string;
+        ctx.beginPath();
+        ctx.ellipse(0, rw === 2.5 ? 0.5 * s : 0, rw * s, rh * s, 0.05, 0, Math.PI * 2);
+        ctx.fill();
+        if (str) { ctx.strokeStyle = str; ctx.lineWidth = lw as number; ctx.stroke(); }
+      }
 
-      // Iris
-      ctx.fillStyle = isDragged ? '#f59e0b' : '#38bdf8';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 4.2 * s, 6.0 * s, 0.05, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Deep dark pupil
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.ellipse(0, 0.5 * s, 2.5 * s, 3.8 * s, 0.05, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Highlights
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(-1.5 * s, -2.5 * s, 1.8 * s, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(1.8 * s, 2.2 * s, 1.0 * s, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.beginPath();
-      ctx.moveTo(-1.5 * s, -2.5 * s - 2.8 * s);
-      ctx.lineTo(-1.5 * s + 0.7 * s, -2.5 * s);
-      ctx.lineTo(-1.5 * s, -2.5 * s + 2.8 * s);
-      ctx.lineTo(-1.5 * s - 0.7 * s, -2.5 * s);
-      ctx.closePath();
-      ctx.fill();
+      for (const [sx, sy, sr] of [[-1.5, -2.5, 1.8], [1.8, 2.2, 1.0]]) {
+        ctx.beginPath();
+        ctx.arc(sx * s, sy * s, sr * s, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       ctx.restore();
 
-      // Cute upper eyelid & eyelashes
       ctx.strokeStyle = isDragged ? '#ffd700' : '#e0f2fe';
       ctx.lineWidth = 2.0;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.arc(eyeX, eyeY - 2 * s, 5.8 * s, Math.PI * 1.15, Math.PI * 1.88);
-      ctx.stroke();
-
-      ctx.beginPath();
       ctx.moveTo(eyeX - 4.5 * s, eyeY - 4.5 * s);
       ctx.lineTo(eyeX - 7.2 * s, eyeY - 6.5 * s);
       ctx.stroke();
@@ -858,7 +694,6 @@ export class GameRenderer {
     ctx.translate(prism.pos.x, prism.pos.y);
     ctx.rotate(prism.rot);
 
-    // 1.1 Render Kawaii Vector Pony beneath the Horn ONLY if shape is 'horn'
     if (prism.shape === 'horn') {
       this.renderPonyHead(s, isHovered || isSelected, isDragged, time, prism.rot);
     }
@@ -871,23 +706,11 @@ export class GameRenderer {
     const rimWidth = isDragged ? 2.5 : (isHovered || isSelected) ? 2.0 : 1.5;
 
     if (prism.shape === 'mirror') {
-      // 1.2 Celestial Mirror Bar
       const w = 36 * s;
       const h = 6 * s;
 
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(-w - 2 * s, -h - 2 * s, (w + 2 * s) * 2, (h + 2 * s) * 2);
-
-      ctx.save();
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
-      ctx.lineWidth = 1.2;
-      for (let x = -w + 6 * s; x <= w; x += 12 * s) {
-        ctx.beginPath();
-        ctx.moveTo(x, 2 * s);
-        ctx.lineTo(x - 6 * s, h + 2 * s);
-        ctx.stroke();
-      }
-      ctx.restore();
 
       const grad = ctx.createLinearGradient(-w, 0, w, 0);
       grad.addColorStop(0, '#7dd3fc');
@@ -905,7 +728,6 @@ export class GameRenderer {
       ctx.arc(0, 0, 3 * s, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // 1.3 Glass Body (Horn, Dove, Lens, Orb)
       const grad = ctx.createLinearGradient(0, -38 * s, 0, 38 * s);
       grad.addColorStop(0, isDragged ? 'rgba(255, 240, 200, 0.48)' : 'rgba(200, 240, 255, 0.35)');
       grad.addColorStop(1, isDragged ? 'rgba(255, 215, 0, 0.24)' : 'rgba(120, 180, 240, 0.16)');
@@ -922,7 +744,6 @@ export class GameRenderer {
         ctx.lineTo(62 * s, 16 * s);
         ctx.lineTo(-62 * s, 16 * s);
       } else {
-        // orb
         ctx.arc(0, 0, 30 * s, 0, Math.PI * 2);
       }
       ctx.closePath();
@@ -931,7 +752,6 @@ export class GameRenderer {
       ctx.strokeStyle = rimStroke;
       ctx.stroke();
 
-      // Shape-specific internal crystal accents
       ctx.save();
       ctx.strokeStyle = isDragged ? 'rgba(255, 215, 0, 0.45)' : 'rgba(255, 255, 255, 0.38)';
       ctx.lineWidth = 1.2;
@@ -967,7 +787,7 @@ export class GameRenderer {
       ctx.restore();
     }
 
-    ctx.restore(); // Restore rotated transform
+    ctx.restore();
 
     // ==========================================
     // 2. UNROTATED CONTROLS LAYER (World/Screen Aligned)
@@ -976,7 +796,6 @@ export class GameRenderer {
     ctx.translate(prism.pos.x, prism.pos.y);
 
     if (showControls) {
-      // 2.0 Selection Ambient Glow Aura
       const pulse = 0.8 + Math.sin(time * 0.005) * 0.2;
       const aura = ctx.createRadialGradient(0, 20 * s, 10, 0, 20 * s, 85 * s);
       aura.addColorStop(
@@ -996,19 +815,15 @@ export class GameRenderer {
       const isRotActive = (isDragged && dragMode === 'rotate') || hoverHandle === 'rot';
 
       ctx.save();
-      ctx.strokeStyle = isRotActive
-        ? '#ffd700'
-        : 'rgba(56, 189, 248, 0.45)';
+      ctx.strokeStyle = isRotActive ? '#ffd700' : 'rgba(56, 189, 248, 0.45)';
       ctx.lineWidth = isRotActive ? 2.2 : 1.4;
 
-      // Dashed outer rotation orbit
       ctx.setLineDash([8 * s, 6 * s]);
       ctx.beginPath();
       ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Top Orbital Knob for coarse drag rotation
       const topBeadR = isRotActive ? 6.5 * s : 5.2 * s;
       ctx.fillStyle = isRotActive ? '#ffd700' : '#38bdf8';
       ctx.strokeStyle = '#ffffff';
@@ -1018,18 +833,14 @@ export class GameRenderer {
       ctx.fill();
       ctx.stroke();
 
-      // 2.1.1 Fine Rotation Buttons at Left (-ringRadius, 0) and Right (+ringRadius, 0)
-      const drawStepBtn = (
-        bx: number,
-        by: number,
-        isCCW: boolean,
-        isBtnHovered: boolean,
-        isBtnActive: boolean
-      ) => {
-        ctx.save();
+      // 2.1.1 Step Buttons (CCW & CW)
+      [-ringRadius, ringRadius].forEach((bx, idx) => {
+        const isCCW = idx === 0;
+        const isBtnHovered = hoverHandle === (isCCW ? 'step-ccw' : 'step-cw');
+        const isBtnActive = isDragged && dragMode === (isCCW ? 'step-ccw' : 'step-cw');
         const btnR = (isBtnHovered || isBtnActive ? 15.0 : 13.5) * s;
 
-        // Button background
+        ctx.save();
         ctx.fillStyle = isBtnActive
           ? 'rgba(255, 215, 0, 0.35)'
           : isBtnHovered
@@ -1042,83 +853,50 @@ export class GameRenderer {
           : 'rgba(56, 189, 248, 0.85)';
         ctx.lineWidth = isBtnActive ? 2.2 : 1.5;
 
-        // Button circle
         ctx.beginPath();
-        ctx.arc(bx, by, btnR, 0, Math.PI * 2);
+        ctx.arc(bx, 0, btnR, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Button Outer Glow Ring if hovered/active
         if (isBtnHovered || isBtnActive) {
-          ctx.strokeStyle = isBtnActive
-            ? 'rgba(255, 215, 0, 0.6)'
-            : 'rgba(56, 189, 248, 0.5)';
+          ctx.strokeStyle = isBtnActive ? 'rgba(255, 215, 0, 0.6)' : 'rgba(56, 189, 248, 0.5)';
           ctx.lineWidth = 2.4;
           ctx.beginPath();
-          ctx.arc(bx, by, btnR + 2.5 * s, 0, Math.PI * 2);
+          ctx.arc(bx, 0, btnR + 2.5 * s, 0, Math.PI * 2);
           ctx.stroke();
         }
 
-        // Draw curved arc arrow
-        const iconColor = isBtnActive
-          ? '#ffd700'
-          : isBtnHovered
-          ? '#ffffff'
-          : '#38bdf8';
-
-        ctx.save();
-        ctx.translate(bx, by);
-        if (isCCW) {
-          ctx.scale(-1, 1);
-        }
-
+        const iconColor = isBtnActive ? '#ffd700' : isBtnHovered ? '#ffffff' : '#38bdf8';
+        ctx.translate(bx, 0);
+        if (isCCW) ctx.scale(-1, 1);
         ctx.strokeStyle = iconColor;
         ctx.fillStyle = iconColor;
         ctx.lineWidth = 1.8 * s;
         ctx.lineCap = 'round';
 
         const arcR = 6.0 * s;
-        const headLen = 4.6 * s;
-        const headWidth = 3.2 * s;
-
-        // Large ~260° circular tail (from ~3:15 o'clock around bottom & left to 12 o'clock)
         ctx.beginPath();
         ctx.arc(0, 0, arcR, Math.PI * 0.08, Math.PI * 1.50, false);
         ctx.stroke();
 
-        // Prominent horizontal arrowhead at top (12 o'clock) pointing straight right (CW) / left (CCW)
         const tipX = 2.4 * s;
         const tipY = -arcR;
-        const baseX = tipX - headLen;
-
         ctx.beginPath();
         ctx.moveTo(tipX, tipY);
-        ctx.lineTo(baseX, tipY - headWidth);
-        ctx.lineTo(baseX, tipY + headWidth);
+        ctx.lineTo(tipX - 4.6 * s, tipY - 3.2 * s);
+        ctx.lineTo(tipX - 4.6 * s, tipY + 3.2 * s);
         ctx.closePath();
         ctx.fill();
-
         ctx.restore();
-
-        ctx.restore();
-      };
-
-      const isCCWHover = hoverHandle === 'step-ccw';
-      const isCCWActive = isDragged && dragMode === 'step-ccw';
-      drawStepBtn(-ringRadius, 0, true, isCCWHover, isCCWActive);
-
-      const isCWHover = hoverHandle === 'step-cw';
-      const isCWActive = isDragged && dragMode === 'step-cw';
-      drawStepBtn(ringRadius, 0, false, isCWHover, isCWActive);
+      });
 
       ctx.restore();
 
-      // 2.2 Move Indicator - ALWAYS FIXED AT THE BOTTOM at (0, 82 * s)
+      // 2.2 Move Indicator at (0, 82 * s)
       const moveY = 82 * s;
       const isMoveActive = (isDragged && dragMode === 'move') || hoverHandle === 'body';
 
       ctx.save();
-      // Move badge background
       ctx.fillStyle = isMoveActive ? 'rgba(28, 40, 72, 0.96)' : 'rgba(15, 23, 42, 0.90)';
       ctx.strokeStyle = isMoveActive ? '#ffd700' : 'rgba(56, 189, 248, 0.85)';
       ctx.lineWidth = isMoveActive ? 2.4 : 1.6;
@@ -1129,7 +907,6 @@ export class GameRenderer {
       ctx.fill();
       ctx.stroke();
 
-      // Outer badge glow ring
       ctx.save();
       ctx.strokeStyle = isMoveActive ? 'rgba(255, 215, 0, 0.6)' : 'rgba(56, 189, 248, 0.25)';
       ctx.lineWidth = isMoveActive ? 3.5 : 1.8;
@@ -1138,7 +915,7 @@ export class GameRenderer {
       ctx.stroke();
       ctx.restore();
 
-      // 4-directional Move Arrows (✥) - Always upright and prominent
+      // 4-directional Move Arrows
       const arrowColor = isMoveActive ? '#ffd700' : '#38bdf8';
       ctx.fillStyle = arrowColor;
       ctx.strokeStyle = arrowColor;
@@ -1147,50 +924,26 @@ export class GameRenderer {
       const arm = 11.5 * s;
       const arrowSize = 3.6 * s;
 
-      // Vertical & Horizontal cross lines
-      ctx.beginPath();
-      ctx.moveTo(0, moveY - arm);
-      ctx.lineTo(0, moveY + arm);
-      ctx.moveTo(-arm, moveY);
-      ctx.lineTo(arm, moveY);
-      ctx.stroke();
-
-      // North arrow
-      ctx.beginPath();
-      ctx.moveTo(0, moveY - arm - 1.5 * s);
-      ctx.lineTo(-arrowSize, moveY - arm + arrowSize * 0.7);
-      ctx.lineTo(arrowSize, moveY - arm + arrowSize * 0.7);
-      ctx.closePath();
-      ctx.fill();
-
-      // South arrow
-      ctx.beginPath();
-      ctx.moveTo(0, moveY + arm + 1.5 * s);
-      ctx.lineTo(-arrowSize, moveY + arm - arrowSize * 0.7);
-      ctx.lineTo(arrowSize, moveY + arm - arrowSize * 0.7);
-      ctx.closePath();
-      ctx.fill();
-
-      // West arrow
-      ctx.beginPath();
-      ctx.moveTo(-arm - 1.5 * s, moveY);
-      ctx.lineTo(-arm + arrowSize * 0.7, moveY - arrowSize);
-      ctx.lineTo(-arm + arrowSize * 0.7, moveY + arrowSize);
-      ctx.closePath();
-      ctx.fill();
-
-      // East arrow
-      ctx.beginPath();
-      ctx.moveTo(arm + 1.5 * s, moveY);
-      ctx.lineTo(arm - arrowSize * 0.7, moveY - arrowSize);
-      ctx.lineTo(arm - arrowSize * 0.7, moveY + arrowSize);
-      ctx.closePath();
-      ctx.fill();
+      for (let i = 0; i < 4; i++) {
+        ctx.save();
+        ctx.translate(0, moveY);
+        ctx.rotate((i * Math.PI) / 2);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -arm);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, -arm - 1.5 * s);
+        ctx.lineTo(-arrowSize, -arm + arrowSize * 0.7);
+        ctx.lineTo(arrowSize, -arm + arrowSize * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
 
       ctx.restore();
     }
 
-    // Center pivot indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.beginPath();
     ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
@@ -1290,15 +1043,15 @@ export class GameRenderer {
     ctx.arc(0, 0, centerRadius, 0, Math.PI * 2);
 
     if (hasLight) {
+      const [sr, sg, sb] = sampledRgb;
       const lensGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, centerRadius);
-      lensGrad.addColorStop(0, `rgba(${Math.min(255, Math.round(sampledRgb[0] + 50))}, ${Math.min(255, Math.round(sampledRgb[1] + 50))}, ${Math.min(255, Math.round(sampledRgb[2] + 50))}, 1.0)`);
-      lensGrad.addColorStop(0.7, `rgba(${Math.round(sampledRgb[0])}, ${Math.round(sampledRgb[1])}, ${Math.round(sampledRgb[2])}, 0.85)`);
-      lensGrad.addColorStop(1, `rgba(${Math.max(0, Math.round(sampledRgb[0] - 30))}, ${Math.max(0, Math.round(sampledRgb[1] - 30))}, ${Math.max(0, Math.round(sampledRgb[2] - 30))}, 0.4)`);
+      lensGrad.addColorStop(0, `rgba(${Math.min(255, sr + 50)}, ${Math.min(255, sg + 50)}, ${Math.min(255, sb + 50)}, 1)`);
+      lensGrad.addColorStop(0.7, `rgba(${sr}, ${sg}, ${sb}, 0.85)`);
+      lensGrad.addColorStop(1, `rgba(${Math.max(0, sr - 30)}, ${Math.max(0, sg - 30)}, ${Math.max(0, sb - 30)}, 0.4)`);
       ctx.fillStyle = lensGrad;
       ctx.fill();
 
-      // Optical core reflection
-      ctx.fillStyle = isMatch ? '#ffffff' : `rgba(255, 255, 255, 0.7)`;
+      ctx.fillStyle = isMatch ? '#ffffff' : 'rgba(255, 255, 255, 0.7)';
       ctx.beginPath();
       ctx.arc(0, 0, isMatch ? 3.0 : 1.8, 0, Math.PI * 2);
       ctx.fill();
@@ -1326,14 +1079,12 @@ export class GameRenderer {
     ctx.save();
     ctx.strokeStyle = isMatch ? '#ffffff' : 'rgba(255, 255, 255, 0.55)';
     ctx.lineWidth = 1.0;
-    const tickInner = centerRadius - 2.0;
-    const tickOuter = centerRadius + 3.0;
-
+    const ti = centerRadius - 2.0, to = centerRadius + 3.0;
     ctx.beginPath();
-    ctx.moveTo(0, -tickInner); ctx.lineTo(0, -tickOuter);
-    ctx.moveTo(0, tickInner);  ctx.lineTo(0, tickOuter);
-    ctx.moveTo(-tickInner, 0); ctx.lineTo(-tickOuter, 0);
-    ctx.moveTo(tickInner, 0);  ctx.lineTo(tickOuter, 0);
+    ctx.moveTo(0, -ti); ctx.lineTo(0, -to);
+    ctx.moveTo(0, ti); ctx.lineTo(0, to);
+    ctx.moveTo(-ti, 0); ctx.lineTo(-to, 0);
+    ctx.moveTo(ti, 0); ctx.lineTo(to, 0);
     ctx.stroke();
     ctx.restore();
 
@@ -1367,35 +1118,18 @@ export class GameRenderer {
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) {
-      ctx.lineTo(pts[i].x, pts[i].y);
-    }
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
     ctx.closePath();
 
-    if (obstacle.isMirror) {
-      // Chrome Mirror styling
-      ctx.fillStyle = '#3a4a68';
-      ctx.fill();
-      ctx.strokeStyle = '#a5f3fc';
-      ctx.lineWidth = 2.0;
-      ctx.stroke();
+    ctx.fillStyle = obstacle.isMirror ? '#3a4a68' : '#141724';
+    ctx.fill();
+    ctx.strokeStyle = obstacle.isMirror ? '#a5f3fc' : '#2d3748';
+    ctx.lineWidth = obstacle.isMirror ? 2.0 : 1.8;
+    ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    } else {
-      // Obsidian Absorbing Wall styling
-      ctx.fillStyle = '#141724';
-      ctx.fill();
-      ctx.strokeStyle = '#2d3748';
-      ctx.lineWidth = 1.8;
-      ctx.stroke();
-
-      ctx.strokeStyle = '#4a5568';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
+    ctx.strokeStyle = obstacle.isMirror ? 'rgba(255, 255, 255, 0.4)' : '#4a5568';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -1411,56 +1145,6 @@ export class GameRenderer {
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.restore();
-  }
-
-  public renderProfiler(stats: {
-    fps: number;
-    traceTime: number;
-    raysTime: number;
-    dustTime: number;
-    prismTime: number;
-    clearTime: number;
-    totalTime: number;
-    rayCount: number;
-    segmentCount: number;
-  }): void {
-    const ctx = this.ctx;
-    ctx.save();
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'right';
-
-    const x = 985;
-    let y = 22;
-
-    // FPS badge
-    ctx.fillStyle = stats.fps >= 50 ? '#4ade80' : stats.fps >= 30 ? '#facc15' : '#f87171';
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(`${stats.fps} FPS (${stats.totalTime.toFixed(1)}ms)`, x, y);
-    y += 15;
-
-    ctx.font = '10px monospace';
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
-    ctx.fillText(`Rays (${stats.rayCount}r/${stats.segmentCount}s): ${stats.raysTime.toFixed(2)}ms`, x, y);
-    y += 13;
-    ctx.fillText(`CPU Trace: ${stats.traceTime.toFixed(2)}ms`, x, y);
-    y += 13;
-    ctx.fillText(`Dust: ${stats.dustTime.toFixed(2)}ms`, x, y);
-    y += 13;
-    ctx.fillText(`Prisms: ${stats.prismTime.toFixed(2)}ms`, x, y);
-    y += 13;
-    ctx.fillText(`Clear/BG: ${stats.clearTime.toFixed(2)}ms`, x, y);
-
-    ctx.restore();
-  }
-
-  public renderFPS(fps: number): void {
-    const ctx = this.ctx;
-    ctx.save();
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.5)';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(`${fps} FPS`, 985, 24);
     ctx.restore();
   }
 }
