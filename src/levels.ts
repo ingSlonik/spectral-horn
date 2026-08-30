@@ -53,7 +53,7 @@ export const TITLE_SCENE: { emitters: Emitter[]; prisms: Prism[] } = {
 };
 
 // =========================================================================
-// 🌟 16 EXPANDED PROGRESSION LEVELS
+// 🌟 17 EXPANDED PROGRESSION LEVELS
 // Carefully calibrated with strict optics & no auto-solving on startup.
 // =========================================================================
 export const LEVELS: LevelDef[] = [
@@ -198,7 +198,59 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 4,
-    title: "4. The Celestial Mirror",
+    title: "4. Total Internal Reflection",
+    subtitle: "Critical angles: 90° periscope turns inside crystal",
+    hint: "Refraction alone cannot make this sharp 90° turn. Rotate the horn into a steep angle for internal reflection!",
+    emitter: {
+      pos: v2(90, 240),
+      angle: 0,
+      width: 7,
+      rayCount: 64,
+      minLambda: 400,
+      maxLambda: 700
+    },
+    prisms: [
+      {
+        id: 1,
+        pos: v2(240, 240),
+        rot: 0,
+        scale: 1,
+        baseIndex: 1.56,
+        dispersionB: 15000,
+        shape: "horn"
+      },
+      {
+        id: 2,
+        pos: v2(240, 750),
+        rot: 0,
+        scale: 1,
+        baseIndex: 1.56,
+        dispersionB: 15000,
+        shape: "horn"
+      }
+    ],
+    targets: [
+      {
+        id: 1,
+        pos: v2(880, 856),
+        radius: 28,
+        minLambda: 400,
+        maxLambda: 480,
+        charge: 0,
+        isSatisfied: false,
+        name: "Blue Sensor"
+      }
+    ],
+    obstacles: [
+      {
+        id: 1,
+        points: [v2(480, 50), v2(520, 50), v2(520, 650), v2(480, 650)]
+      }
+    ]
+  },
+  {
+    id: 5,
+    title: "5. The Celestial Mirror",
     subtitle: "Specular zig-zag: mirror reflection meets horn refraction",
     hint: "Bounce the beam down between the barriers with the mirror, then use your horn to bend it back up into the sensor!",
     emitter: {
@@ -250,8 +302,8 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 5,
-    title: "5. Chrome & Obsidian",
+    id: 6,
+    title: "6. Chrome & Obsidian",
     subtitle: "Bank shots in deep space: fixed mirrors meet moving horns",
     hint: "Bounce the beam off the polished chrome floor before routing it through your prism.",
     emitter: {
@@ -317,8 +369,8 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 6,
-    title: "6. Inverted Spectrum",
+    id: 7,
+    title: "7. Inverted Spectrum",
     subtitle: "Spectral reflection: flipping 3-color order with a mirror",
     hint: "The horn disperses Red on top and Blue below, but the three sensors are inverted! Bounce the rainbow off the mirror to reverse the spectrum.",
     emitter: {
@@ -389,13 +441,13 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 7,
-    title: "7. The Crystal Labyrinth",
-    subtitle: "Chamber of reflections: static mirror maze with single rainbow beam",
-    hint: "Angle your horn to send the rainbow into the floor mirror, bouncing it through the ceiling reflector into both sensors!",
+    id: 8,
+    title: "8. The Crystal Labyrinth",
+    subtitle: "Inverted N reflection: bouncing spectra across mirror blocks",
+    hint: "Direct the beam down to the floor mirror to bounce it up and back down into the green sensor, while illuminating the red sensor near the source!",
     emitter: {
       pos: v2(90, 200),
-      angle: 0,
+      angle: -0.2,
       width: 7,
       rayCount: 64,
       minLambda: 400,
@@ -405,7 +457,7 @@ export const LEVELS: LevelDef[] = [
       {
         id: 1,
         pos: v2(240, 500),
-        rot: 0,
+        rot: 0.5,
         scale: 1,
         baseIndex: 1.52,
         dispersionB: 35000,
@@ -415,53 +467,198 @@ export const LEVELS: LevelDef[] = [
     targets: [
       {
         id: 1,
-        pos: v2(880, 350),
-        radius: 25,
-        minLambda: 440,
-        maxLambda: 490,
+        pos: v2(340, 700),
+        radius: 26,
+        minLambda: 620,
+        maxLambda: 700,
         charge: 0,
         isSatisfied: false,
-        name: "Cyan Sensor"
+        name: "Red Sensor"
       },
       {
         id: 2,
-        pos: v2(880, 480),
-        radius: 25,
-        minLambda: 400,
-        maxLambda: 440,
+        pos: v2(750, 180),
+        radius: 26,
+        minLambda: 520,
+        maxLambda: 565,
         charge: 0,
         isSatisfied: false,
-        name: "Violet Sensor"
+        name: "Green Sensor"
       }
     ],
     obstacles: [
       {
         id: 1,
-        points: [v2(380, 840), v2(600, 840), v2(600, 860), v2(380, 860)],
+        // Left side mirror (entire left wall)
+        points: [v2(30, 50), v2(50, 50), v2(50, 760), v2(30, 760)],
         isMirror: true
       },
       {
         id: 2,
-        points: [v2(660, 60), v2(880, 60), v2(880, 80), v2(660, 80)],
+        // Bottom mirror (entire floor)
+        points: [v2(100, 840), v2(800, 840), v2(800, 860), v2(100, 860)],
         isMirror: true
       },
       {
         id: 3,
-        points: [v2(340, 50), v2(380, 50), v2(380, 280), v2(340, 280)]
+        // Right side mirror (entire right wall)
+        points: [v2(930, 50), v2(950, 50), v2(950, 760), v2(930, 760)],
+        isMirror: true
       },
       {
         id: 4,
-        points: [v2(540, 50), v2(580, 50), v2(580, 360), v2(540, 360)]
-      },
-      {
-        id: 5,
-        points: [v2(600, 580), v2(640, 580), v2(640, 840), v2(600, 840)]
+        // Middle vertical mirror (from ceiling down to ~3/4 height)
+        points: [v2(490, 50), v2(510, 50), v2(510, 520), v2(490, 520)],
+        isMirror: true
       }
     ]
   },
   {
-    id: 8,
-    title: "8. The Crystal Orb",
+    id: 9,
+    title: "9. Inverted Spectrum: The Dove Prism",
+    subtitle: "Image inversion: flipping spectra without angular deflection",
+    hint: "The colors are inverted inside the horizontal tunnel! A horn will deflect into the walls — only the Dove prism can flip the colors horizontally.",
+    emitter: [
+      {
+        pos: v2(90, 485),
+        angle: 0,
+        width: 4,
+        rayCount: 32,
+        minLambda: 650,
+        maxLambda: 680
+      },
+      {
+        pos: v2(90, 515),
+        angle: 0,
+        width: 4,
+        rayCount: 32,
+        minLambda: 440,
+        maxLambda: 470
+      }
+    ],
+    prisms: [
+      {
+        id: 1,
+        pos: v2(300, 750),
+        rot: 2,
+        scale: 1.6,
+        baseIndex: 1.53,
+        dispersionB: 12000,
+        shape: "dove"
+      }
+    ],
+    targets: [
+      {
+        id: 1,
+        pos: v2(880, 485),
+        radius: 20,
+        minLambda: 440,
+        maxLambda: 470,
+        charge: 0,
+        isSatisfied: false,
+        name: "Blue Sensor (Top)"
+      },
+      {
+        id: 2,
+        pos: v2(880, 515),
+        radius: 20,
+        minLambda: 650,
+        maxLambda: 680,
+        charge: 0,
+        isSatisfied: false,
+        name: "Red Sensor (Bot)"
+      }
+    ],
+    obstacles: [
+      {
+        id: 1,
+        points: [v2(480, 50), v2(880, 50), v2(880, 465), v2(480, 465)]
+      },
+      {
+        id: 2,
+        points: [v2(480, 535), v2(880, 535), v2(880, 950), v2(480, 950)]
+      }
+    ]
+  },
+  {
+    id: 10,
+    title: "10. Rainbow Inversion: Dove & Horn",
+    subtitle: "Spectral inversion: flipping the Cauchy rainbow with a Dove prism",
+    hint: "Disperse the white beam into a rainbow with your horn, then use the Dove prism to flip the color order into the sensors!",
+    emitter: {
+      pos: v2(90, 480),
+      angle: 0,
+      width: 7,
+      rayCount: 64,
+      minLambda: 400,
+      maxLambda: 700
+    },
+    prisms: [
+      {
+        id: 1,
+        pos: v2(240, 750),
+        rot: 0,
+        scale: 1,
+        baseIndex: 1.52,
+        dispersionB: 35000,
+        shape: "horn"
+      },
+      {
+        id: 2,
+        pos: v2(560, 750),
+        rot: 0,
+        scale: 1.6,
+        baseIndex: 1.53,
+        dispersionB: 8000,
+        shape: "dove"
+      }
+    ],
+    targets: [
+      {
+        id: 1,
+        pos: v2(880, 530),
+        radius: 24,
+        minLambda: 400,
+        maxLambda: 480,
+        charge: 0,
+        isSatisfied: false,
+        name: "Blue Sensor"
+      },
+      {
+        id: 2,
+        pos: v2(880, 480),
+        radius: 22,
+        minLambda: 520,
+        maxLambda: 565,
+        charge: 0,
+        isSatisfied: false,
+        name: "Green Sensor"
+      },
+      {
+        id: 3,
+        pos: v2(880, 430),
+        radius: 24,
+        minLambda: 620,
+        maxLambda: 700,
+        charge: 0,
+        isSatisfied: false,
+        name: "Red Sensor"
+      }
+    ],
+    obstacles: [
+      {
+        id: 1,
+        points: [v2(650, 50), v2(880, 50), v2(880, 390), v2(650, 390)]
+      },
+      {
+        id: 2,
+        points: [v2(650, 570), v2(880, 570), v2(880, 950), v2(650, 950)]
+      }
+    ]
+  },
+  {
+    id: 11,
+    title: "11. The Crystal Orb",
     subtitle: "Spherical refraction: focusing full rainbow through the needle’s eye",
     hint: "A broad rainbow beam cannot pass through the narrow slit. Focus it with the Crystal Orb, then bend it to the target with your horn!",
     emitter: {
@@ -497,11 +694,11 @@ export const LEVELS: LevelDef[] = [
         id: 1,
         pos: v2(880, 473),
         radius: 26,
-        minLambda: 520,
-        maxLambda: 565,
+        minLambda: 620,
+        maxLambda: 700,
         charge: 0,
         isSatisfied: false,
-        name: "Green Sensor"
+        name: "Red Sensor"
       }
     ],
     obstacles: [
@@ -520,8 +717,8 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 9,
-    title: "9. Focus & Disperse",
+    id: 12,
+    title: "12. Focus & Disperse",
     subtitle: "Harmonic pairing: spherical lens meets dispersive crystal",
     hint: "First focus the broad beam through the keyhole with the Orb, then place the Horn to split the focused beam into Green and Cyan sensors!",
     emitter: {
@@ -586,8 +783,8 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 10,
-    title: "10. Additive Alchemy: Yellow",
+    id: 13,
+    title: "13. Additive Alchemy: Yellow",
     subtitle: "RGB synthesis: Red + Green = Golden Glow",
     hint: "Single colors won't satisfy this sensor. Intersect both beams right inside its lens!",
     emitter: [
@@ -657,8 +854,8 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 11,
-    title: "11. Dual Synthesis: Cyan & Magenta",
+    id: 14,
+    title: "14. Dual Synthesis: Cyan & Magenta",
     subtitle: "Secondary harmonics: mixing Green, Blue, and Red across distance",
     hint: "Blue is in high demand! Use the Orb to expand Blue light so it combines with Red at the top and Green at the bottom.",
     emitter: [
@@ -751,8 +948,8 @@ export const LEVELS: LevelDef[] = [
     obstacles: []
   },
   {
-    id: 12,
-    title: "12. Recombining White",
+    id: 15,
+    title: "15. Recombining White",
     subtitle: "Newton's reverse trick: putting the rainbow back together",
     hint: "Individual spectral colors are too saturated. Converge the whole rainbow back into pure white light!",
     emitter: {
@@ -808,127 +1005,8 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 13,
-    title: "13. Total Internal Reflection",
-    subtitle: "Critical angles: 90° periscope turns inside crystal",
-    hint: "Refraction alone cannot make this sharp 90° turn. Rotate the horn into a steep angle for internal reflection!",
-    emitter: {
-      pos: v2(90, 240),
-      angle: 0,
-      width: 7,
-      rayCount: 64,
-      minLambda: 400,
-      maxLambda: 700
-    },
-    prisms: [
-      {
-        id: 1,
-        pos: v2(240, 240),
-        rot: 0,
-        scale: 1,
-        baseIndex: 1.56,
-        dispersionB: 15000,
-        shape: "horn"
-      },
-      {
-        id: 2,
-        pos: v2(240, 750),
-        rot: 0,
-        scale: 1,
-        baseIndex: 1.56,
-        dispersionB: 15000,
-        shape: "horn"
-      }
-    ],
-    targets: [
-      {
-        id: 1,
-        pos: v2(880, 856),
-        radius: 28,
-        minLambda: 400,
-        maxLambda: 480,
-        charge: 0,
-        isSatisfied: false,
-        name: "Blue Sensor"
-      }
-    ],
-    obstacles: [
-      {
-        id: 1,
-        points: [v2(480, 50), v2(520, 50), v2(520, 650), v2(480, 650)]
-      }
-    ]
-  },
-  {
-    id: 14,
-    title: "14. Inverted Spectrum: The Dove Prism",
-    subtitle: "Image inversion: flipping spectra without angular deflection",
-    hint: "The colors are inverted inside the horizontal tunnel! A horn will deflect into the walls — only the Dove prism can flip the colors horizontally.",
-    emitter: [
-      {
-        pos: v2(90, 485),
-        angle: 0,
-        width: 4,
-        rayCount: 32,
-        minLambda: 650,
-        maxLambda: 680
-      },
-      {
-        pos: v2(90, 515),
-        angle: 0,
-        width: 4,
-        rayCount: 32,
-        minLambda: 440,
-        maxLambda: 470
-      }
-    ],
-    prisms: [
-      {
-        id: 1,
-        pos: v2(300, 750),
-        rot: 2,
-        scale: 1.6,
-        baseIndex: 1.53,
-        dispersionB: 12000,
-        shape: "dove"
-      }
-    ],
-    targets: [
-      {
-        id: 1,
-        pos: v2(880, 485),
-        radius: 20,
-        minLambda: 440,
-        maxLambda: 470,
-        charge: 0,
-        isSatisfied: false,
-        name: "Blue Sensor (Top)"
-      },
-      {
-        id: 2,
-        pos: v2(880, 515),
-        radius: 20,
-        minLambda: 650,
-        maxLambda: 680,
-        charge: 0,
-        isSatisfied: false,
-        name: "Red Sensor (Bot)"
-      }
-    ],
-    obstacles: [
-      {
-        id: 1,
-        points: [v2(480, 50), v2(880, 50), v2(880, 465), v2(480, 465)]
-      },
-      {
-        id: 2,
-        points: [v2(480, 535), v2(880, 535), v2(880, 950), v2(480, 950)]
-      }
-    ]
-  },
-  {
-    id: 15,
-    title: "15. The Prismatic Web",
+    id: 16,
+    title: "16. The Prismatic Web",
     subtitle: "Geometric synthesis: Horn, Mirror, and Orb in full harmony",
     hint: "Bend the beam upward with the Horn, bounce it off the Mirror, and focus the spectrum into the sensors with your Orb!",
     emitter: {
@@ -998,10 +1076,10 @@ export const LEVELS: LevelDef[] = [
     ]
   },
   {
-    id: 16,
-    title: "16. The Grand Optical Symphony",
+    id: 17,
+    title: "17. The Grand Optical Symphony",
     subtitle: "Master of photons: the ultimate celestial harmony",
-    hint: "Your entire optical toolkit is unlocked. Orchestrate all four artifacts to illuminate every sensor!",
+    hint: "Your entire optical toolkit is unlocked. Orchestrate all four artifacts (Horn, Mirror, Orb, Dove) to illuminate every sensor!",
     emitter: [
       {
         pos: v2(90, 240),
@@ -1064,6 +1142,15 @@ export const LEVELS: LevelDef[] = [
         baseIndex: 1,
         dispersionB: 0,
         shape: "mirror"
+      },
+      {
+        id: 5,
+        pos: v2(460, 500),
+        rot: 0,
+        scale: 1.4,
+        baseIndex: 1.53,
+        dispersionB: 8000,
+        shape: "dove"
       }
     ],
     targets: [
