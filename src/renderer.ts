@@ -59,6 +59,7 @@ export class GameRenderer {
   private dust: DustParticle[] = [];
   private rayCanvas: HTMLCanvasElement;
   private rayCtx: CanvasRenderingContext2D;
+  private bgCanvas: HTMLCanvasElement | null = null;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -66,7 +67,55 @@ export class GameRenderer {
     this.rayCanvas.width = 1000;
     this.rayCanvas.height = 1000;
     this.rayCtx = this.rayCanvas.getContext('2d')!;
+    this.initBackground();
     this.initDust();
+  }
+
+  /**
+   * Pre-renders the textured cosmic radial gradient and wall projection grain
+   * onto an offscreen canvas ONCE at startup for 0.01ms hardware GPU blitting.
+   */
+  private initBackground(): void {
+    if (typeof document === 'undefined') return;
+    try {
+      this.bgCanvas = document.createElement('canvas');
+      this.bgCanvas.width = 1000;
+      this.bgCanvas.height = 1000;
+      const bctx = this.bgCanvas.getContext('2d');
+      if (!bctx) return;
+
+      // 1. Deep cosmic radial gradient
+      const bgGrad = bctx.createRadialGradient(500, 500, 40, 500, 500, 720);
+      bgGrad.addColorStop(0, '#0e1635');
+      bgGrad.addColorStop(0.5, '#070a1a');
+      bgGrad.addColorStop(1, '#020309');
+      bctx.fillStyle = bgGrad;
+      bctx.fillRect(0, 0, 1000, 1000);
+
+      // 2. Fine textured noise / wall projection grain
+      const noiseCanvas = document.createElement('canvas');
+      noiseCanvas.width = 128;
+      noiseCanvas.height = 128;
+      const nctx = noiseCanvas.getContext('2d');
+      if (nctx) {
+        const imgData = nctx.createImageData(128, 128);
+        const buf = imgData.data;
+        for (let i = 0; i < buf.length; i += 4) {
+          const v = Math.floor(Math.random() * 255);
+          buf[i] = v;
+          buf[i + 1] = v;
+          buf[i + 2] = v;
+          buf[i + 3] = Math.floor(Math.random() * 16 + 6); // Subtle 6-22 alpha grain
+        }
+        nctx.putImageData(imgData, 0, 0);
+
+        const pattern = bctx.createPattern(noiseCanvas, 'repeat');
+        if (pattern) {
+          bctx.fillStyle = pattern;
+          bctx.fillRect(0, 0, 1000, 1000);
+        }
+      }
+    } catch {}
   }
 
   private initDust(count: number = 45): void {
@@ -119,81 +168,70 @@ export class GameRenderer {
   public clear(x: number = 0, y: number = 0, width: number = 1000, height: number = 1000): void {
     const ctx = this.ctx;
 
-    // 1. Deep cosmic space background (instant single-fill, 0.01ms on all browsers)
-    ctx.fillStyle = '#060814';
+    // 1. Fill extended screen edges with base dark cosmic color
+    ctx.fillStyle = '#020309';
     ctx.fillRect(x, y, width, height);
 
-    // 2. Ultra-subtle ethereal coordinate grid
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.015)';
-    ctx.lineWidth = 1;
-    const step = 50;
-    const startX = Math.floor(x / step) * step;
-    const startY = Math.floor(y / step) * step;
-    const endX = x + width;
-    const endY = y + height;
-
-    for (let gx = startX; gx <= endX; gx += step) {
-      ctx.beginPath();
-      ctx.moveTo(gx, y);
-      ctx.lineTo(gx, endY);
-      ctx.stroke();
+    // 2. Blit pre-rendered cosmic radial gradient + grain onto active 1000x1000 viewport (0.01ms GPU hardware blit!)
+    if (this.bgCanvas) {
+      ctx.drawImage(this.bgCanvas, 0, 0);
     }
-    for (let gy = startY; gy <= endY; gy += step) {
-      ctx.beginPath();
-      ctx.moveTo(x, gy);
-      ctx.lineTo(endX, gy);
-      ctx.stroke();
-    }
-    ctx.restore();
   }
 
   public renderSquareBounds(size: number = 1000): void {
     const ctx = this.ctx;
     ctx.save();
 
-    const pad = 10;
+    const pad = 12;
     const innerSize = size - pad * 2;
     const radius = 24;
 
     // 1. Soft ambient glow aura around play area
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
+    ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.roundRect(pad, pad, innerSize, innerSize, radius);
     ctx.stroke();
 
     // 2. Elegant celestial boundary frame
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.roundRect(pad, pad, innerSize, innerSize, radius);
     ctx.stroke();
 
-    // 3. Delicate celestial corner markings (subtle ✦ stars, no harsh yellow brackets)
+    // 3. Crisp optical reticle crosshairs (+) in the 4 corners
+    const margin = 28;
+    const arm = 7;
     const corners = [
-      { x: pad + 24, y: pad + 24 },
-      { x: size - pad - 24, y: pad + 24 },
-      { x: size - pad - 24, y: size - pad - 24 },
-      { x: pad + 24, y: size - pad - 24 },
+      { x: margin, y: margin },
+      { x: size - margin, y: margin },
+      { x: size - margin, y: size - margin },
+      { x: margin, y: size - margin },
     ];
 
-    ctx.fillStyle = 'rgba(255, 215, 0, 0.35)';
-    ctx.strokeStyle = 'rgba(255, 215, 0, 0.25)';
-    ctx.lineWidth = 1.0;
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.55)';
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = 'butt';
 
     for (const pt of corners) {
-      // 4-point micro star
+      // Horizontal bar
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(pt.x - 6, pt.y);
-      ctx.lineTo(pt.x + 6, pt.y);
-      ctx.moveTo(pt.x, pt.y - 6);
-      ctx.lineTo(pt.x + 6, pt.y);
+      ctx.moveTo(pt.x - arm, pt.y);
+      ctx.lineTo(pt.x + arm, pt.y);
       ctx.stroke();
+
+      // Vertical bar
+      ctx.beginPath();
+      ctx.moveTo(pt.x, pt.y - arm);
+      ctx.lineTo(pt.x, pt.y + arm);
+      ctx.stroke();
+
+      // Central micro-pinpoint
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 1.2, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     ctx.restore();
@@ -399,7 +437,8 @@ export class GameRenderer {
     s: number,
     isHovered: boolean,
     isDragged: boolean,
-    time: number
+    time: number,
+    rot: number = 0
   ): void {
     const ctx = this.ctx;
     ctx.save();
@@ -431,11 +470,28 @@ export class GameRenderer {
     ctx.stroke();
 
     // 3. Four Slowly Paddling / Fluttering Stubby Little Legs (Floating in cosmic space)
+    // When upside down (rot ~ PI), the unicorn splays / spreads its legs apart cute starfish style!
+    const upsideDownRaw = Math.max(0, -Math.cos(rot));
+    const upsideDown = upsideDownRaw * upsideDownRaw * (3 - 2 * upsideDownRaw); // smoothstep blend
+
     const swimSpeed = 0.0035;
-    const legSwingFrontL = Math.sin(time * swimSpeed) * 0.35;
-    const legSwingFrontR = Math.sin(time * swimSpeed + Math.PI) * 0.35;
-    const legSwingBackL = Math.sin(time * swimSpeed + 1.2) * 0.35;
-    const legSwingBackR = Math.sin(time * swimSpeed + Math.PI + 1.2) * 0.35;
+    const flutterSpeed = 0.007;
+
+    const idleSwingFrontL = Math.sin(time * swimSpeed) * 0.35;
+    const idleSwingFrontR = Math.sin(time * swimSpeed + Math.PI) * 0.35;
+    const idleSwingBackL = Math.sin(time * swimSpeed + 1.2) * 0.35;
+    const idleSwingBackR = Math.sin(time * swimSpeed + Math.PI + 1.2) * 0.35;
+
+    const upsideFlutterFrontL = Math.sin(time * flutterSpeed) * 0.15;
+    const upsideFlutterFrontR = Math.sin(time * flutterSpeed + Math.PI) * 0.15;
+    const upsideFlutterBackL = Math.sin(time * flutterSpeed + 1.2) * 0.15;
+    const upsideFlutterBackR = Math.sin(time * flutterSpeed + Math.PI + 1.2) * 0.15;
+
+    // Front legs angle outward/forward (positive in canvas), back legs angle outward/backward (negative in canvas) when upside down
+    const legAngleFrontL = (1 - upsideDown) * idleSwingFrontL + 0.95 * upsideDown + upsideDown * upsideFlutterFrontL;
+    const legAngleFrontR = (1 - upsideDown) * idleSwingFrontR + 0.75 * upsideDown + upsideDown * upsideFlutterFrontR;
+    const legAngleBackL = (1 - upsideDown) * idleSwingBackL - 0.95 * upsideDown + upsideDown * upsideFlutterBackL;
+    const legAngleBackR = (1 - upsideDown) * idleSwingBackR - 0.75 * upsideDown + upsideDown * upsideFlutterBackR;
 
     const drawLittleLeg = (pivotX: number, pivotY: number, swing: number, isFar: boolean) => {
       ctx.save();
@@ -467,9 +523,9 @@ export class GameRenderer {
       ctx.restore();
     };
 
-    // Draw Far legs (behind body)
-    drawLittleLeg(16 * s, 102 * s, legSwingFrontR, true);
-    drawLittleLeg(36 * s, 98 * s, legSwingBackR, true);
+    // Draw Far legs (behind body) - with pivots splaying slightly outward when upside down
+    drawLittleLeg((16 - 3 * upsideDown) * s, (102 - 3 * upsideDown) * s, legAngleFrontR, true);
+    drawLittleLeg((36 + 5 * upsideDown) * s, (98 - 3 * upsideDown) * s, legAngleBackR, true);
 
     // 4. Flowing Multi-Layered Twilight Mane (Layered waves behind neck)
     const maneSway1 = Math.sin(time * 0.003 + 0.4) * 4.5 * s;
@@ -534,9 +590,9 @@ export class GameRenderer {
     ctx.lineWidth = isDragged ? 2.0 : 1.5;
     ctx.stroke();
 
-    // Draw Near legs (in front of body)
-    drawLittleLeg(4 * s, 106 * s, legSwingFrontL, false);
-    drawLittleLeg(26 * s, 104 * s, legSwingBackL, false);
+    // Draw Near legs (in front of body) - with pivots splaying slightly outward when upside down
+    drawLittleLeg((4 - 4 * upsideDown) * s, (106 - 3 * upsideDown) * s, legAngleFrontL, false);
+    drawLittleLeg((26 + 4 * upsideDown) * s, (104 - 3 * upsideDown) * s, legAngleBackL, false);
 
     // 6. Cute Soft Pink Cheek Blush
     const blushX = -18 * s;
@@ -713,10 +769,10 @@ export class GameRenderer {
     prism: Prism,
     isHovered: boolean,
     isDragged: boolean,
-    hoverHandle: 'body' | 'rot' | null,
+    hoverHandle: 'body' | 'rot' | 'step-ccw' | 'step-cw' | null,
     time: number,
     isSelected: boolean = false,
-    dragMode: 'move' | 'rotate' | null = null
+    dragMode: 'move' | 'rotate' | 'step-ccw' | 'step-cw' | null = null
   ): void {
     const ctx = this.ctx;
     const s = prism.scale || 1;
@@ -731,7 +787,7 @@ export class GameRenderer {
 
     // 1.1 Render Kawaii Vector Pony beneath the Horn ONLY if shape is 'horn'
     if (prism.shape === 'horn') {
-      this.renderPonyHead(s, isHovered || isSelected, isDragged, time);
+      this.renderPonyHead(s, isHovered || isSelected, isDragged, time, prism.rot);
     }
 
     const rimStroke = isDragged
@@ -879,28 +935,117 @@ export class GameRenderer {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Orbital Grip Beads (at top, left, right)
-      const beadPositions = [
-        { x: 0, y: -ringRadius },
-        { x: ringRadius, y: 0 },
-        { x: -ringRadius, y: 0 },
-      ];
+      // Top Orbital Knob for coarse drag rotation
+      const topBeadR = isRotActive ? 6.5 * s : 5.2 * s;
+      ctx.fillStyle = isRotActive ? '#ffd700' : '#38bdf8';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, -ringRadius, topBeadR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
 
-      for (let i = 0; i < beadPositions.length; i++) {
-        const bp = beadPositions[i];
-        const beadR = isRotActive ? (i === 0 ? 6.5 * s : 4.5 * s) : (i === 0 ? 5.5 * s : 3.8 * s);
+      // 2.1.1 Fine Rotation Buttons at Left (-ringRadius, 0) and Right (+ringRadius, 0)
+      const drawStepBtn = (
+        bx: number,
+        by: number,
+        isCCW: boolean,
+        isBtnHovered: boolean,
+        isBtnActive: boolean
+      ) => {
+        ctx.save();
+        const btnR = (isBtnHovered || isBtnActive ? 15.0 : 13.5) * s;
 
-        ctx.fillStyle = isRotActive
+        // Button background
+        ctx.fillStyle = isBtnActive
+          ? 'rgba(255, 215, 0, 0.35)'
+          : isBtnHovered
+          ? 'rgba(56, 189, 248, 0.32)'
+          : 'rgba(10, 18, 42, 0.90)';
+        ctx.strokeStyle = isBtnActive
           ? '#ffd700'
-          : (i === 0 ? '#38bdf8' : 'rgba(56, 189, 248, 0.7)');
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.2;
+          : isBtnHovered
+          ? '#ffffff'
+          : 'rgba(56, 189, 248, 0.85)';
+        ctx.lineWidth = isBtnActive ? 2.2 : 1.5;
 
+        // Button circle
         ctx.beginPath();
-        ctx.arc(bp.x, bp.y, beadR, 0, Math.PI * 2);
+        ctx.arc(bx, by, btnR, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-      }
+
+        // Button Outer Glow Ring if hovered/active
+        if (isBtnHovered || isBtnActive) {
+          ctx.strokeStyle = isBtnActive
+            ? 'rgba(255, 215, 0, 0.6)'
+            : 'rgba(56, 189, 248, 0.5)';
+          ctx.lineWidth = 2.4;
+          ctx.beginPath();
+          ctx.arc(bx, by, btnR + 2.5 * s, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Draw curved arc arrow
+        const iconColor = isBtnActive
+          ? '#ffd700'
+          : isBtnHovered
+          ? '#ffffff'
+          : '#38bdf8';
+        ctx.strokeStyle = iconColor;
+        ctx.fillStyle = iconColor;
+        ctx.lineWidth = 1.6 * s;
+        ctx.lineCap = 'round';
+
+        const arcR = 7.0 * s;
+        ctx.beginPath();
+        if (isCCW) {
+          // Counter-Clockwise arc
+          ctx.arc(bx, by, arcR, Math.PI * 0.25, Math.PI * 1.55, false);
+          ctx.stroke();
+
+          // Arrowhead
+          const ax = bx + Math.cos(Math.PI * 1.55) * arcR;
+          const ay = by + Math.sin(Math.PI * 1.55) * arcR;
+          ctx.beginPath();
+          ctx.moveTo(ax - 3.5 * s, ay + 1.0 * s);
+          ctx.lineTo(ax + 1.0 * s, ay - 3.5 * s);
+          ctx.lineTo(ax + 2.0 * s, ay + 2.5 * s);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // Clockwise arc
+          ctx.arc(bx, by, arcR, Math.PI * 0.75, Math.PI * 2.45, false);
+          ctx.stroke();
+
+          // Arrowhead
+          const ax = bx + Math.cos(Math.PI * 2.45) * arcR;
+          const ay = by + Math.sin(Math.PI * 2.45) * arcR;
+          ctx.beginPath();
+          ctx.moveTo(ax + 3.5 * s, ay + 1.0 * s);
+          ctx.lineTo(ax - 1.0 * s, ay - 3.5 * s);
+          ctx.lineTo(ax - 2.0 * s, ay + 2.5 * s);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Text label 1°
+        ctx.font = `bold ${7.5 * s}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = iconColor;
+        ctx.fillText(isCCW ? '-1°' : '+1°', bx, by + 1.0 * s);
+
+        ctx.restore();
+      };
+
+      const isCCWHover = hoverHandle === 'step-ccw';
+      const isCCWActive = isDragged && dragMode === 'step-ccw';
+      drawStepBtn(-ringRadius, 0, true, isCCWHover, isCCWActive);
+
+      const isCWHover = hoverHandle === 'step-cw';
+      const isCWActive = isDragged && dragMode === 'step-cw';
+      drawStepBtn(ringRadius, 0, false, isCWHover, isCWActive);
 
       ctx.restore();
 
