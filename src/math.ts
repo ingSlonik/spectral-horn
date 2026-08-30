@@ -93,48 +93,26 @@ export function refractRay(
   isEntering: boolean
 ): { dir: Vec2; isTIR: boolean } {
   const v = vNorm(rayDir);
-  const eta = n1 / n2;
+  const n = isEntering ? nOut : vScale(nOut, -1);
+  const c1 = -vDot(v, n);
+  if (c1 <= 0) return { dir: v, isTIR: false };
 
-  if (isEntering) {
-    const c1 = -vDot(v, nOut);
-    if (c1 <= 0) return { dir: v, isTIR: false };
-    const sin2_theta2 = eta * eta * (1 - c1 * c1);
-    if (sin2_theta2 > 1.0) {
-      return { dir: vNorm(vAdd(v, vScale(nOut, 2 * c1))), isTIR: true };
-    }
-    const c2 = Math.sqrt(Math.max(0, 1 - sin2_theta2));
-    return { dir: vNorm(vAdd(vScale(v, eta), vScale(nOut, eta * c1 - c2))), isTIR: false };
-  } else {
-    const nIn = vScale(nOut, -1);
-    const c1 = -vDot(v, nIn);
-    if (c1 <= 0) return { dir: v, isTIR: false };
-    const sin2_theta2 = eta * eta * (1 - c1 * c1);
-    if (sin2_theta2 > 1.0) {
-      return { dir: vNorm(vSub(v, vScale(nOut, 2 * vDot(v, nOut)))), isTIR: true };
-    }
-    const c2 = Math.sqrt(Math.max(0, 1 - sin2_theta2));
-    return { dir: vNorm(vAdd(vScale(v, eta), vScale(nIn, eta * c1 - c2))), isTIR: false };
+  const eta = n1 / n2;
+  const sin2_theta2 = eta * eta * (1 - c1 * c1);
+  if (sin2_theta2 > 1.0) {
+    return { dir: vNorm(vAdd(v, vScale(n, 2 * c1))), isTIR: true };
   }
+  const c2 = Math.sqrt(Math.max(0, 1 - sin2_theta2));
+  return { dir: vNorm(vAdd(vScale(v, eta), vScale(n, eta * c1 - c2))), isTIR: false };
 }
 
 export function getPrismVertices(prism: Prism): Vec2[] {
+  const s = prism.scale || 1, sh = prism.shape;
   let pts: Vec2[];
-  const s = prism.scale || 1;
-  if (prism.shape === 'horn') {
-    pts = [{ x: 0, y: -38 * s }, { x: 22 * s, y: 22 * s }, { x: -22 * s, y: 22 * s }];
-  } else if (prism.shape === 'mirror') {
-    pts = [{ x: -36 * s, y: -6 * s }, { x: 36 * s, y: -6 * s }, { x: 36 * s, y: 6 * s }, { x: -36 * s, y: 6 * s }];
-  } else if (prism.shape === 'dove') {
-    pts = [{ x: -30 * s, y: -16 * s }, { x: 30 * s, y: -16 * s }, { x: 62 * s, y: 16 * s }, { x: -62 * s, y: 16 * s }];
-  } else if (prism.shape === 'orb') {
-    pts = [];
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2;
-      pts.push({ x: Math.cos(a) * 30 * s, y: Math.sin(a) * 30 * s });
-    }
-  } else {
-    pts = [{ x: 0, y: -38 * s }, { x: 22 * s, y: 22 * s }, { x: -22 * s, y: 22 * s }];
-  }
+  if (sh === 'mirror') pts = [{ x: -36 * s, y: -6 * s }, { x: 36 * s, y: -6 * s }, { x: 36 * s, y: 6 * s }, { x: -36 * s, y: 6 * s }];
+  else if (sh === 'dove') pts = [{ x: -30 * s, y: -16 * s }, { x: 30 * s, y: -16 * s }, { x: 62 * s, y: 16 * s }, { x: -62 * s, y: 16 * s }];
+  else if (sh === 'orb') pts = Array.from({ length: 16 }, (_, i) => ({ x: Math.cos((i / 8) * Math.PI) * 30 * s, y: Math.sin((i / 8) * Math.PI) * 30 * s }));
+  else pts = [{ x: 0, y: -38 * s }, { x: 22 * s, y: 22 * s }, { x: -22 * s, y: 22 * s }];
   return pts.map((p) => vAdd(vRotate(p, prism.rot), prism.pos));
 }
 

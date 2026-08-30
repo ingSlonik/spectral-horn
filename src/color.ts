@@ -20,11 +20,6 @@ export function wavelengthToRGB(wl: number): [number, number, number] {
   return [adj(r), adj(g), adj(b)];
 }
 
-export function wavelengthToRGBA(wavelength: number, alpha = 0.08): string {
-  const [r, g, b] = wavelengthToRGB(wavelength);
-  return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
-}
-
 export function wavelengthToHex(wavelength: number): string {
   const [r, g, b] = wavelengthToRGB(wavelength);
   return rgbToHex(r, g, b);

@@ -102,13 +102,14 @@ export function traceScene(
     ? boundsOrWidth
     : { minX: 0, minY: 0, maxX: boundsOrWidth, maxY: height };
 
-  const boundsEdges = [
-    { p1: v2(b.minX, b.minY), p2: v2(b.maxX, b.minY), nOut: v2(0, 1) },
-    { p1: v2(b.maxX, b.minY), p2: v2(b.maxX, b.maxY), nOut: v2(-1, 0) },
-    { p1: v2(b.maxX, b.maxY), p2: v2(b.minX, b.maxY), nOut: v2(0, -1) },
-    { p1: v2(b.minX, b.maxY), p2: v2(b.minX, b.minY), nOut: v2(1, 0) },
-  ];
-  sceneEdges.push(...boundsEdges);
+  sceneEdges.push(
+    ...[
+      [b.minX, b.minY, b.maxX, b.minY, 0, 1],
+      [b.maxX, b.minY, b.maxX, b.maxY, -1, 0],
+      [b.maxX, b.maxY, b.minX, b.maxY, 0, -1],
+      [b.minX, b.maxY, b.minX, b.minY, 1, 0],
+    ].map(([x1, y1, x2, y2, nx, ny]) => ({ p1: v2(x1, y1), p2: v2(x2, y2), nOut: v2(nx, ny) }))
+  );
 
   for (const emitter of emitters) {
     const count = emitter.rayCount || 48;
@@ -189,33 +190,23 @@ export function traceScene(
           }
         }
 
-        if (hitObs) {
-          if (hitObs.isMirror && hitNormal) {
-            const refl = vSub(ray.dir, vScale(hitNormal, 2 * vDot(ray.dir, hitNormal)));
-            ray.dir = vNorm(refl);
-            ray.origin = vAdd(hitPos, vScale(ray.dir, EPS));
-            ray.bounceCount++;
-          } else {
-            break;
-          }
+        const isMirrorHit = (hitObs && hitObs.isMirror) || (hitPrism && hitPrism.shape === 'mirror');
+        if (isMirrorHit && hitNormal) {
+          const refl = vSub(ray.dir, vScale(hitNormal, 2 * vDot(ray.dir, hitNormal)));
+          ray.dir = vNorm(refl);
+          ray.origin = vAdd(hitPos, vScale(ray.dir, EPS));
+          ray.bounceCount++;
         } else if (hitPrism && hitNormal) {
-          if (hitPrism.shape === 'mirror') {
-            const refl = vSub(ray.dir, vScale(hitNormal, 2 * vDot(ray.dir, hitNormal)));
-            ray.dir = vNorm(refl);
-            ray.origin = vAdd(hitPos, vScale(ray.dir, EPS));
-            ray.bounceCount++;
-          } else {
-            const prismN = getRefractiveIndex(hitPrism.baseIndex, hitPrism.dispersionB, wavelength);
-            const inside = ray.insidePrismId === hitPrism.id;
-            const res = refractRay(ray.dir, hitNormal, inside ? prismN : 1.0, inside ? 1.0 : prismN, !inside);
-            ray.dir = res.dir;
-            ray.origin = vAdd(hitPos, vScale(res.dir, EPS));
-            if (!res.isTIR) {
-              ray.insidePrismId = inside ? null : hitPrism.id;
-              ray.mediumIndex = inside ? 1.0 : prismN;
-            }
-            ray.bounceCount++;
+          const prismN = getRefractiveIndex(hitPrism.baseIndex, hitPrism.dispersionB, wavelength);
+          const inside = ray.insidePrismId === hitPrism.id;
+          const res = refractRay(ray.dir, hitNormal, inside ? prismN : 1.0, inside ? 1.0 : prismN, !inside);
+          ray.dir = res.dir;
+          ray.origin = vAdd(hitPos, vScale(res.dir, EPS));
+          if (!res.isTIR) {
+            ray.insidePrismId = inside ? null : hitPrism.id;
+            ray.mediumIndex = inside ? 1.0 : prismN;
           }
+          ray.bounceCount++;
         } else {
           break;
         }
