@@ -403,7 +403,7 @@ body:not(.is-title) #title-screen {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: min(90vw, 460px);
+  max-width: min(92vw, 560px);
 }
 
 .modal-box-large {
@@ -414,7 +414,7 @@ body:not(.is-title) #title-screen {
 }
 
 .modal-title {
-  font-size: 1.8rem;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
   font-weight: 900;
   letter-spacing: 1.5px;
   background: linear-gradient(135deg, #ffd700, #fff275, #38bdf8);
