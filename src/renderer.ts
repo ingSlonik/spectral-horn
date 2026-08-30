@@ -843,10 +843,10 @@ export class GameRenderer {
         ctx.lineTo(22 * s, 22 * s);
         ctx.lineTo(-22 * s, 22 * s);
       } else if (prism.shape === 'dove') {
-        ctx.moveTo(-20 * s, -24 * s);
-        ctx.lineTo(20 * s, -24 * s);
-        ctx.lineTo(44 * s, 24 * s);
-        ctx.lineTo(-44 * s, 24 * s);
+        ctx.moveTo(-30 * s, -16 * s);
+        ctx.lineTo(30 * s, -16 * s);
+        ctx.lineTo(62 * s, 16 * s);
+        ctx.lineTo(-62 * s, 16 * s);
       } else {
         // orb
         ctx.arc(0, 0, 30 * s, 0, Math.PI * 2);
@@ -872,9 +872,9 @@ export class GameRenderer {
         }
       } else if (prism.shape === 'dove') {
         ctx.beginPath();
-        ctx.moveTo(-20 * s, -24 * s);
-        ctx.lineTo(0, 24 * s);
-        ctx.lineTo(20 * s, -24 * s);
+        ctx.moveTo(-30 * s, -16 * s);
+        ctx.lineTo(0, 16 * s);
+        ctx.lineTo(30 * s, -16 * s);
         ctx.stroke();
       } else if (prism.shape === 'orb') {
         const starPulse = 3.5 * s + Math.sin(time * 0.005) * 1.5 * s;
