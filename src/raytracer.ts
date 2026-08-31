@@ -24,6 +24,8 @@ import {
 } from './math';
 import { getRefractiveIndex, wavelengthToRGB, checkColorMatch } from './color';
 
+const { sin, cos, min, max, hypot, abs, round } = Math;
+
 export interface TargetHitStats {
   valid: number;
   total: number;
@@ -102,14 +104,13 @@ export function traceScene(
     ? boundsOrWidth
     : { minX: 0, minY: 0, maxX: boundsOrWidth, maxY: height };
 
-  sceneEdges.push(
-    ...[
-      [b.minX, b.minY, b.maxX, b.minY, 0, 1],
-      [b.maxX, b.minY, b.maxX, b.maxY, -1, 0],
-      [b.maxX, b.maxY, b.minX, b.maxY, 0, -1],
-      [b.minX, b.maxY, b.minX, b.minY, 1, 0],
-    ].map(([x1, y1, x2, y2, nx, ny]) => ({ p1: v2(x1, y1), p2: v2(x2, y2), nOut: v2(nx, ny) }))
-  );
+  const { minX, minY, maxX, maxY } = b;
+  for (const [x1, y1, x2, y2, nx, ny] of [
+    [minX, minY, maxX, minY, 0, 1],
+    [maxX, minY, maxX, maxY, -1, 0],
+    [maxX, maxY, minX, maxY, 0, -1],
+    [minX, maxY, minX, minY, 1, 0],
+  ]) sceneEdges.push({ p1: v2(x1, y1), p2: v2(x2, y2), nOut: v2(nx, ny) });
 
   for (const emitter of emitters) {
     const count = emitter.rayCount || 48;
@@ -117,34 +118,30 @@ export function traceScene(
     const maxL = emitter.maxLambda || 700;
     const width = emitter.width || 6;
 
-    const baseDir = v2(Math.cos(emitter.angle), Math.sin(emitter.angle));
+    const baseDir = v2(cos(emitter.angle), sin(emitter.angle));
     const perpDir = v2(-baseDir.y, baseDir.x);
 
     for (let i = 0; i < count; i++) {
+      // CONTINUOUS SPECTRAL SAMPLING:
+      // Linearly maps emitter width to discrete photon streams sampled across [minLambda, maxLambda]
       const tParam = count > 1 ? i / (count - 1) : 0.5;
       const wavelength = minL + tParam * (maxL - minL);
-      const origin = vAdd(emitter.pos, vScale(perpDir, (tParam - 0.5) * width));
-      const rayPoints: Vec2[] = [origin];
+      let rOrigin = vAdd(emitter.pos, vScale(perpDir, (tParam - 0.5) * width));
+      let rDir = baseDir;
+      let insideId: number | null = null;
+      let bounces = 0;
+      const rayPoints: Vec2[] = [rOrigin];
 
-      const ray: Ray = {
-        origin,
-        dir: baseDir,
-        wavelength,
-        intensity: 1.0,
-        mediumIndex: 1.0,
-        insidePrismId: null,
-        bounceCount: 0,
-      };
-
-      while (ray.bounceCount < MAX_BOUNCES) {
+      while (bounces < MAX_BOUNCES) {
         let minDist = Infinity;
         let hitPos: Vec2 | null = null;
         let hitPrism: Prism | null = null;
         let hitNormal: Vec2 | null = null;
         let hitObs: Obstacle | null = null;
 
+        // 1. CURVED OPTICS: Analytical ray-circle intersection for Orb prisms
         for (const o of orbs) {
-          const hit = rayCircleIntersection(ray.origin, ray.dir, o.prism.pos, o.r, ray.insidePrismId === o.prism.id);
+          const hit = rayCircleIntersection(rOrigin, rDir, o.prism.pos, o.r, insideId === o.prism.id);
           if (hit && hit.t < minDist) {
             minDist = hit.t;
             hitPos = hit.hitPoint;
@@ -154,95 +151,91 @@ export function traceScene(
           }
         }
 
+        // 2. POLYGONAL OPTICS: Ray-segment intersection against prism facets, obsidian & mirrors
         for (const edge of sceneEdges) {
-          const hit = raySegmentIntersection(ray.origin, ray.dir, edge.p1, edge.p2);
+          const hit = raySegmentIntersection(rOrigin, rDir, edge.p1, edge.p2);
           if (hit && hit.t < minDist) {
             minDist = hit.t;
-            hitPos = { x: ray.origin.x + ray.dir.x * hit.t, y: ray.origin.y + ray.dir.y * hit.t };
+            hitPos = v2(rOrigin.x + rDir.x * hit.t, rOrigin.y + rDir.y * hit.t);
             hitPrism = edge.prism || null;
             hitNormal = edge.nOut;
             hitObs = edge.obstacle || null;
           }
         }
 
+        // Ray escaped into infinity
         if (!hitPos) {
-          const far = vAdd(ray.origin, vScale(ray.dir, 2000));
-          segments.push({ p1: ray.origin, p2: far, wavelength, intensity: ray.intensity });
+          const far = vAdd(rOrigin, vScale(rDir, 2000));
+          segments.push({ p1: rOrigin, p2: far, wavelength, intensity: 1 });
           rayPoints.push(far);
           break;
         }
 
-        const segStart = ray.origin;
+        const segStart = rOrigin;
         const segEnd = hitPos;
-        segments.push({ p1: segStart, p2: segEnd, wavelength, intensity: ray.intensity });
+        segments.push({ p1: segStart, p2: segEnd, wavelength, intensity: 1 });
         rayPoints.push(segEnd);
 
+        // 3. SENSOR DETECTION: Integrate photon flux crossing the sensor photodiode aperture
         for (const target of targets) {
           if (distToSegment(target.pos, segStart, segEnd) <= target.radius * 0.374) {
             const st = targetStats.get(target.id)!;
             st.total++;
             st.sumWl += wavelength;
             const [cr, cg, cb] = wavelengthToRGB(wavelength);
-            st.r += cr * ray.intensity;
-            st.g += cg * ray.intensity;
-            st.b += cb * ray.intensity;
+            st.r += cr;
+            st.g += cg;
+            st.b += cb;
             if (wavelength >= target.minLambda && wavelength <= target.maxLambda) st.valid++;
           }
         }
 
+        // 4. LAW OF SPECULAR REFLECTION: r_refl = d - 2 * (d · n) * n
         const isMirrorHit = (hitObs && hitObs.isMirror) || (hitPrism && hitPrism.shape === 'mirror');
         if (isMirrorHit && hitNormal) {
-          const refl = vSub(ray.dir, vScale(hitNormal, 2 * vDot(ray.dir, hitNormal)));
-          ray.dir = vNorm(refl);
-          ray.origin = vAdd(hitPos, vScale(ray.dir, EPS));
-          ray.bounceCount++;
+          const refl = vSub(rDir, vScale(hitNormal, 2 * vDot(rDir, hitNormal)));
+          rDir = vNorm(refl);
+          rOrigin = vAdd(hitPos, vScale(rDir, EPS));
+          bounces++;
         } else if (hitPrism && hitNormal) {
+          // 5. SNELL'S LAW & CHROMATIC DISPERSION:
+          // Wavelength-specific refractive index n(λ) produces wavelength-dependent deflection angles.
           const prismN = getRefractiveIndex(hitPrism.baseIndex, hitPrism.dispersionB, wavelength);
-          const inside = ray.insidePrismId === hitPrism.id;
-          const res = refractRay(ray.dir, hitNormal, inside ? prismN : 1.0, inside ? 1.0 : prismN, !inside);
-          ray.dir = res.dir;
-          ray.origin = vAdd(hitPos, vScale(res.dir, EPS));
+          const inside: boolean = insideId === hitPrism.id;
+          const res = refractRay(rDir, hitNormal, inside ? prismN : 1.0, inside ? 1.0 : prismN, !inside);
+          rDir = res.dir;
+          rOrigin = vAdd(hitPos, vScale(res.dir, EPS));
           if (!res.isTIR) {
-            ray.insidePrismId = inside ? null : hitPrism.id;
-            ray.mediumIndex = inside ? 1.0 : prismN;
+            insideId = inside ? null : hitPrism.id;
           }
-          ray.bounceCount++;
+          bounces++;
         } else {
+          // Ray struck an opaque non-reflective obstacle or room boundary
           break;
         }
       }
 
-      rays.push({ wavelength, intensity: ray.intensity, points: rayPoints });
+      rays.push({ wavelength, intensity: 1, points: rayPoints });
     }
   }
 
+  // OPTIMIZATION: Streamlined reduction of sensor hit statistics avoiding intermediate array allocations
   const finalHits = new Map<number, TargetHitStats>();
-  for (const [id, st] of targetStats.entries()) {
-    const t = st.t;
-    const targetRgb = t.targetRgb || wavelengthToRGB((t.minLambda + t.maxLambda) / 2);
-    let sampledRgb: [number, number, number] = [0, 0, 0];
-    let isMatch = false;
-    let hasLight = false;
-
-    if (st.total > 0) {
-      const maxVal = Math.max(st.r, st.g, st.b, 1);
-      sampledRgb = [
-        Math.min(255, Math.round((st.r / maxVal) * 255)),
-        Math.min(255, Math.round((st.g / maxVal) * 255)),
-        Math.min(255, Math.round((st.b / maxVal) * 255)),
-      ];
-      const m = checkColorMatch(sampledRgb, targetRgb);
-      isMatch = m.isMatch;
-      hasLight = m.hasLight;
-    }
+  for (const [id, st] of targetStats) {
+    const targetRgb = st.t.targetRgb || wavelengthToRGB((st.t.minLambda + st.t.maxLambda) / 2);
+    const maxVal = max(st.r, st.g, st.b, 1);
+    const sampledRgb = st.total
+      ? ([st.r, st.g, st.b].map((c) => min(255, round((c / maxVal) * 255))) as [number, number, number])
+      : ([0, 0, 0] as [number, number, number]);
+    const m = st.total ? checkColorMatch(sampledRgb, targetRgb) : { isMatch: false, hasLight: false };
 
     finalHits.set(id, {
       valid: st.valid,
       total: st.total,
-      avgWavelength: st.total > 0 ? st.sumWl / st.total : 0,
+      avgWavelength: st.total ? st.sumWl / st.total : 0,
       sampledRgb,
-      isMatch,
-      hasLight,
+      isMatch: m.isMatch,
+      hasLight: m.hasLight,
     });
   }
 
