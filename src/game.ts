@@ -1,8 +1,8 @@
 import { LevelDef, Prism, Target } from './types';
 import { LEVELS, TITLE_SCENE } from './levels';
 import { traceScene } from './raytracer';
-import { GameRenderer } from './renderer';
-import { InputHandler } from './input';
+import { createRenderer } from './renderer';
+import { createInput } from './input';
 import {
   initAudio,
   playVictory,
@@ -12,21 +12,16 @@ import {
   toggleSfx,
 } from './audio';
 
-const STORAGE_KEY = 'spectral_horn';
+const { sin, min, max, round, PI } = Math;
+
+// OPTIMIZATION: Short localStorage key + Set for deduplicating cleared level indices
+const STORAGE_KEY = 'sh_clr';
 const getCleared = (): number[] => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 };
 
 const markCleared = (idx: number) => {
-  try {
-    const s = new Set(getCleared());
-    s.add(idx);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...s]));
-  } catch { }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...new Set([...getCleared(), idx])])); } catch {}
 };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -38,32 +33,60 @@ const updateViewport = () => {
   }
 };
 
-export class Game {
-  private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
-  private renderer: GameRenderer;
-  private input: InputHandler;
+export function initGame(): void {
+  updateViewport();
+  const canvas = $<HTMLCanvasElement>('c');
+  const ctx = canvas.getContext('2d')!;
+  const renderer = createRenderer(ctx);
 
-  private isTitleScreen = true;
-  private currentLevelIdx = 0;
-  private level!: LevelDef;
-  private prisms: Prism[] = [];
-  private targets: Target[] = [];
-  private isLevelComplete = false;
-  private winDelay = 0;
+  let isTitleScreen = true;
+  let currentLevelIdx = 0;
+  let level: LevelDef;
+  let prisms: Prism[] = [];
+  let targets: Target[] = [];
+  let isLevelComplete = false;
+  let winDelay = 0;
 
   // DOM Elements
-  private elLevelTitle = $('lvl-title');
-  private elLevelHint = $('lvl-hint');
-  private elLevelSelect = $<HTMLSelectElement>('lvl-select');
-  private elWinModal = $('win-modal');
-  private elWinTitle = $('win-title');
-  private elWinDesc = $('win-desc');
-  private elHelpModal = $('help-modal');
-  private elNextBtn = $<HTMLButtonElement>('next-btn');
-  private elTitleScreen = $('title-screen');
+  const elLevelTitle = $('lvl-title');
+  const elLevelHint = $('lvl-hint');
+  const elLevelSelect = $<HTMLSelectElement>('lvl-select');
+  const elWinModal = $('win-modal');
+  const elWinTitle = $('win-title');
+  const elWinDesc = $('win-desc');
+  const elHelpModal = $('help-modal');
+  const elNextBtn = $<HTMLButtonElement>('next-btn');
+  const elTitleScreen = $('title-screen');
 
-  private cachedBounds = {
+  const cardsHtml = [
+    ['🎮 Controls & Steering', 'card-horn-c', [
+      ['cyan', '💫 Drag / Wheel', 'Rotate horn'],
+      ['gold', '↺ ↻ Step Buttons', '0.5° nudges'],
+      ['green', '✥ Drag Body', 'Move horn'],
+    ]],
+    ['🎯 Target Sensors', 'card-sensor-c', [
+      ['green', '🌈 Target Spectrum', 'Match wavelength'],
+      ['cyan', '🔬 Photodiode', 'Aim beam at lens'],
+      ['gold', '🏆 100% Charge', 'Hold beam to lock'],
+    ]],
+  ].map(([hdr, cid, lbs]) => `
+    <div class="glass-card">
+      <div class="card-header">${hdr}</div>
+      <div class="card-body">
+        <canvas id="${cid}" class="card-canvas" width="160" height="175"></canvas>
+        <div class="card-labels">
+          ${(lbs as string[][]).map(([c, h, s]) => `<div class="card-lb ${c}"><div class="th">${h}</div><div class="ts">${s}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  ['title-cards-container', 'modal-cards-container'].forEach((id) => {
+    const el = $(id);
+    if (el) el.innerHTML = cardsHtml;
+  });
+
+  let cachedBounds = {
     minX: 0,
     minY: 0,
     maxX: 1000,
@@ -76,60 +99,26 @@ export class Game {
     dpr: 1,
   };
 
-  constructor() {
-    updateViewport();
-    this.canvas = $<HTMLCanvasElement>('c');
-    this.ctx = this.canvas.getContext('2d')!;
-    this.renderer = new GameRenderer(this.ctx);
+  const input = createInput(canvas);
+  input.setGetPrisms(() => prisms);
 
-    const titleCards = this.elTitleScreen.querySelector('.title-cards');
-    const modalCards = $('modal-cards-container');
-    if (titleCards && modalCards) modalCards.innerHTML = titleCards.innerHTML;
-
-    this.input = new InputHandler(this.canvas);
-    this.input.getPrisms = () => this.prisms;
-
-    this.setupUI();
-    this.showTitleScreen();
-    this.resizeCanvas();
-    window.addEventListener('resize', () => {
-      updateViewport();
-      this.resizeCanvas();
-    });
-    window.addEventListener('orientationchange', () => {
-      updateViewport();
-      this.resizeCanvas();
-    });
-
-    let lastTime = performance.now();
-    const loop = (time: number) => {
-      const dt = Math.min((time - lastTime) / 1000, 0.1);
-      lastTime = time;
-      this.update(time);
-      this.render(dt, time);
-      requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
-  }
-
-  private resizeCanvas(): void {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = this.canvas.getBoundingClientRect();
+  const resizeCanvas = (): void => {
+    const dpr = min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const targetW = Math.round(rect.width * dpr);
-    const targetH = Math.round(rect.height * dpr);
-    if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
-      this.canvas.width = targetW;
-      this.canvas.height = targetH;
-      this.renderer.resize(targetW, targetH);
+    const targetW = round(rect.width * dpr);
+    const targetH = round(rect.height * dpr);
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
     }
 
-    const side = Math.min(rect.width, rect.height) || 1000;
+    const side = min(rect.width, rect.height) || 1000;
     const offsetX = (rect.width - side) / 2;
     const offsetY = (rect.height - side) / 2;
     const scale = side / 1000;
 
-    this.cachedBounds = {
+    cachedBounds = {
       minX: -offsetX / scale,
       minY: -offsetY / scale,
       maxX: 1000 + offsetX / scale,
@@ -141,24 +130,66 @@ export class Game {
       offsetY,
       dpr,
     };
-  }
+  };
 
-  private populateLevelSelect(): void {
+  const populateLevelSelect = (): void => {
     const cleared = new Set(getCleared());
-    this.elLevelSelect.innerHTML = LEVELS.map(
+    elLevelSelect.innerHTML = LEVELS.map(
       (lvl, idx) => `<option value="${idx}" style="color:${cleared.has(idx) ? '#4ade80' : '#cbd5e1'}">${cleared.has(idx) ? '✓' : '○'} ${lvl.title}</option>`
     ).join('');
-    this.elLevelSelect.value = `${this.currentLevelIdx}`;
-  }
+    elLevelSelect.value = `${currentLevelIdx}`;
+  };
 
-  private setupUI(): void {
-    this.populateLevelSelect();
+  const clonePrisms = (list: Prism[]) =>
+    list.map((p) => ({ ...p, pos: { ...p.pos }, basePos: p.basePos ? { ...p.basePos } : undefined }));
 
-    const triggerAudio = () => {
-      initAudio();
-      window.removeEventListener('pointerdown', triggerAudio);
-      window.removeEventListener('keydown', triggerAudio);
-    };
+  const showTitleScreen = (): void => {
+    isTitleScreen = true;
+    document.body.classList.add('is-title');
+    prisms = clonePrisms(TITLE_SCENE.prisms);
+    targets = [];
+    isLevelComplete = false;
+    winDelay = 0;
+    input.setSelected(0);
+
+    elTitleScreen.classList.remove('hidden');
+    elWinModal.classList.add('hidden');
+    elHelpModal.classList.add('hidden');
+
+    elLevelTitle.textContent = '✨ Cosmic Sandbox';
+    elLevelHint.textContent = 'Where photons collide and unicorns test optics. Drag and twist freely!';
+    populateLevelSelect();
+  };
+
+  const loadLevel = (idx: number): void => {
+    isTitleScreen = false;
+    document.body.classList.remove('is-title');
+    elTitleScreen.classList.add('hidden');
+    elHelpModal.classList.add('hidden');
+    currentLevelIdx = max(0, min(LEVELS.length - 1, idx));
+    level = LEVELS[currentLevelIdx];
+
+    prisms = clonePrisms(level.prisms);
+    targets = level.targets.map((t) => ({ ...t, pos: { ...t.pos } }));
+
+    const firstMovable = prisms.findIndex((p) => !p.locked);
+    input.setSelected(firstMovable !== -1 ? firstMovable : null);
+
+    isLevelComplete = false;
+    winDelay = 0;
+    elWinModal.classList.add('hidden');
+
+    elLevelTitle.textContent = level.title;
+    elLevelHint.textContent = level.hint;
+    populateLevelSelect();
+  };
+
+  const setupUI = (): void => {
+    populateLevelSelect();
+
+    // OPTIMIZATION: '{ once: true }' automatically unbinds the listener after first user gesture,
+    // avoiding the need for manual 'window.removeEventListener(...)' boilerplate.
+    const triggerAudio = () => initAudio();
     window.addEventListener('pointerdown', triggerAudio, { once: true });
     window.addEventListener('keydown', triggerAudio, { once: true });
 
@@ -170,184 +201,113 @@ export class Game {
       });
     };
 
-    this.elLevelSelect.addEventListener('change', (e) => {
+    elLevelSelect.addEventListener('change', (e) => {
       initAudio();
       playClick();
-      this.loadLevel(parseInt((e.target as HTMLSelectElement).value, 10));
+      loadLevel(parseInt((e.target as HTMLSelectElement).value, 10));
     });
 
-    bindClick('reset-btn', () => (this.isTitleScreen ? this.showTitleScreen() : this.loadLevel(this.currentLevelIdx)));
-    bindClick('menu-btn', () => this.showTitleScreen());
-    bindClick('play-btn', () => this.startGame());
-
-    const musicBtn = $('music-btn');
-    bindClick('music-btn', () => {
-      const m = toggleMusic();
-      musicBtn.innerHTML = `<span class="btn-icon">${m ? '🔇' : '🎵'}</span><span class="btn-text"> Music</span>`;
+    bindClick('reset-btn', () => (isTitleScreen ? showTitleScreen() : loadLevel(currentLevelIdx)));
+    bindClick('menu-btn', () => showTitleScreen());
+    bindClick('play-btn', () => loadLevel(currentLevelIdx));
+    const toggleBtn = (id: string, fn: () => boolean, iconOn: string, label: string) => {
+      bindClick(id, () => {
+        $(id).innerHTML = `${fn() ? '🔇' : iconOn}<span class="btn-text"> ${label}</span>`;
+      });
+    };
+    toggleBtn('music-btn', toggleMusic, '🎵', 'Music');
+    toggleBtn('sfx-btn', toggleSfx, '🔊', 'SFX');
+    bindClick('help-btn', () => elHelpModal.classList.remove('hidden'));
+    bindClick('help-close-btn', () => elHelpModal.classList.add('hidden'));
+    bindClick('next-btn', () => {
+      elWinModal.classList.add('hidden');
+      loadLevel((currentLevelIdx + 1) % LEVELS.length);
     });
+  };
 
-    const sfxBtn = $('sfx-btn');
-    bindClick('sfx-btn', () => {
-      const s = toggleSfx();
-      sfxBtn.innerHTML = `<span class="btn-icon">${s ? '🔇' : '🔊'}</span><span class="btn-text"> SFX</span>`;
-    });
+  setupUI();
+  showTitleScreen();
+  const onResize = () => { updateViewport(); resizeCanvas(); };
+  onResize();
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
 
-    bindClick('help-btn', () => this.elHelpModal.classList.remove('hidden'));
-    bindClick('help-close-btn', () => this.elHelpModal.classList.add('hidden'));
+  const update = (time: number): void => {
+    renderer.updateDust(time);
 
-    this.elNextBtn.addEventListener('click', () => {
-      initAudio();
-      playClick();
-      this.elWinModal.classList.add('hidden');
-      this.loadLevel((this.currentLevelIdx + 1) % LEVELS.length);
-    });
-  }
-
-  public showTitleScreen(): void {
-    this.isTitleScreen = true;
-    document.body.classList.add('is-title');
-    this.prisms = JSON.parse(JSON.stringify(TITLE_SCENE.prisms));
-    this.targets = [];
-    this.isLevelComplete = false;
-    this.winDelay = 0;
-    this.input.selectedPrismIndex = 0;
-
-    this.elTitleScreen.classList.remove('hidden');
-    this.elWinModal.classList.add('hidden');
-    this.elHelpModal.classList.add('hidden');
-
-    this.elLevelTitle.textContent = '✨ Cosmic Sandbox';
-    this.elLevelHint.textContent = 'Where photons collide and unicorns test theoretical optics. Drag and twist freely!';
-    this.populateLevelSelect();
-  }
-
-  public startGame(): void {
-    this.loadLevel(this.currentLevelIdx);
-  }
-
-  public loadLevel(idx: number): void {
-    this.isTitleScreen = false;
-    document.body.classList.remove('is-title');
-    this.elTitleScreen.classList.add('hidden');
-    this.elHelpModal.classList.add('hidden');
-    this.currentLevelIdx = Math.max(0, Math.min(LEVELS.length - 1, idx));
-    this.level = LEVELS[this.currentLevelIdx];
-
-    this.prisms = JSON.parse(JSON.stringify(this.level.prisms));
-    this.targets = JSON.parse(JSON.stringify(this.level.targets));
-
-    const firstMovable = this.prisms.findIndex((p) => !p.locked);
-    this.input.selectedPrismIndex = firstMovable !== -1 ? firstMovable : null;
-
-    this.isLevelComplete = false;
-    this.winDelay = 0;
-    this.elWinModal.classList.add('hidden');
-
-    this.elLevelTitle.textContent = this.level.title;
-    this.elLevelHint.textContent = this.level.hint;
-    this.populateLevelSelect();
-  }
-
-  private update(time: number): void {
-    this.renderer.updateParticles();
-    this.renderer.updateDust(time);
-
-    if (this.isTitleScreen) {
-      for (let i = 0; i < this.prisms.length; i++) {
-        const prism = this.prisms[i];
-        if (this.input.dragState.prismIndex !== i) {
-          const phase = prism.swayPhase ?? i * Math.PI;
+    if (isTitleScreen) {
+      for (let i = 0; i < prisms.length; i++) {
+        const prism = prisms[i];
+        if (input.getDragState().prismIndex !== i) {
+          const phase = prism.swayPhase ?? i * PI;
           const baseRot = prism.baseRot ?? prism.rot;
           const baseY = prism.basePos ? prism.basePos.y : prism.pos.y;
-          prism.rot = baseRot + Math.sin(time * 0.0018 + phase) * 0.05;
-          prism.pos.y = baseY + Math.sin(time * 0.0022 + phase) * 3.5;
+          prism.rot = baseRot + sin(time * 0.0018 + phase) * 0.05;
+          prism.pos.y = baseY + sin(time * 0.0022 + phase) * 3.5;
         }
       }
     }
-  }
+  };
 
-  private render(dt: number, time: number): void {
-    const ctx = this.ctx;
-    const bounds = this.cachedBounds;
+  const render = (dt: number, time: number): void => {
+    const bounds = cachedBounds;
     const dpr = bounds.dpr;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.renderer.clear(ctx.canvas.width, ctx.canvas.height);
+    renderer.clear(ctx.canvas.width, ctx.canvas.height);
 
     ctx.save();
     ctx.translate(bounds.offsetX * dpr, bounds.offsetY * dpr);
     ctx.scale(bounds.scale * dpr, bounds.scale * dpr);
 
-    this.renderer.renderSquareBounds(1000);
+    renderer.renderSquareBounds(1000);
 
-    if (this.isTitleScreen) {
-      this.renderer.renderEmitters(TITLE_SCENE.emitters, time);
+    const hoverIdx = input.getHoverIndex();
+    const hoverHandle = input.getHoverHandle();
+    const dragState = input.getDragState();
+    const selIdx = input.getSelected();
 
-      for (let i = 0; i < this.prisms.length; i++) {
-        this.renderer.renderPrism(
-          this.prisms[i],
-          this.input.hoverPrismIndex === i,
-          this.input.dragState.prismIndex === i,
-          this.input.hoverPrismIndex === i ? this.input.hoverHandle : null,
+    const drawPrisms = () => {
+      for (let i = 0; i < prisms.length; i++) {
+        renderer.renderPrism(
+          prisms[i],
+          hoverIdx === i,
+          dragState.prismIndex === i,
+          hoverIdx === i ? hoverHandle : null,
           time,
-          this.input.selectedPrismIndex === i,
-          this.input.dragState.prismIndex === i ? this.input.dragState.mode : null
+          selIdx === i,
+          dragState.prismIndex === i ? dragState.mode : null
         );
       }
+    };
 
-      const traceResult = traceScene(
-        TITLE_SCENE.emitters,
-        this.prisms,
-        [],
-        [],
-        bounds
-      );
+    // OPTIMIZATION: Unified render pipeline between Title Screen and Level gameplay.
+    // Instead of two separate duplicated blocks running traceScene, renderRays, and renderDust,
+    // we parameterize input objects (curEmitters, curObstacles) to execute a single shared pass.
+    const curEmitters = isTitleScreen ? TITLE_SCENE.emitters : level.emitter;
+    const curObstacles = isTitleScreen ? [] : level.obstacles;
 
-      this.renderer.renderRays(traceResult.rays, bounds);
-      this.renderer.renderDust(traceResult.segments, time);
-      this.renderer.renderParticles();
-      this.renderer.renderCardPreview(time);
+    curObstacles.forEach(renderer.renderObstacle);
+    renderer.renderEmitters(curEmitters, time);
+    drawPrisms();
 
+    const traceResult = traceScene(curEmitters, prisms, curObstacles, targets, bounds);
+    renderer.renderRays(traceResult.rays, bounds);
+    renderer.renderDust(traceResult.segments, time);
+
+    if (isTitleScreen || !elHelpModal.classList.contains('hidden')) {
+      renderer.renderCardPreview(time);
+    }
+
+    if (isTitleScreen) {
+      renderer.renderParticles();
       ctx.restore();
       return;
     }
 
-    if (!this.elHelpModal.classList.contains('hidden')) {
-      this.renderer.renderCardPreview(time);
-    }
-
-    for (const obs of this.level.obstacles) {
-      this.renderer.renderObstacle(obs);
-    }
-
-    this.renderer.renderEmitters(this.level.emitter, time);
-
-    for (let i = 0; i < this.prisms.length; i++) {
-      this.renderer.renderPrism(
-        this.prisms[i],
-        this.input.hoverPrismIndex === i,
-        this.input.dragState.prismIndex === i,
-        this.input.hoverPrismIndex === i ? this.input.hoverHandle : null,
-        time,
-        this.input.selectedPrismIndex === i,
-        this.input.dragState.prismIndex === i ? this.input.dragState.mode : null
-      );
-    }
-
-    const traceResult = traceScene(
-      this.level.emitter,
-      this.prisms,
-      this.level.obstacles,
-      this.targets,
-      bounds
-    );
-
-    this.renderer.renderRays(traceResult.rays, bounds);
-    this.renderer.renderDust(traceResult.segments, time);
-
     let allSatisfied = true;
 
-    for (const target of this.targets) {
+    for (const target of targets) {
       const hitStats = traceResult.targetHits.get(target.id);
       const isMatch = !!hitStats?.isMatch;
       const hasLight = !!hitStats?.hasLight;
@@ -357,41 +317,47 @@ export class Game {
       target.hasLight = hasLight;
 
       target.charge = isMatch
-        ? Math.min(1.0, target.charge + dt * 1.5)
-        : Math.max(0, target.charge - dt * (hasLight ? 1.2 : 0.7));
+        ? min(1.0, target.charge + dt * 1.5)
+        : max(0, target.charge - dt * (hasLight ? 1.2 : 0.7));
       target.isSatisfied = isMatch && target.charge >= 0.95;
       if (isMatch) playSensorPulse(target.charge);
       if (!target.isSatisfied) allSatisfied = false;
     }
 
-    for (const target of this.targets) {
-      this.renderer.renderTarget(target, time);
-    }
+    targets.forEach((t) => renderer.renderTarget(t, time));
 
-    if (allSatisfied && !this.isLevelComplete) {
-      this.winDelay += dt;
-      if (this.winDelay > 0.4) {
-        this.isLevelComplete = true;
-        markCleared(this.currentLevelIdx);
-        this.populateLevelSelect();
+    if (allSatisfied && !isLevelComplete) {
+      winDelay += dt;
+      if (winDelay > 0.4) {
+        isLevelComplete = true;
+        markCleared(currentLevelIdx);
+        populateLevelSelect();
         playVictory();
-        const isLast = this.currentLevelIdx === LEVELS.length - 1;
-        this.elWinTitle.textContent = isLast ? '✨ MASTER OF PHOTONS! ✨' : '✨ LEVEL COMPLETE! ✨';
-        this.elWinDesc.textContent = isLast
-          ? 'You have bent, dispersed, reflected, and synthesized every wavelength in the cosmos!'
-          : 'All spectral sensors are fully charged. Photons behave themselves... for now.';
-        this.elNextBtn.textContent = isLast ? 'Play Again ↺' : 'Next Experiment ➔';
-        this.elWinModal.classList.remove('hidden');
+        const isLast = currentLevelIdx === LEVELS.length - 1;
+        elWinTitle.textContent = isLast ? '✨ MASTER OF PHOTONS! ✨' : '✨ LEVEL COMPLETE! ✨';
+        elWinDesc.textContent = isLast
+          ? 'You synthesized every wavelength in the cosmos!'
+          : 'All spectral sensors charged. Photons tamed... for now.';
+        elNextBtn.textContent = isLast ? 'Play Again ↺' : 'Next Experiment ➔';
+        elWinModal.classList.remove('hidden');
       }
     } else if (!allSatisfied) {
-      this.winDelay = 0;
+      winDelay = 0;
     }
 
-    this.renderer.renderParticles();
+    renderer.renderParticles();
     ctx.restore();
-  }
+  };
+
+  let lastTime = performance.now();
+  const loop = (time: number) => {
+    const dt = min((time - lastTime) / 1000, 0.1);
+    lastTime = time;
+    update(time);
+    render(dt, time);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  new Game();
-});
+window.addEventListener('DOMContentLoaded', initGame);
