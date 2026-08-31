@@ -371,12 +371,12 @@ select,
   color: #4ade80;
 }
 
-.th {
+.card-lb b {
   font-size: .82rem;
   font-weight: 900;
 }
 
-.ts {
+.card-lb span {
   font-size: .72rem;
   color: #cbd5e1;
 }

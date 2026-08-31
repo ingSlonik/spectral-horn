@@ -27,9 +27,6 @@ import { getRefractiveIndex, wavelengthToRGB, checkColorMatch } from './color';
 const { sin, cos, min, max, hypot, abs, round } = Math;
 
 export interface TargetHitStats {
-  valid: number;
-  total: number;
-  avgWavelength: number;
   sampledRgb: [number, number, number];
   isMatch: boolean;
   hasLight: boolean;
@@ -54,16 +51,14 @@ export function traceScene(
   const segments: RaySegment[] = [];
   const targetStats = new Map<number, {
     t: Target;
-    valid: number;
     total: number;
-    sumWl: number;
     r: number;
     g: number;
     b: number;
   }>();
 
   for (const t of targets) {
-    targetStats.set(t.id, { t, valid: 0, total: 0, sumWl: 0, r: 0, g: 0, b: 0 });
+    targetStats.set(t.id, { t, total: 0, r: 0, g: 0, b: 0 });
   }
 
   const emitters = Array.isArray(emitterInput) ? emitterInput : [emitterInput];
@@ -164,12 +159,10 @@ export function traceScene(
           if (distToSegment(target.pos, segStart, segEnd) <= target.radius * 0.374) {
             const st = targetStats.get(target.id)!;
             st.total++;
-            st.sumWl += wavelength;
             const [cr, cg, cb] = wavelengthToRGB(wavelength);
             st.r += cr;
             st.g += cg;
             st.b += cb;
-            if (wavelength >= target.minLambda && wavelength <= target.maxLambda) st.valid++;
           }
         }
 
@@ -213,9 +206,6 @@ export function traceScene(
     const m = st.total ? checkColorMatch(sampledRgb, targetRgb) : { isMatch: false, hasLight: false };
 
     finalHits.set(id, {
-      valid: st.valid,
-      total: st.total,
-      avgWavelength: st.total ? st.sumWl / st.total : 0,
       sampledRgb,
       isMatch: m.isMatch,
       hasLight: m.hasLight,

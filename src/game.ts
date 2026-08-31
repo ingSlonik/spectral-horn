@@ -75,7 +75,7 @@ export function initGame(): void {
       <div class="card-body">
         <canvas id="${cid}" class="card-canvas" width="160" height="175"></canvas>
         <div class="card-labels">
-          ${(lbs as string[][]).map(([c, h, s]) => `<div class="card-lb ${c}"><div class="th">${h}</div><div class="ts">${s}</div></div>`).join('')}
+          ${(lbs as string[][]).map(([c, h, s]) => `<div class="card-lb ${c}"><b>${h}</b><span>${s}</span></div>`).join('')}
         </div>
       </div>
     </div>
@@ -87,12 +87,6 @@ export function initGame(): void {
   });
 
   let cachedBounds = {
-    minX: 0,
-    minY: 0,
-    maxX: 1000,
-    maxY: 1000,
-    width: 1000,
-    height: 1000,
     scale: 1,
     offsetX: 0,
     offsetY: 0,
@@ -118,18 +112,7 @@ export function initGame(): void {
     const offsetY = (rect.height - side) / 2;
     const scale = side / 1000;
 
-    cachedBounds = {
-      minX: -offsetX / scale,
-      minY: -offsetY / scale,
-      maxX: 1000 + offsetX / scale,
-      maxY: 1000 + offsetY / scale,
-      width: (1000 + 2 * offsetX) / scale,
-      height: (1000 + 2 * offsetY) / scale,
-      scale,
-      offsetX,
-      offsetY,
-      dpr,
-    };
+    cachedBounds = { scale, offsetX, offsetY, dpr };
   };
 
   const populateLevelSelect = (): void => {

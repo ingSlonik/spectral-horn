@@ -1,24 +1,42 @@
-import { LevelDef, Emitter, Prism } from './types';
+import { LevelDef, Emitter, Prism, Target, Obstacle } from './types';
 import { v2 } from './math';
 
 const { PI } = Math;
 
-export const TITLE_SCENE: { emitters: Emitter[]; prisms: Prism[] } = {
-  emitters: [[80, 260, 0.15], [920, 260, 3]].map(([x, y, angle]) => ({
-    pos: v2(x, y), angle, width: 7, rayCount: 64, minLambda: 400, maxLambda: 700
-  })),
-  prisms: [200, 800].map((x, i) => ({
+const makeEmitter = (a: any): Emitter => ({
+  pos: v2(a[0], a[1]),
+  angle: a[2] || 0,
+  width: a[3] || 7,
+  rayCount: a[4] || 64,
+  minLambda: a[5] || 400,
+  maxLambda: a[6] || 700,
+});
+
+const makePrism = (a: any, i: number): Prism => {
+  const isStr = typeof a[2] === 'string';
+  const shape = isStr ? a[2] : a[6] || 'horn';
+  const isMirror = shape === 'mirror';
+  const r = isStr || a[2] > 100 ? 0 : a[2] || 0;
+  return {
     id: i + 1,
-    pos: v2(x, 300),
-    rot: 0,
-    scale: 1,
-    baseIndex: 1.52,
-    dispersionB: 28000,
-    shape: 'horn' as const,
-    basePos: v2(x, 300),
-    baseRot: 0,
-    swayPhase: i ? PI : 0.1,
-  })),
+    pos: v2(a[0], a[1]),
+    rot: r,
+    scale: a[3] || 1,
+    baseIndex: isStr ? a[4] || (isMirror ? 1 : 1.52) : a[4] || 1.52,
+    dispersionB: isStr ? a[5] ?? (isMirror ? 0 : 22000) : a[2] > 100 ? a[2] : a[5] ?? 22000,
+    shape,
+    basePos: v2(a[0], a[1]),
+    baseRot: r,
+    swayPhase: a[7] || 0,
+  };
+};
+
+export const TITLE_SCENE: { emitters: Emitter[]; prisms: Prism[] } = {
+  emitters: [[80, 260, 0.15], [920, 260, 3]].map(makeEmitter),
+  prisms: [
+    [200, 300, 0, 1, 1.52, 28000, 'horn', 0.1],
+    [800, 300, 0, 1, 1.52, 28000, 'horn', PI],
+  ].map(makePrism),
 };
 
 // OPTIMIZATION (STRING DEDUPLICATION):
@@ -39,6 +57,27 @@ const W_RGB: [number, number, number] = [255, 255, 255];
 // By using positional array tuples `[title, hint, emitters, prisms, targets, obstacles]`, all property
 // key strings are eliminated entirely from the data representation.
 //
+const META_STR =
+  "First Horn~Rotate your horn into the beam. Snell's law refracts green photons directly into the sensor.~" +
+  "Prismatic Party~Red bends gently, violet sharply. Fan the rainbow across all three sensors simultaneously!~" +
+  "Obsidian Shield~The sensor hides behind obsidian. Flip your horn upside down to refract photons upward!~" +
+  "Periscope Trick~Refraction can't turn 90°. Tilt past the critical angle for total internal reflection!~" +
+  "Celestial Mirror~Bank the beam off the mirror, then scoop photons back up into the amber sensor.~" +
+  "Cosmic Trickshot~Bank off the floor mirror, then position your horn to split the rebound into both sensors.~" +
+  "Upside-Down Rainbow~The horn puts Red on top and Blue below. Bounce off the mirror to invert the colors!~" +
+  "Hall of Mirrors~Ricochet off the floor mirror into the green sensor, clipping the red sensor en route!~" +
+  "Enter the Dove~Colors inverted in a tunnel! The Dove prism flips color order without bending the beam.~" +
+  "Prismatic Inversion~Fan out a rainbow, then pass through the Dove prism to reverse the color stack.~" +
+  "Crystal Orb~Beam too wide! Focus to a point with the Orb, then steer the exit ray with your horn.~" +
+  "Squeeze & Scatter~Squeeze through the keyhole with the Orb, then catch the focal point to split colors.~" +
+  "Additive Alchemy: Yellow~Pure wavelengths won't satisfy this sensor. Intersect Red and Green beams in its lens!~" +
+  "Dual Synthesis~Broaden the Blue beam with the Orb so it pairs with Red at top and Green at bottom.~" +
+  "Great Recombination~Pure white light required! Use the second horn to re-converge the dispersed rainbow.~" +
+  "Prismatic Ensemble~Optical tour: bend up with the horn, bank off the mirror, and focus with the Orb.~" +
+  "Grand Optical Symphony~Orchestrate Horns, Mirrors, Orb, and Dove to light every sensor and the White core!";
+
+const META = META_STR.split('~');
+
 // Positional tuple formats:
 // - Emitter:  [x, y, angle=0, width=7, rayCount=64, minLambda=400, maxLambda=700]
 // - Prism:    [x, y, rot=0, scale=1, baseIndex=1.52, dispersionB=22000, shape='horn', swayPhase=0]
@@ -48,15 +87,11 @@ const W_RGB: [number, number, number] = [255, 255, 255];
 // - Obstacle: [x1, y1, x2, y2, isMirror=false]
 const RAW_LEVELS: any[] = [
   [
-    'First Horn',
-    "Rotate your horn into the beam. Snell's law refracts green photons directly into the sensor.",
     [90, 420],
     [[400, 600, 0.85, 1, 1.5]],
     [[870, 644, 520, 565, GS]],
   ],
   [
-    'Prismatic Party',
-    'Red bends gently, violet sharply. Fan the rainbow across all three sensors simultaneously!',
     [90, 300, 0, 6, 72],
     [[240, 520, 45000]],
     [
@@ -66,32 +101,24 @@ const RAW_LEVELS: any[] = [
     ],
   ],
   [
-    'Obsidian Shield',
-    'The sensor hides behind obsidian. Flip your horn upside down to refract photons upward!',
     [90, 820],
     [[340, 820]],
     [[880, 528, 520, 565, GS]],
     [[700, 50, 740, 660]],
   ],
   [
-    'Periscope Trick',
-    "Refraction can't turn 90°. Tilt past the critical angle for total internal reflection!",
     [90, 240],
     [[240, 240, 0, 1, 1.56, 15000], [240, 750, 0, 1, 1.56, 15000]],
     [[880, 856, 400, 480, BS]],
     [[480, 50, 520, 650]],
   ],
   [
-    'Celestial Mirror',
-    'Bank the beam off the mirror, then scoop photons back up into the amber sensor.',
     [90, 550, -1.1, 7, 48],
     [[240, 750, MIRROR, 1.4], [240, 850]],
     [[880, 521, 500, 600, AS]],
     [[540, 50, 580, 600]],
   ],
   [
-    'Cosmic Trickshot',
-    'Bank off the floor mirror, then position your horn to split the rebound into both sensors.',
     [90, 220, 1.05],
     [[300, 450, 45000]],
     [
@@ -101,8 +128,6 @@ const RAW_LEVELS: any[] = [
     [[350, 50, 400, 480], [260, 840, 580, 860, true], [680, 580, 730, 950]],
   ],
   [
-    'Upside-Down Rainbow',
-    'The horn puts Red on top and Blue below. Bounce off the mirror to invert the colors!',
     [90, 200, 0, 6],
     [[220, 450, 45000], [580, 850, MIRROR, 1.8]],
     [
@@ -113,8 +138,6 @@ const RAW_LEVELS: any[] = [
     [[320, 50, 360, 260]],
   ],
   [
-    'Hall of Mirrors',
-    'Ricochet off the floor mirror into the green sensor, clipping the red sensor en route!',
     [90, 200, -0.2],
     [[240, 500, 0.5, 1, 1.52, 35000]],
     [
@@ -129,8 +152,6 @@ const RAW_LEVELS: any[] = [
     ],
   ],
   [
-    'Enter the Dove',
-    'Colors inverted in a tunnel! The Dove prism flips color order without bending the beam.',
     [[90, 485, 0, 4, 32, 650, 680], [90, 515, 0, 4, 32, 440, 470]],
     [[300, 750, 2, 1.6, 1.53, 12000, DOVE]],
     [
@@ -140,8 +161,6 @@ const RAW_LEVELS: any[] = [
     [[480, 50, 880, 465], [480, 535, 880, 950]],
   ],
   [
-    'Prismatic Inversion',
-    'Fan out a rainbow, then pass through the Dove prism to reverse the color stack.',
     [90, 480],
     [[240, 750, 35000], [560, 750, DOVE, 1.6, 1.53, 8000]],
     [
@@ -152,16 +171,12 @@ const RAW_LEVELS: any[] = [
     [[650, 50, 880, 390], [650, 570, 880, 950]],
   ],
   [
-    'Crystal Orb',
-    'Beam too wide! Focus to a point with the Orb, then steer the exit ray with your horn.',
     [90, 300, 0, 28, 72],
     [[240, 750, ORB, 1.25, 1.58, 18000], [580, 750, 35000]],
     [[880, 473, 620, 700, RS]],
     [[420, 50, 460, 292], [420, 308, 460, 950], [700, 250, 740, 350]],
   ],
   [
-    'Squeeze & Scatter',
-    'Squeeze through the keyhole with the Orb, then catch the focal point to split colors.',
     [90, 500, 0, 24, 72],
     [[240, 240, ORB, 1.15, 1.56, 20000], [750, 750, 45000]],
     [
@@ -171,16 +186,12 @@ const RAW_LEVELS: any[] = [
     [[370, 50, 390, 492], [370, 508, 390, 950]],
   ],
   [
-    'Additive Alchemy: Yellow',
-    'Pure wavelengths won\'t satisfy this sensor. Intersect Red and Green beams in its lens!',
     [[90, 240, 0, 7, 52, 650, 680], [90, 760, 0, 7, 52, 525, 545]],
     [[240, 240, 0.35, 1, 1.52, 12000], [240, 760, -0.35, 1, 1.52, 12000]],
     [[870, 500, 520, 680, YS, 45, [255, 235, 0]]],
     [[520, 50, 560, 260], [520, 740, 560, 950]],
   ],
   [
-    'Dual Synthesis',
-    'Broaden the Blue beam with the Orb so it pairs with Red at top and Green at bottom.',
     [
       [90, 180, 0, 6, 48, 650, 680],
       [90, 500, 0, 36, 64, 440, 470],
@@ -197,16 +208,12 @@ const RAW_LEVELS: any[] = [
     ],
   ],
   [
-    'Great Recombination',
-    'Pure white light required! Use the second horn to re-converge the dispersed rainbow.',
     [90, 500, 0, 6, 68],
     [[240, 300, 26000], [580, 850, 26000]],
     [[880, 670, 400, 700, WS, 40, W_RGB]],
     [[420, 50, 460, 560]],
   ],
   [
-    'Prismatic Ensemble',
-    'Optical tour: bend up with the horn, bank off the mirror, and focus with the Orb.',
     [90, 750, 0, 7, 48],
     [
       [240, 550, 35000],
@@ -220,8 +227,6 @@ const RAW_LEVELS: any[] = [
     [[400, 680, 440, 950]],
   ],
   [
-    'Grand Optical Symphony',
-    'Orchestrate Horns, Mirrors, Orb, and Dove to light every sensor and the White core!',
     [[90, 240, 0, 6, 48], [90, 440, 0.12, 8, 48, 520, 565], [90, 760, 0, 6, 48]],
     [
       [240, 160, 35000],
@@ -243,54 +248,34 @@ const RAW_LEVELS: any[] = [
   ],
 ];
 
+const makeTarget = (a: any, i: number): Target => ({
+  id: i + 1,
+  pos: v2(a[0], a[1]),
+  minLambda: a[2],
+  maxLambda: a[3],
+  name: a[4] || '',
+  radius: a[5] || 25,
+  targetRgb: a[6],
+  charge: 0,
+  isSatisfied: false,
+});
+
+const makeObstacle = (a: any, i: number): Obstacle => ({
+  id: i + 1,
+  points: [v2(a[0], a[1]), v2(a[2], a[1]), v2(a[2], a[3]), v2(a[0], a[3])],
+  isMirror: a[4],
+});
+
 // OPTIMIZATION: Transform concise level definitions into full typed structures
-export const LEVELS: LevelDef[] = RAW_LEVELS.map(([title, hint, ems, prs, tgs, obs], idx) => {
+export const LEVELS: LevelDef[] = RAW_LEVELS.map(([ems, prs, tgs, obs], idx) => {
   const emList = typeof ems[0] === 'number' ? [ems] : ems;
   return {
     id: idx + 1,
-    title: `${idx + 1}. ${title}`,
-    hint,
-    emitter: emList.map((a: any) => ({
-      pos: v2(a[0], a[1]),
-      angle: a[2] || 0,
-      width: a[3] || 7,
-      rayCount: a[4] || 64,
-      minLambda: a[5] || 400,
-      maxLambda: a[6] || 700,
-    })),
-    prisms: prs.map((a: any, i: number) => {
-      const isStr = typeof a[2] === 'string';
-      const shape = isStr ? a[2] : a[6] || 'horn';
-      const isMirror = shape === 'mirror';
-      const r = isStr || a[2] > 100 ? 0 : a[2] || 0;
-      return {
-        id: i + 1,
-        pos: v2(a[0], a[1]),
-        rot: r,
-        scale: a[3] || 1,
-        baseIndex: isStr ? a[4] || (isMirror ? 1 : 1.52) : a[4] || 1.52,
-        dispersionB: isStr ? a[5] ?? (isMirror ? 0 : 22000) : a[2] > 100 ? a[2] : a[5] ?? 22000,
-        shape,
-        basePos: v2(a[0], a[1]),
-        baseRot: r,
-        swayPhase: a[7] || 0,
-      };
-    }),
-    targets: tgs.map((a: any, i: number) => ({
-      id: i + 1,
-      pos: v2(a[0], a[1]),
-      minLambda: a[2],
-      maxLambda: a[3],
-      name: a[4] || '',
-      radius: a[5] || 25,
-      targetRgb: a[6],
-      charge: 0,
-      isSatisfied: false,
-    })),
-    obstacles: (obs || []).map((a: any, i: number) => ({
-      id: i + 1,
-      points: [v2(a[0], a[1]), v2(a[2], a[1]), v2(a[2], a[3]), v2(a[0], a[3])],
-      isMirror: a[4],
-    })),
+    title: `${idx + 1}. ${META[idx * 2]}`,
+    hint: META[idx * 2 + 1],
+    emitter: emList.map(makeEmitter),
+    prisms: prs.map(makePrism),
+    targets: tgs.map(makeTarget),
+    obstacles: (obs || []).map(makeObstacle),
   };
 });

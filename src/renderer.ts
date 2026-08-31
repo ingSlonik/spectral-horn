@@ -278,10 +278,16 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       c.restore();
     };
 
+    const drawLegs = (isFar: boolean) => {
+      for (const [px, py, sw] of (isFar
+        ? [[16 - 3 * upsideDown, 102 - 3 * upsideDown, swingFR], [36 + 5 * upsideDown, 98 - 3 * upsideDown, swingBR]]
+        : [[4 - 4 * upsideDown, 106 - 3 * upsideDown, swingFL], [26 + 4 * upsideDown, 104 - 3 * upsideDown, swingBL]])) {
+        drawLittleLeg(px, py, sw, isFar);
+      }
+    };
+
     // Far legs
-    for (const [px, py, sw] of [[16 - 3 * upsideDown, 102 - 3 * upsideDown, swingFR], [36 + 5 * upsideDown, 98 - 3 * upsideDown, swingBR]]) {
-      drawLittleLeg(px, py, sw, true);
-    }
+    drawLegs(true);
 
     const s1 = sin(time * 0.003 + 0.4) * 4.5;
     const s2 = sin(time * 0.0036 + 1.2) * 5.5;
@@ -314,9 +320,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     );
 
     // Near legs
-    for (const [px, py, sw] of [[4 - 4 * upsideDown, 106 - 3 * upsideDown, swingFL], [26 + 4 * upsideDown, 104 - 3 * upsideDown, swingBL]]) {
-      drawLittleLeg(px, py, sw, false);
-    }
+    drawLegs(false);
 
     // Cheek blush
     circ(c, -18, 50, 6, rgbaPnk(0.35));
@@ -355,9 +359,10 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     const blinkCycle = (time * 0.001) % 3.6;
     const isBlinking = blinkCycle > 3.42;
     const blinkProgress = isBlinking ? sin(((blinkCycle - 3.42) / 0.18) * PI) : 0;
+    const eyeStroke = isDragged ? C_GOLD : '#e0f2fe';
 
     if (blinkProgress > 0.75) {
-      c.strokeStyle = isDragged ? C_GOLD : '#e0f2fe';
+      c.strokeStyle = eyeStroke;
       c.lineWidth = 2.4;
       c.lineCap = 'round';
       c.beginPath();
@@ -384,7 +389,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       circ(c, 1.8, 2.2, 1.0, C_WHITE);
       c.restore();
 
-      c.strokeStyle = isDragged ? C_GOLD : '#e0f2fe';
+      c.strokeStyle = eyeStroke;
       c.lineWidth = 2.0;
       c.lineCap = 'round';
       c.beginPath();
