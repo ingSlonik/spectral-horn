@@ -39,10 +39,8 @@ export function wavelengthToRGB(wl: number): [number, number, number] {
   return [adj(r), adj(g), adj(b)];
 }
 
-export const rgbToHex = (r: any, g = 0, b = 0): string => {
-  const [cr, cg, cb] = Array.isArray(r) ? r : [r, g, b];
-  return '#' + ((1 << 24) + (round(cr) << 16) + (round(cg) << 8) + round(cb)).toString(16).slice(1);
-};
+export const rgbToHex = (r: any, g = 0, b = 0): string =>
+  '#' + ((1 << 24) + (round(r[0] ?? r) << 16) + (round(r[1] ?? g) << 8) + round(r[2] ?? b)).toString(16).slice(1);
 
 export const wavelengthToHex = (wl: number) => rgbToHex(wavelengthToRGB(wl));
 
@@ -66,19 +64,15 @@ export function rgbToHsv(r: number, g: number, b: number): [number, number, numb
  * Matches pure monochromatic beams as well as synthesized composite beams (e.g. Red + Green = Yellow).
  */
 export function checkColorMatch(
-  sampledRgbRaw: [number, number, number],
-  targetRgb: [number, number, number],
-  bgRgb: [number, number, number] = [0, 0, 0]
+  sRgb: [number, number, number],
+  tRgb: [number, number, number]
 ): { isMatch: boolean; hasLight: boolean; intensity: number } {
-  const r = max(0, sampledRgbRaw[0] - bgRgb[0]);
-  const g = max(0, sampledRgbRaw[1] - bgRgb[1]);
-  const b = max(0, sampledRgbRaw[2] - bgRgb[2]);
-
+  const [r, g, b] = sRgb;
   const maxChannel = max(r, g, b);
   const hasLight = maxChannel >= 14 || (r + g + b) / 3 >= 8;
 
   const [sH, sS, sV] = rgbToHsv(r, g, b);
-  const [tH, tS] = rgbToHsv(targetRgb[0], targetRgb[1], targetRgb[2]);
+  const [tH, tS] = rgbToHsv(tRgb[0], tRgb[1], tRgb[2]);
 
   const diff = abs(sH - tH) % 360;
   const hueDiff = diff > 180 ? 360 - diff : diff;
