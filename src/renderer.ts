@@ -25,10 +25,7 @@ const TAU = PI * 2;
 
 // Pre-computed lookup table for zero-allocation continuous smooth rainbow colors
 const COLOR_TABLE: string[] = [];
-for (let wl = 380; wl <= 750; wl++) {
-  const [r, g, b] = wavelengthToRGB(wl);
-  COLOR_TABLE[wl] = `${r},${g},${b}`;
-}
+for (let wl = 380; wl <= 750; wl++) COLOR_TABLE[wl] = wavelengthToRGB(wl).join(',');
 
 export interface Particle {
   x: number;
@@ -137,11 +134,7 @@ const drawCurve = (
   ctx.beginPath();
   ctx.moveTo(start[0], start[1]);
   for (const s of segs) {
-    s.length === 6
-      ? ctx.bezierCurveTo(s[0], s[1], s[2], s[3], s[4], s[5])
-      : s.length === 4
-      ? ctx.quadraticCurveTo(s[0], s[1], s[2], s[3])
-      : ctx.lineTo(s[0], s[1]);
+    (ctx as any)[s.length === 6 ? 'bezierCurveTo' : s.length === 4 ? 'quadraticCurveTo' : 'lineTo'](...s);
   }
   if (close) ctx.closePath();
   fillStroke(ctx, fill, stroke, lw);
@@ -623,7 +616,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     c.font = 'bold 10px sans-serif';
     c.textAlign = 'center';
     c.fillStyle = targetHex;
-    c.fillText(target.name || round(midWl) + 'nm Sensor', 0, r + 14);
+    c.fillText(target.name || '', 0, r + 14);
 
     if (target.isSatisfied || target.charge > 0) {
       c.fillStyle = target.isSatisfied ? C_GREEN : C_WHITE;
@@ -822,17 +815,11 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     c.restore();
   };
 
-  const renderEmitters = (emitters: Emitter | Emitter[], time: number): void => {
-    const list = Array.isArray(emitters) ? emitters : [emitters];
-    for (const em of list) renderEmitter(em, time);
-  };
+  const renderEmitters = (emitters: Emitter | Emitter[], time: number): void =>
+    (Array.isArray(emitters) ? emitters : [emitters]).forEach((em) => renderEmitter(em, time));
 
-  const renderObstacle = (obstacle: Obstacle): void => {
-    const c = currentCtx;
-    c.save();
-    poly(c, obstacle.points, obstacle.isMirror ? '#3a4a68' : '#141724', obstacle.isMirror ? '#a5f3fc' : '#2d3748', obstacle.isMirror ? 2.0 : 1.8);
-    c.restore();
-  };
+  const renderObstacle = (obs: Obstacle): void =>
+    poly(currentCtx, obs.points, obs.isMirror ? '#3a4a68' : '#141724', obs.isMirror ? '#a5f3fc' : '#2d3748', obs.isMirror ? 2 : 1.8);
 
   // OPTIMIZATION: Particle physics integration and rendering are combined into a single reverse loop.
   // Eliminates a separate 'updateParticles()' function, simplifying runtime execution and saving bytes.

@@ -81,10 +81,7 @@ export function initGame(): void {
     </div>
   `).join('');
 
-  ['title-cards-container', 'modal-cards-container'].forEach((id) => {
-    const el = $(id);
-    if (el) el.innerHTML = cardsHtml;
-  });
+  document.querySelectorAll('.title-cards').forEach((el) => { el.innerHTML = cardsHtml; });
 
   let cachedBounds = {
     scale: 1,
@@ -294,19 +291,15 @@ export function initGame(): void {
 
     for (const target of targets) {
       const hitStats = traceResult.targetHits.get(target.id);
-      const isMatch = !!hitStats?.isMatch;
-      const hasLight = !!hitStats?.hasLight;
-
+      const isMatch = target.isColorMatching = !!hitStats?.isMatch;
+      const hasLight = target.hasLight = !!hitStats?.hasLight;
       target.sampledRgb = hitStats?.sampledRgb || [0, 0, 0];
-      target.isColorMatching = isMatch;
-      target.hasLight = hasLight;
 
       target.charge = isMatch
         ? min(1.0, target.charge + dt * 1.5)
         : max(0, target.charge - dt * (hasLight ? 1.2 : 0.7));
-      target.isSatisfied = isMatch && target.charge >= 0.95;
+      if (!(target.isSatisfied = isMatch && target.charge >= 0.95)) allSatisfied = false;
       if (isMatch) playSensorPulse(target.charge);
-      if (!target.isSatisfied) allSatisfied = false;
     }
 
     targets.forEach((t) => renderer.renderTarget(t, time));

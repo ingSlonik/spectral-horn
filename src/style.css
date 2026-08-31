@@ -39,16 +39,13 @@ body {
   touch-action: none;
 }
 
-/* GLASSMORPHISM SYSTEM:
-   Shared backdrop blur and saturation filter applied to all floating UI components,
-   modals, and guide cards. Consolidated into a single selector for maximum minification. */
 #author-credit,
 #game-header,
 #game-hint-bar,
 .glass-card,
 .modal,
 .modal-box {
-  backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px);
 }
 
 #author-credit,
@@ -56,8 +53,11 @@ body {
 #game-hint-bar {
   position: fixed;
   background: rgba(6, 10, 24, .35);
-  border: 1px solid rgba(56, 189, 248, .35);
   box-shadow: 0 0 16px rgba(56, 189, 248, .2);
+}
+
+#game-header,
+#game-hint-bar {
   z-index: 10;
 }
 
@@ -71,6 +71,9 @@ select,
 }
 
 #author-credit,
+#game-header,
+#game-hint-bar,
+.glass-card,
 button,
 select {
   border: 1px solid rgba(56, 189, 248, .35);
@@ -315,7 +318,6 @@ select,
 
 .glass-card {
   background: rgba(8, 14, 32, .68);
-  border: 1px solid rgba(56, 189, 248, .35);
   border-radius: 20px;
   padding: 16px 18px;
   gap: 8px;

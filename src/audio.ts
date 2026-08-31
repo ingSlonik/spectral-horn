@@ -156,8 +156,7 @@ export function playPrismRotate(rotSpeed = 1): void {
   lastRotateSound = now;
   rotateNoteIdx = (rotateNoteIdx + max(1, floor(abs(rotSpeed) * 2))) % BELL_SCALE.length;
   const f = BELL_SCALE[rotateNoteIdx];
-  playTone(f, 0.16, 0.024);
-  playTone(f * 2.76, 0.16, 0.024);
+  for (const m of [1, 2.76]) playTone(f * m, 0.16, 0.024);
 }
 
 export const playPrismMove = (_speed = 1): void => {

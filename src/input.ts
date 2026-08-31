@@ -1,8 +1,8 @@
 import { Vec2, Prism } from './types';
-import { v2, vDist, clamp } from './math';
+import { v2, vDist } from './math';
 import { initAudio, playPrismRotate, playPrismMove } from './audio';
 
-const { min, atan2, abs, sign, PI } = Math;
+const { min, max, atan2, abs, sign, PI } = Math;
 
 export interface DragState {
   prismIndex: number | null;
@@ -138,8 +138,8 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
       if (p && !p.locked) {
         if (dragState.mode === 'move') {
           const y = isTouch ? pos.y - TOUCH_OFFSET_Y : pos.y;
-          p.pos.x = clamp(pos.x + dragState.dragOffset.x, 60, 940);
-          p.pos.y = clamp(y + dragState.dragOffset.y, 60, 940);
+          p.pos.x = max(60, min(940, pos.x + dragState.dragOffset.x));
+          p.pos.y = max(60, min(940, y + dragState.dragOffset.y));
           if (p.basePos) { p.basePos.x = p.pos.x; p.basePos.y = p.pos.y; }
           playPrismMove(0.2);
         } else if (dragState.mode === 'rotate') {

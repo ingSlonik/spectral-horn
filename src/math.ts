@@ -23,8 +23,6 @@ export const vRotate = (v: Vec2, rad: number): Vec2 => {
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
 };
 
-export const clamp = (val: number, minVal: number, maxVal: number): number => max(minVal, min(maxVal, val));
-
 export function raySegmentIntersection(
   ro: Vec2,
   rd: Vec2,

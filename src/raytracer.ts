@@ -141,22 +141,14 @@ export function traceScene(
           }
         }
 
-        // Ray escaped into infinity
-        if (!hitPos) {
-          const far = vAdd(rOrigin, vScale(rDir, 2000));
-          segments.push({ p1: rOrigin, p2: far, wavelength, intensity: 1 });
-          rayPoints.push(far);
-          break;
-        }
-
-        const segStart = rOrigin;
-        const segEnd = hitPos;
-        segments.push({ p1: segStart, p2: segEnd, wavelength, intensity: 1 });
+        const segEnd = hitPos || vAdd(rOrigin, vScale(rDir, 2000));
+        segments.push({ p1: rOrigin, p2: segEnd, wavelength, intensity: 1 });
         rayPoints.push(segEnd);
+        if (!hitPos) break;
 
         // 3. SENSOR DETECTION: Integrate photon flux crossing the sensor photodiode aperture
         for (const target of targets) {
-          if (distToSegment(target.pos, segStart, segEnd) <= target.radius * 0.374) {
+          if (distToSegment(target.pos, rOrigin, segEnd) <= target.radius * 0.374) {
             const st = targetStats.get(target.id)!;
             st.total++;
             const [cr, cg, cb] = wavelengthToRGB(wavelength);

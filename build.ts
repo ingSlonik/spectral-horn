@@ -30,7 +30,7 @@ async function build() {
     target: 'es2020',
     treeShaking: true,
     legalComments: 'none',
-    minify: false,
+    minify: true,
   });
 
   const bundledJs = bundleResult.outputFiles[0].text;
