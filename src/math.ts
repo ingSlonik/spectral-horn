@@ -135,8 +135,6 @@ export function getPrismVertices(prism: Prism): Vec2[] {
     ? [[-36, -6], [36, -6], [36, 6], [-36, 6]]
     : sh === 'dove'
     ? [[-30, -16], [30, -16], [62, 16], [-62, 16]]
-    : sh === 'orb'
-    ? Array.from({ length: 16 }, (_, i) => [cos((i / 8) * PI) * 30, sin((i / 8) * PI) * 30])
     : [[0, -38], [22, 22], [-22, 22]];
   return raw.map(([x, y]) => vAdd(vRotate(v2(x * s, y * s), prism.rot), prism.pos));
 }

@@ -275,20 +275,17 @@ export const LEVELS: LevelDef[] = RAW_LEVELS.map(([title, hint, ems, prs, tgs, o
         swayPhase: a[7] || 0,
       };
     }),
-    targets: tgs.map((a: any, i: number) => {
-      const isNum = typeof a[4] === 'number';
-      return {
-        id: i + 1,
-        pos: v2(a[0], a[1]),
-        minLambda: a[2],
-        maxLambda: a[3],
-        radius: isNum ? a[4] : 25,
-        name: isNum ? a[5] || '' : a[4] || '',
-        targetRgb: isNum ? a[6] : a[5],
-        charge: 0,
-        isSatisfied: false,
-      };
-    }),
+    targets: tgs.map((a: any, i: number) => ({
+      id: i + 1,
+      pos: v2(a[0], a[1]),
+      minLambda: a[2],
+      maxLambda: a[3],
+      radius: typeof a[4] === 'number' ? a[4] : 25,
+      name: typeof a[4] === 'string' ? a[4] : a[5] || '',
+      targetRgb: typeof a[4] === 'number' ? a[6] : a[5],
+      charge: 0,
+      isSatisfied: false,
+    })),
     obstacles: (obs || []).map((a: any, i: number) => ({
       id: i + 1,
       points: [v2(a[0], a[1]), v2(a[2], a[1]), v2(a[2], a[3]), v2(a[0], a[3])],

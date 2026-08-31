@@ -143,6 +143,8 @@ export function initGame(): void {
   const clonePrisms = (list: Prism[]) =>
     list.map((p) => ({ ...p, pos: { ...p.pos }, basePos: p.basePos ? { ...p.basePos } : undefined }));
 
+  const setHidden = (el: HTMLElement, hide = true) => el.classList.toggle('hidden', hide);
+
   const showTitleScreen = (): void => {
     isTitleScreen = true;
     document.body.classList.add('is-title');
@@ -152,9 +154,9 @@ export function initGame(): void {
     winDelay = 0;
     input.setSelected(0);
 
-    elTitleScreen.classList.remove('hidden');
-    elWinModal.classList.add('hidden');
-    elHelpModal.classList.add('hidden');
+    setHidden(elTitleScreen, false);
+    setHidden(elWinModal);
+    setHidden(elHelpModal);
 
     elLevelTitle.textContent = '✨ Cosmic Sandbox';
     elLevelHint.textContent = 'Where photons collide and unicorns test optics. Drag and twist freely!';
@@ -164,8 +166,8 @@ export function initGame(): void {
   const loadLevel = (idx: number): void => {
     isTitleScreen = false;
     document.body.classList.remove('is-title');
-    elTitleScreen.classList.add('hidden');
-    elHelpModal.classList.add('hidden');
+    setHidden(elTitleScreen);
+    setHidden(elHelpModal);
     currentLevelIdx = max(0, min(LEVELS.length - 1, idx));
     level = LEVELS[currentLevelIdx];
 
@@ -177,7 +179,7 @@ export function initGame(): void {
 
     isLevelComplete = false;
     winDelay = 0;
-    elWinModal.classList.add('hidden');
+    setHidden(elWinModal);
 
     elLevelTitle.textContent = level.title;
     elLevelHint.textContent = level.hint;
@@ -217,10 +219,10 @@ export function initGame(): void {
     };
     toggleBtn('music-btn', toggleMusic, '🎵', 'Music');
     toggleBtn('sfx-btn', toggleSfx, '🔊', 'SFX');
-    bindClick('help-btn', () => elHelpModal.classList.remove('hidden'));
-    bindClick('help-close-btn', () => elHelpModal.classList.add('hidden'));
+    bindClick('help-btn', () => setHidden(elHelpModal, false));
+    bindClick('help-close-btn', () => setHidden(elHelpModal));
     bindClick('next-btn', () => {
-      elWinModal.classList.add('hidden');
+      setHidden(elWinModal);
       loadLevel((currentLevelIdx + 1) % LEVELS.length);
     });
   };
@@ -339,7 +341,7 @@ export function initGame(): void {
           ? 'You synthesized every wavelength in the cosmos!'
           : 'All spectral sensors charged. Photons tamed... for now.';
         elNextBtn.textContent = isLast ? 'Play Again ↺' : 'Next Experiment ➔';
-        elWinModal.classList.remove('hidden');
+        setHidden(elWinModal, false);
       }
     } else if (!allSatisfied) {
       winDelay = 0;

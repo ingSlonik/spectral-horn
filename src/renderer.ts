@@ -111,6 +111,9 @@ const rgbaG = (a: number) => `rgba(255,215,0,${a})`;
 const rgbaC = (a: number) => `rgba(56,189,248,${a})`;
 const rgbaP = (a: number) => `rgba(192,132,252,${a})`;
 const rgbaW = (a: number) => `rgba(255,255,255,${a})`;
+const rgbaB = (a: number) => `rgba(15,23,42,${a})`;
+const rgbaPnk = (a: number) => `rgba(244,114,182,${a})`;
+const rgbaAmber = (a: number) => `rgba(251,191,36,${a})`;
 
 // OPTIMIZATION: Compact polygon path builder - index 0 uses moveTo, subsequent indices use lineTo.
 // Replaced previous boilerplate with manual array length check and separate 0-index handling.
@@ -268,7 +271,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       c.rotate(swing);
 
       const legLength = isFar ? 14 : 17;
-      const legFill = isFar ? 'rgba(16,22,46,0.55)' : isDragged ? 'rgba(38,52,94,0.65)' : 'rgba(24,34,66,0.52)';
+      const legFill = isFar ? rgbaB(0.55) : isDragged ? rgbaB(0.7) : rgbaB(0.52);
 
       rRect(c, -3.5, 0, 7, legLength, 3.5, legFill, strokeColor, isFar ? 1.0 : 1.4);
       rRect(c, -3.5, legLength - 5, 7, 5, [0, 0, 3.5, 3.5], isDragged ? C_GOLD : C_CYAN);
@@ -287,7 +290,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     for (const [st, segs, f, str, w] of [
       [[10, 22], [[34 + s1, 26, 42 + s1, 56, 34 + s1, 84], [24, 70, 20, 48, 14, 32]], isDragged ? rgbaG(0.35) : rgbaP(0.38), isDragged ? rgbaG(0.75) : rgbaP(0.65), 1.4],
       [[14, 36], [[44 + s2, 48, 48 + s2, 82, 28 + s2, 104], [22, 86, 18, 64, 10, 48]], isDragged ? rgbaG(0.25) : rgbaC(0.35), isDragged ? rgbaG(0.65) : rgbaC(0.6), 1.4],
-      [[16, 54], [[38 + s3, 68, 40 + s3, 98, 22 + s3, 118], [16, 102, 14, 80, 8, 66]], 'rgba(251,191,36,0.3)', 'rgba(251,191,36,0.55)', 1.2],
+      [[16, 54], [[38 + s3, 68, 40 + s3, 98, 22 + s3, 118], [16, 102, 14, 80, 8, 66]], rgbaAmber(0.3), rgbaAmber(0.55), 1.2],
     ] as const) {
       drawCurve(c, st as any, segs as any, f, str, w);
     }
@@ -305,7 +308,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
         [46, 110, 48, 92, 42, 80],
         [36, 68, 26, 44, 20, 21],
       ],
-      isDragged ? 'rgba(38,52,94,0.6)' : 'rgba(24,34,66,0.48)',
+      isDragged ? rgbaB(0.65) : rgbaB(0.48),
       strokeColor,
       isDragged ? 2.0 : 1.5
     );
@@ -316,15 +319,15 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     }
 
     // Cheek blush
-    circ(c, -18, 50, 6, 'rgba(244,114,182,0.35)');
+    circ(c, -18, 50, 6, rgbaPnk(0.35));
 
     // Ear
     const earDroop = sin(time * 0.003) * 1.5;
     c.save();
     c.translate(14, 24);
     c.rotate(0.6 + earDroop * 0.04);
-    drawCurve(c, [-6, 0], [[-4, 16, 2, 26], [8, 18, 8, 0]], isDragged ? 'rgba(36,48,86,0.65)' : 'rgba(22,30,58,0.52)', strokeColor, 1.5);
-    drawCurve(c, [-3, 2], [[-1, 12, 2, 19], [5, 12, 5, 2]], isDragged ? rgbaG(0.45) : 'rgba(244,114,182,0.35)');
+    drawCurve(c, [-6, 0], [[-4, 16, 2, 26], [8, 18, 8, 0]], isDragged ? rgbaB(0.65) : rgbaB(0.52), strokeColor, 1.5);
+    drawCurve(c, [-3, 2], [[-1, 12, 2, 19], [5, 12, 5, 2]], isDragged ? rgbaG(0.45) : rgbaPnk(0.35));
     c.restore();
 
     // Forelock
@@ -368,9 +371,9 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       c.scale(1, max(0.2, 1 - blinkProgress));
 
       for (const [rw, rh, col, str, lw] of [
-        [5.5, 7.5, 'rgba(240, 249, 255, 0.95)', strokeColor, 1.0],
+        [5.5, 7.5, rgbaW(0.95), strokeColor, 1.0],
         [4.2, 6.0, isDragged ? '#f59e0b' : C_CYAN],
-        [2.5, 3.8, '#0f172a'],
+        [2.5, 3.8, rgbaB(1)],
       ] as const) {
         c.beginPath();
         c.ellipse(0, rw === 2.5 ? 0.5 : 0, rw, rh, 0.05, 0, TAU);
@@ -428,7 +431,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
 
     if (prism.shape === 'mirror') {
       const w = 36, h = 6;
-      rRect(c, -w - 2, -h - 2, (w + 2) * 2, (h + 2) * 2, 0, '#0f172a');
+      rRect(c, -w - 2, -h - 2, (w + 2) * 2, (h + 2) * 2, 0, rgbaB(1));
       const grad = linGrad(c, -w, 0, w, 0, [[0, '#7dd3fc'], [0.5, C_WHITE], [1, C_CYAN]]);
       rRect(c, -w, -h, w * 2, h * 2, 0, grad, rimStroke, rimWidth);
       circ(c, 0, 0, 3, isDragged ? C_GOLD : C_CYAN);
@@ -493,7 +496,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
         const isHot = isBtnHovered || isBtnActive;
         const btnR = isHot ? 15.0 : 13.5;
 
-        const btnFill = isBtnActive ? rgbaG(0.35) : isBtnHovered ? rgbaC(0.32) : 'rgba(10,18,42,0.90)';
+        const btnFill = isBtnActive ? rgbaG(0.35) : isBtnHovered ? rgbaC(0.32) : rgbaB(0.9);
         const btnStroke = isBtnActive ? C_GOLD : isBtnHovered ? C_WHITE : rgbaC(0.85);
         circ(c, bx, 0, btnR, btnFill, btnStroke, isBtnActive ? 2.2 : 1.5);
 
@@ -516,7 +519,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       const isMoveActive = (isDragged && dragMode === 'move') || hoverHandle === 'body';
 
       const badgeR = 19;
-      const moveFill = isMoveActive ? 'rgba(28,40,72,0.96)' : 'rgba(15,23,42,0.90)';
+      const moveFill = isMoveActive ? rgbaB(0.96) : rgbaB(0.9);
       const moveStroke = isMoveActive ? C_GOLD : rgbaC(0.85);
       circ(c, 0, moveY, badgeR, moveFill, moveStroke, isMoveActive ? 2.4 : 1.6);
       circ(c, 0, moveY, badgeR + 3, undefined, isMoveActive ? rgbaG(0.6) : rgbaC(0.25), isMoveActive ? 3.5 : 1.8);
@@ -569,12 +572,13 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     }
 
     // 2. Mounting Brackets
-    for (const [sx, sy] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
-      line(c, sx * 0.71 * (r - 2), sy * 0.71 * (r - 2), sx * 0.71 * (r + 6), sy * 0.71 * (r + 6), 'rgba(100,116,139,0.45)', 2);
+    for (let i = 0; i < 4; i++) {
+      c.rotate(PI / 2);
+      line(c, 0.71 * (r - 2), 0.71 * (r - 2), 0.71 * (r + 6), 0.71 * (r + 6), 'rgba(100,116,139,0.45)', 2);
     }
 
     // 3. Chassis Backplate
-    circ(c, 0, 0, r, 'rgba(10,15,30,0.42)', rgbaW(0.18), 1.5);
+    circ(c, 0, 0, r, rgbaB(0.42), rgbaW(0.18), 1.5);
 
     // 4. Target Color Band
     circ(c, 0, 0, r - 2, undefined, targetHex, 3.2);
@@ -585,7 +589,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     }
 
     // 6. Mid-chassis Ring
-    circ(c, 0, 0, r * 0.68, 'rgba(5,8,16,0.55)');
+    circ(c, 0, 0, r * 0.68, rgbaB(0.55));
 
     // 7. Sensor Aperture Lens
     if (hasLight) {
@@ -598,7 +602,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       circ(c, 0, 0, centerRadius, lensGrad);
       circ(c, 0, 0, isMatch ? 3.0 : 1.8, isMatch ? C_WHITE : rgbaW(0.7));
     } else {
-      circ(c, 0, 0, centerRadius, 'rgba(3,6,14,0.65)');
+      circ(c, 0, 0, centerRadius, rgbaB(0.65));
       circ(c, 0, 0, 1.5, rgbaW(0.2));
     }
 
@@ -607,8 +611,9 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     // 8. Optical Reticle Notches
     const ti = centerRadius - 2.0, to = centerRadius + 3.0;
     const reticleCol = isMatch ? C_WHITE : rgbaW(0.55);
-    for (const [x1, y1, x2, y2] of [[0, -ti, 0, -to], [0, ti, 0, to], [-ti, 0, -to, 0], [ti, 0, to, 0]]) {
-      line(c, x1, y1, x2, y2, reticleCol);
+    for (let i = 0; i < 4; i++) {
+      c.rotate(PI / 2);
+      line(c, 0, -ti, 0, -to, reticleCol);
     }
 
     // 9. Text Label

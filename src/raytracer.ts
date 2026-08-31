@@ -73,31 +73,21 @@ export function traceScene(
   const orbs: { prism: Prism; r: number }[] = [];
   const sceneEdges: { p1: Vec2; p2: Vec2; nOut: Vec2; prism?: Prism; obstacle?: Obstacle }[] = [];
 
-  for (const p of prisms) {
-    if (p.shape === 'orb') {
-      orbs.push({ prism: p, r: 30 * (p.scale || 1) });
-    } else {
-      const v = getPrismVertices(p);
-      const len = v.length;
-      for (let i = 0; i < len; i++) {
-        const p1 = v[i];
-        const p2 = v[(i + 1) % len];
-        sceneEdges.push({ p1, p2, nOut: getOutwardNormal(p1, p2, p.pos), prism: p });
-      }
+  const pushEdges = (pts: Vec2[], centroid: Vec2, prism?: Prism, obstacle?: Obstacle) => {
+    for (let i = 0, len = pts.length; i < len; i++) {
+      sceneEdges.push({ p1: pts[i], p2: pts[(i + 1) % len], nOut: getOutwardNormal(pts[i], pts[(i + 1) % len], centroid), prism, obstacle });
     }
+  };
+
+  for (const p of prisms) {
+    p.shape === 'orb'
+      ? orbs.push({ prism: p, r: 30 * (p.scale || 1) })
+      : pushEdges(getPrismVertices(p), p.pos, p);
   }
 
   for (const obs of obstacles) {
     const pts = obs.points;
-    const len = pts.length;
-    let cx = 0, cy = 0;
-    for (const pt of pts) { cx += pt.x; cy += pt.y; }
-    const centroid = v2(cx / len, cy / len);
-    for (let i = 0; i < len; i++) {
-      const p1 = pts[i];
-      const p2 = pts[(i + 1) % len];
-      sceneEdges.push({ p1, p2, nOut: getOutwardNormal(p1, p2, centroid), obstacle: obs });
-    }
+    pushEdges(pts, v2((pts[0].x + pts[2].x) / 2, (pts[0].y + pts[2].y) / 2), undefined, obs);
   }
 
   const b = typeof boundsOrWidth === 'object'
