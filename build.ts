@@ -27,7 +27,9 @@ async function build() {
     bundle: true,
     write: false,
     format: 'iife',
-    target: 'esnext',
+    target: 'es2020',
+    treeShaking: true,
+    legalComments: 'none',
     minify: false,
   });
 
@@ -88,6 +90,7 @@ async function build() {
       inline: 3,
       loops: true,
       toplevel: true,
+      keep_fargs: false,
     },
     mangle: {
       toplevel: true,
@@ -134,7 +137,7 @@ async function build() {
     sortAttributes: true,
     sortClassName: true,
     useShortDoctype: true,
-    minifyCSS: false,
+    minifyCSS: true,
     minifyJS: false,
   });
 
