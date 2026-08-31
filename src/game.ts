@@ -15,21 +15,21 @@ import {
 const { sin, min, max, round, PI } = Math;
 
 // OPTIMIZATION: Short localStorage key + Set for deduplicating cleared level indices
-const STORAGE_KEY = 'sh_clr';
+const STORAGE_KEY = 'sh';
 const getCleared = (): number[] => {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 };
 
 const markCleared = (idx: number) => {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...new Set([...getCleared(), idx])])); } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...new Set([...getCleared(), idx])])); } catch { }
 };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const updateViewport = () => {
-  const m = $<HTMLMetaElement>('vpmeta');
+  const m = $<HTMLMetaElement>('m');
   if (m && window.screen) {
-    m['content'] = screen.width >= 700 ? 'width=device-width,initial-scale=1' : 'width=700';
+    m.content = screen.width >= 700 ? 'width=device-width,initial-scale=1' : 'width=700';
   }
 };
 
@@ -47,41 +47,35 @@ export function initGame(): void {
   let isLevelComplete = false;
   let winDelay = 0;
 
-  // DOM Elements
-  const elLevelTitle = $('lvl-title');
-  const elLevelHint = $('lvl-hint');
-  const elLevelSelect = $<HTMLSelectElement>('lvl-select');
-  const elWinModal = $('win-modal');
-  const elWinTitle = $('win-title');
-  const elWinDesc = $('win-desc');
-  const elHelpModal = $('help-modal');
-  const elNextBtn = $<HTMLButtonElement>('next-btn');
-  const elTitleScreen = $('title-screen');
+  // DOM Elements & Child Index Mapping:
+  // Header: <header> contains [0: Logo <div class="l">, 1: Level select <select>, 2: Menu btn, 3: Reset btn, 4: Help btn, 5: Music btn, 6: SFX btn]
+  const headerChildren = document.querySelector('header')!.children;
+  const elLevelSelect = headerChildren[1] as HTMLSelectElement;
+  const btnMenu = headerChildren[2] as HTMLButtonElement;
+  const btnReset = headerChildren[3] as HTMLButtonElement;
+  const btnHelp = headerChildren[4] as HTMLButtonElement;
+  const btnMusic = headerChildren[5] as HTMLButtonElement;
+  const btnSfx = headerChildren[6] as HTMLButtonElement;
 
-  const cardsHtml = [
-    ['🎮 Horn Controls & Steering', 'card-horn-c', [
-      ['cyan', '💫 Orbit Drag Ring', 'Drag outer ring to rotate horn'],
-      ['gold', '↺ ↻ Step Buttons', 'Click for precise 0.5° angle nudges'],
-      ['green', '✥ Drag Body', 'Move unicorn position across canvas'],
-    ]],
-    ['🎯 Target Sensors: Objective', 'card-sensor-c', [
-      ['green', '🌈 Target Spectrum (λ)', 'Sensor demands exact color/wavelength'],
-      ['cyan', '🔬 Sensor Photodiode', 'Split white light & aim matching beam into lens'],
-      ['gold', '🏆 Charge to 100%', 'Hold steady beam until locked — charge all to win!'],
-    ]],
-  ].map(([hdr, cid, lbs]) => `
-    <div class="glass-card">
-      <div class="card-header">${hdr}</div>
-      <div class="card-body">
-        <canvas id="${cid}" class="card-canvas" width="160" height="175"></canvas>
-        <div class="card-labels">
-          ${(lbs as string[][]).map(([c, h, s]) => `<div class="card-lb ${c}"><b>${h}</b><span>${s}</span></div>`).join('')}
-        </div>
-      </div>
-    </div>
-  `).join('');
+  // Footer: <footer> contains [0: Level title <b>, 1: Level hint <span>]
+  const footerChildren = document.querySelector('footer')!.children;
+  const elLevelTitle = footerChildren[0] as HTMLElement;
+  const elLevelHint = footerChildren[1] as HTMLElement;
 
-  document.querySelectorAll('.title-cards').forEach((el) => { el.innerHTML = cardsHtml; });
+  // Title screen: #ts container and play button (.bp)
+  const elTitleScreen = $('ts');
+  const btnPlay = elTitleScreen.querySelector('button')!;
+
+  // Help modal: #hm container and close button (.b1)
+  const elHelpModal = $('hm');
+  const btnHelpClose = elHelpModal.querySelector('button')!;
+
+  // Win modal: #wm container. Modal box (.mb) contains [0: Title (.mt), 1: Description (<p>), 2: Next button (.b1)]
+  const elWinModal = $('wm');
+  const winBoxChildren = elWinModal.firstElementChild!.children;
+  const elWinTitle = winBoxChildren[0] as HTMLElement;
+  const elWinDesc = winBoxChildren[1] as HTMLElement;
+  const elNextBtn = winBoxChildren[2] as HTMLButtonElement;
 
   let cachedBounds = {
     scale: 1,
@@ -123,11 +117,11 @@ export function initGame(): void {
   const clonePrisms = (list: Prism[]) =>
     list.map((p) => ({ ...p, pos: { ...p.pos }, basePos: p.basePos ? { ...p.basePos } : undefined }));
 
-  const setHidden = (el: HTMLElement, hide = true) => el.classList.toggle('hidden', hide);
+  const setHidden = (el: HTMLElement, hide = true) => el.classList.toggle('h', hide);
 
   const showTitleScreen = (): void => {
     isTitleScreen = true;
-    document.body.classList.add('is-title');
+    document.body.classList.add('t');
     prisms = clonePrisms(TITLE_SCENE.prisms);
     targets = [];
     isLevelComplete = false;
@@ -145,7 +139,7 @@ export function initGame(): void {
 
   const loadLevel = (idx: number): void => {
     isTitleScreen = false;
-    document.body.classList.remove('is-title');
+    document.body.classList.remove('t');
     setHidden(elTitleScreen);
     setHidden(elHelpModal);
     currentLevelIdx = max(0, min(LEVELS.length - 1, idx));
@@ -166,42 +160,45 @@ export function initGame(): void {
     populateLevelSelect();
   };
 
+  const on = (t: EventTarget, ev: string, fn: any, opts?: any) => t.addEventListener(ev, fn, opts);
+
   const setupUI = (): void => {
     populateLevelSelect();
 
-    // OPTIMIZATION: '{ once: true }' automatically unbinds the listener after first user gesture,
-    // avoiding the need for manual 'window.removeEventListener(...)' boilerplate.
     const triggerAudio = () => initAudio();
-    window.addEventListener('pointerdown', triggerAudio, { once: true });
-    window.addEventListener('keydown', triggerAudio, { once: true });
+    on(window, 'pointerdown', triggerAudio, { once: true });
+    on(window, 'keydown', triggerAudio, { once: true });
 
-    const bindClick = (id: string, action: () => void) => {
-      $(id).addEventListener('click', () => {
+    const bindClick = (btn: HTMLElement, action: () => void) => {
+      on(btn, 'click', () => {
         initAudio();
         playClick();
         action();
       });
     };
 
-    elLevelSelect.addEventListener('change', (e) => {
+    on(elLevelSelect, 'change', () => {
       initAudio();
       playClick();
-      loadLevel(parseInt((e.target as HTMLSelectElement).value, 10));
+      loadLevel(parseInt(elLevelSelect.value, 10));
     });
 
-    bindClick('reset-btn', () => (isTitleScreen ? showTitleScreen() : loadLevel(currentLevelIdx)));
-    bindClick('menu-btn', () => showTitleScreen());
-    bindClick('play-btn', () => loadLevel(currentLevelIdx));
-    const toggleBtn = (id: string, fn: () => boolean, iconOn: string, label: string) => {
-      bindClick(id, () => {
-        $(id).innerHTML = `${fn() ? '🔇' : iconOn}<b> ${label}</b>`;
+    bindClick(btnReset, () => (isTitleScreen ? showTitleScreen() : loadLevel(currentLevelIdx)));
+    bindClick(btnMenu, () => showTitleScreen());
+    bindClick(btnPlay, () => loadLevel(currentLevelIdx));
+    const toggleBtn = (btn: HTMLElement, fn: () => boolean, iconOn: string, label: string) => {
+      bindClick(btn, () => {
+        btn.innerHTML = `${fn() ? '🔇' : iconOn}<b> ${label}</b>`;
       });
     };
-    toggleBtn('music-btn', toggleMusic, '🎵', 'Music');
-    toggleBtn('sfx-btn', toggleSfx, '🔊', 'SFX');
-    bindClick('help-btn', () => setHidden(elHelpModal, false));
-    bindClick('help-close-btn', () => setHidden(elHelpModal));
-    bindClick('next-btn', () => {
+    toggleBtn(btnMusic, toggleMusic, '🎵', 'Music');
+    toggleBtn(btnSfx, toggleSfx, '🔊', 'SFX');
+    bindClick(btnHelp, () => {
+      $('htc').innerHTML = $('ts').querySelector('.tc')!.innerHTML;
+      setHidden(elHelpModal, false);
+    });
+    bindClick(btnHelpClose, () => setHidden(elHelpModal));
+    bindClick(elNextBtn, () => {
       setHidden(elWinModal);
       loadLevel((currentLevelIdx + 1) % LEVELS.length);
     });
@@ -211,12 +208,10 @@ export function initGame(): void {
   showTitleScreen();
   const onResize = () => { updateViewport(); resizeCanvas(); };
   onResize();
-  window.addEventListener('resize', onResize);
-  window.addEventListener('orientationchange', onResize);
+  on(window, 'resize', onResize);
+  on(window, 'orientationchange', onResize);
 
   const update = (time: number): void => {
-    renderer.updateDust(time);
-
     if (isTitleScreen) {
       for (let i = 0; i < prisms.length; i++) {
         const prism = prisms[i];
@@ -236,13 +231,13 @@ export function initGame(): void {
     const dpr = bounds.dpr;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    renderer.clear(ctx.canvas.width, ctx.canvas.height);
+    renderer.clear();
 
     ctx.save();
     ctx.translate(bounds.offsetX * dpr, bounds.offsetY * dpr);
     ctx.scale(bounds.scale * dpr, bounds.scale * dpr);
 
-    renderer.renderSquareBounds(1000);
+    renderer.renderSquareBounds();
 
     const hoverIdx = input.getHoverIndex();
     const hoverHandle = input.getHoverHandle();
@@ -277,7 +272,7 @@ export function initGame(): void {
     renderer.renderRays(traceResult.rays, bounds);
     renderer.renderDust(traceResult.segments, time);
 
-    if (isTitleScreen || !elHelpModal.classList.contains('hidden')) {
+    if (isTitleScreen || !elHelpModal.classList.contains('h')) {
       renderer.renderCardPreview(time);
     }
 
@@ -335,7 +330,7 @@ export function initGame(): void {
     render(dt, time);
     requestAnimationFrame(loop);
   };
-  requestAnimationFrame(loop);
+  loop(lastTime);
 }
 
-window.addEventListener('DOMContentLoaded', initGame);
+initGame();
