@@ -1,29 +1,38 @@
-let audioCtx: AudioContext | null = null;
-let masterGain: GainNode | null = null;
-let musicGain: GainNode | null = null;
-let sfxGain: GainNode | null = null;
-let filterNode: BiquadFilterNode | null = null;
+let audioCtx: AudioContext | null = null,
+  masterGain: GainNode | null = null,
+  musicGain: GainNode | null = null,
+  sfxGain: GainNode | null = null,
+  filterNode: BiquadFilterNode | null = null;
 
-let musicMuted = false;
-let sfxMuted = false;
-let musicPlaying = false;
-let musicSchedulerTimer: number | null = null;
-let nextChordTime = 0;
-let currentChordIdx = 0;
-let lastRotateSound = 0;
-let rotateNoteIdx = 0;
-let lastMoveSound = 0;
-let lastChargeSound = 0;
+let musicMuted = false,
+  sfxMuted = false,
+  musicPlaying = false,
+  musicSchedulerTimer: number | null = null,
+  nextChordTime = 0,
+  currentChordIdx = 0,
+  lastRotateSound = 0,
+  rotateNoteIdx = 0,
+  lastMoveSound = 0,
+  lastChargeSound = 0;
+
+// OPTIMIZATION (MATH DESTRUCTURING):
+// Aliasing Math functions to local module scope allows Terser to mangle them into 1-letter variables.
+const { sin, max, min, floor, abs, random, pow } = Math;
 
 const CHORDS = [
-  [146.83, 220, 277.18, 329.63, 369.99, 440],
-  [98, 146.83, 196, 246.94, 293.66, 369.99],
-  [123.47, 185, 220, 293.66, 329.63, 369.99],
-  [110, 164.81, 220, 246.94, 329.63, 415.3],
+  [146.8, 220, 277.2, 329.6, 370, 440],
+  [98, 146.8, 196, 246.9, 293.7, 370],
+  [123.5, 185, 220, 293.7, 329.6, 370],
+  [110, 164.8, 220, 246.9, 329.6, 415.3],
 ];
 
-const BELL_SCALE = [587.33, 659.25, 739.99, 880, 987.77, 1174.66, 1318.51, 1479.98];
+const BELL_SCALE = [587.3, 659.3, 740, 880, 987.8, 1174.7, 1318.5, 1480];
 
+// OPTIMIZATION (WEBAUDIO NATIVE API WRAPPERS):
+// WebAudio properties (createOscillator, createGain, setValueAtTime, linearRampToValueAtTime,
+// exponentialRampToValueAtTime, cancelScheduledValues) cannot be shortened by minifiers.
+// Encapsulating them into concise micro-helpers 'osc()' and 'gain()' dramatically decreases
+// code repetition and isolates un-mangleable browser properties.
 const osc = (type: OscillatorType, freq: number, t: number, stopT: number, out?: AudioNode): OscillatorNode => {
   const o = audioCtx!.createOscillator();
   o.type = type;
@@ -63,32 +72,33 @@ export function initAudio(): void {
   if (!musicPlaying) startAmbientMusic();
 }
 
+// OPTIMIZATION: Unified helper for scheduling smooth target gain transitions across audio nodes
+const setGain = (g: GainNode | null, val: number) => {
+  if (g && audioCtx) {
+    g.gain.cancelScheduledValues(audioCtx.currentTime);
+    g.gain.setTargetAtTime(val, audioCtx.currentTime, 0.05);
+  }
+};
 
 export function toggleMusic(): boolean {
   musicMuted = !musicMuted;
-  if (musicGain && audioCtx) {
-    musicGain.gain.cancelScheduledValues(audioCtx.currentTime);
-    musicGain.gain.setTargetAtTime(musicMuted ? 0 : 0.38, audioCtx.currentTime, 0.05);
-  }
+  setGain(musicGain, musicMuted ? 0 : 0.38);
   return musicMuted;
 }
 
 export function toggleSfx(): boolean {
   sfxMuted = !sfxMuted;
-  if (sfxGain && audioCtx) {
-    sfxGain.gain.cancelScheduledValues(audioCtx.currentTime);
-    sfxGain.gain.setTargetAtTime(sfxMuted ? 0 : 0.7, audioCtx.currentTime, 0.05);
-  }
+  setGain(sfxGain, sfxMuted ? 0 : 0.7);
   return sfxMuted;
 }
 
 function playChordCluster(frequencies: number[], startTime: number, durationSec: number): void {
   if (!audioCtx || !filterNode) return;
-  const t = Math.max(audioCtx.currentTime, startTime);
-  const fade = Math.min(3.5, durationSec * 0.4);
+  const t = max(audioCtx.currentTime, startTime);
+  const fade = min(3.5, durationSec * 0.4);
 
   filterNode.frequency.cancelScheduledValues(t);
-  filterNode.frequency.setTargetAtTime(420 + Math.random() * 400, t, 2.2);
+  filterNode.frequency.setTargetAtTime(420 + random() * 400, t, 2.2);
 
   frequencies.forEach((freq, i) => {
     const ng = gain(0.0001, t, filterNode!);
@@ -98,7 +108,7 @@ function playChordCluster(frequencies: number[], startTime: number, durationSec:
     ng.gain.setValueAtTime(vol, t + durationSec - fade);
     ng.gain.linearRampToValueAtTime(0.0001, t + durationSec);
     osc(i === 0 ? 'sine' : 'triangle', freq, t, t + durationSec + 0.15, ng);
-    osc('sine', freq * Math.pow(2, detune / 1200), t, t + durationSec + 0.15, ng);
+    osc('sine', freq * pow(2, detune / 1200), t, t + durationSec + 0.15, ng);
   });
 }
 
@@ -123,7 +133,6 @@ export function startAmbientMusic(): void {
   musicSchedulerTimer = window.setInterval(scheduleMusic, 2000);
 }
 
-
 function playTone(
   f: number,
   dur = 0.15,
@@ -147,37 +156,37 @@ export function playPrismRotate(rotSpeed = 1): void {
   const now = performance.now();
   if (now - lastRotateSound < 70) return;
   lastRotateSound = now;
-  rotateNoteIdx = (rotateNoteIdx + Math.max(1, Math.floor(Math.abs(rotSpeed) * 2))) % BELL_SCALE.length;
+  rotateNoteIdx = (rotateNoteIdx + max(1, floor(abs(rotSpeed) * 2))) % BELL_SCALE.length;
   const f = BELL_SCALE[rotateNoteIdx];
   playTone(f, 0.16, 0.024);
   playTone(f * 2.76, 0.16, 0.024);
 }
 
-export function playPrismMove(_speed = 1): void {
+export const playPrismMove = (_speed = 1): void => {
   const now = performance.now();
   if (now - lastMoveSound < 65) return;
   lastMoveSound = now;
-  const base = 260 + Math.sin(now * 0.005) * 60;
+  const base = 260 + sin(now * 0.005) * 60;
   playTone(base, 0.18, 0.06, 'triangle', base * 1.2);
   playTone(base * 1.5, 0.18, 0.06, 'sine', base * 1.8);
-}
+};
 
-export function playSensorPulse(progress: number): void {
+export const playSensorPulse = (progress: number): void => {
   const now = performance.now();
   if (now - lastChargeSound < 110) return;
   lastChargeSound = now;
   const f = 440 + progress * 440;
   playTone(f, 0.14, 0.04 + progress * 0.03, 'sine', f * 1.05);
   playTone(f / 2, 0.14, 0.03, 'triangle');
-}
+};
 
-export function playVictory(): void {
-  [587.33, 739.99, 880, 1108.73, 1174.66, 1479.98].forEach((f, idx) => {
-    playTone(f, 0.65, 0.08, 'sine', undefined, idx * 0.09);
-    playTone(f * 2, 0.65, 0.08, 'sine', undefined, idx * 0.09);
+export const playVictory = (): void => {
+  [587.3, 740, 880, 1108.7, 1174.7, 1480].forEach((f, idx) => {
+    for (const m of [1, 2]) playTone(f * m, 0.65, 0.08, 'sine', undefined, idx * 0.09);
   });
-}
+};
 
-export function playClick(): void {
+export const playClick = (): void => {
   playTone(1046.5, 0.05, 0.04, 'sine', 523.25);
-}
+};
+
