@@ -83,13 +83,6 @@ export function traceScene(
     pushEdges(pts, v2((pts[0].x + pts[2].x) / 2, (pts[0].y + pts[2].y) / 2), undefined, obs);
   }
 
-  for (const [x1, y1, x2, y2, nx, ny] of [
-    [0, 0, 1000, 0, 0, 1],
-    [1000, 0, 1000, 1000, -1, 0],
-    [1000, 1000, 0, 1000, 0, -1],
-    [0, 1000, 0, 0, 1, 0],
-  ]) sceneEdges.push({ p1: v2(x1, y1), p2: v2(x2, y2), nOut: v2(nx, ny) });
-
   for (const emitter of emitters) {
     const count = emitter.rayCount || 48;
     const minL = emitter.minLambda || 400;
@@ -141,7 +134,7 @@ export function traceScene(
           }
         }
 
-        const segEnd = hitPos || vAdd(rOrigin, vScale(rDir, 2000));
+        const segEnd = hitPos || vAdd(rOrigin, vScale(rDir, 3000));
         segments.push({ p1: rOrigin, p2: segEnd, wavelength, intensity: 1 });
         rayPoints.push(segEnd);
         if (!hitPos) break;
