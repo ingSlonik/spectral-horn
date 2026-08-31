@@ -1,8 +1,12 @@
 import { Vec2, Prism } from './types';
-import { v2, vDist } from './math';
+import { v2 } from './math';
 import { initAudio, playPrismRotate, playPrismMove } from './audio';
 
-const { min, max, atan2, abs, sign, PI } = Math;
+const { hypot, min, max, atan2, abs, PI } = Math;
+
+const H_BODY = 'body', H_ROT = 'rot', H_CCW = 'step-ccw', H_CW = 'step-cw';
+const M_MOVE = 'move', M_ROTATE = 'rotate';
+const C_POINTER = 'pointer', C_DEFAULT = 'default';
 
 export interface DragState {
   prismIndex: number | null;
@@ -66,21 +70,21 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
     if (selectedPrismIndex !== null && prisms[selectedPrismIndex]) {
       const p = prisms[selectedPrismIndex];
       if (!p.locked) {
-        const s = p.scale || 1;
-        if (vDist(pos, v2(p.pos.x - 78 * s, p.pos.y)) <= 18 * s) return { idx: selectedPrismIndex, handle: 'step-ccw' };
-        if (vDist(pos, v2(p.pos.x + 78 * s, p.pos.y)) <= 18 * s) return { idx: selectedPrismIndex, handle: 'step-cw' };
-        const dCenter = vDist(pos, p.pos);
-        if (vDist(pos, v2(p.pos.x, p.pos.y + 82 * s)) <= 34 * s || dCenter <= 40 * s) {
-          return { idx: selectedPrismIndex, handle: 'body' };
+        const s = p.scale || 1, px = p.pos.x, py = p.pos.y;
+        if (hypot(pos.x - (px - 78 * s), pos.y - py) <= 18 * s) return { idx: selectedPrismIndex, handle: H_CCW };
+        if (hypot(pos.x - (px + 78 * s), pos.y - py) <= 18 * s) return { idx: selectedPrismIndex, handle: H_CW };
+        const dCenter = hypot(pos.x - px, pos.y - py);
+        if (hypot(pos.x - px, pos.y - (py + 82 * s)) <= 34 * s || dCenter <= 40 * s) {
+          return { idx: selectedPrismIndex, handle: H_BODY };
         }
-        if (dCenter >= 45 * s && dCenter <= 110 * s) return { idx: selectedPrismIndex, handle: 'rot' };
+        if (dCenter >= 45 * s && dCenter <= 110 * s) return { idx: selectedPrismIndex, handle: H_ROT };
       }
     }
 
     for (let i = prisms.length - 1; i >= 0; i--) {
       const p = prisms[i];
       if (p.locked || i === selectedPrismIndex) continue;
-      if (vDist(pos, p.pos) <= 75 * (p.scale || 1)) return { idx: i, handle: 'body' };
+      if (hypot(pos.x - p.pos.x, pos.y - p.pos.y) <= 75 * (p.scale || 1)) return { idx: i, handle: H_BODY };
     }
     return null;
   };
@@ -89,7 +93,7 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
     const hit = hitTest(mousePos, prisms);
     hoverPrismIndex = hit ? hit.idx : null;
     hoverHandle = hit ? hit.handle : null;
-    canvas.style.cursor = !hit ? 'default' : hit.handle === 'body' ? 'move' : hit.handle === 'rot' ? 'grab' : 'pointer';
+    canvas.style.cursor = !hit ? C_DEFAULT : hit.handle === H_BODY ? M_MOVE : hit.handle === H_ROT ? 'grab' : C_POINTER;
   };
 
   const handlePointerDown = (pos: Vec2, isRightClick: boolean, isTouch: boolean): void => {
@@ -101,10 +105,10 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
     if (hit) {
       selectedPrismIndex = hit.idx;
       const p = prisms[hit.idx];
-      const mode = isRightClick || hit.handle === 'rot' ? 'rotate' : hit.handle === 'body' ? 'move' : hit.handle;
+      const mode = isRightClick || hit.handle === H_ROT ? M_ROTATE : hit.handle === H_BODY ? M_MOVE : hit.handle;
 
-      if (mode === 'step-ccw' || mode === 'step-cw') {
-        const delta = (mode === 'step-ccw' ? -0.5 : 0.5) * (PI / 180);
+      if (mode === H_CCW || mode === H_CW) {
+        const delta = (mode === H_CCW ? -0.5 : 0.5) * (PI / 180);
         p.rot += delta;
         if (p.baseRot !== undefined) p.baseRot = p.rot;
         playPrismRotate(0.5);
@@ -114,15 +118,15 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
       dragState = {
         prismIndex: hit.idx,
         mode,
-        dragOffset: mode === 'move'
+        dragOffset: mode === M_MOVE
           ? v2(p.pos.x - pos.x, p.pos.y - (isTouch ? pos.y - TOUCH_OFFSET_Y : pos.y))
           : v2(0, 0),
-        lastAngle: mode === 'rotate' ? atan2(pos.y - p.pos.y, pos.x - p.pos.x) : 0,
+        lastAngle: mode === M_ROTATE ? atan2(pos.y - p.pos.y, pos.x - p.pos.x) : 0,
         isTouch,
       };
-      canvas.style.cursor = mode === 'rotate' ? 'grabbing' : mode === 'move' ? 'move' : 'pointer';
+      canvas.style.cursor = mode === M_ROTATE ? 'grabbing' : mode === M_MOVE ? M_MOVE : C_POINTER;
     } else {
-      if (!prisms.some((p) => vDist(pos, p.pos) <= 115 * (p.scale || 1))) selectedPrismIndex = null;
+      if (!prisms.some((p) => hypot(pos.x - p.pos.x, pos.y - p.pos.y) <= 115 * (p.scale || 1))) selectedPrismIndex = null;
     }
 
     updateHover(prisms);
@@ -136,23 +140,18 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
     if (dragState.prismIndex !== null) {
       const p = prisms[dragState.prismIndex];
       if (p && !p.locked) {
-        if (dragState.mode === 'move') {
+        if (dragState.mode === M_MOVE) {
           const y = isTouch ? pos.y - TOUCH_OFFSET_Y : pos.y;
           p.pos.x = max(60, min(940, pos.x + dragState.dragOffset.x));
           p.pos.y = max(60, min(940, y + dragState.dragOffset.y));
           if (p.basePos) { p.basePos.x = p.pos.x; p.basePos.y = p.pos.y; }
           playPrismMove(0.2);
-        } else if (dragState.mode === 'rotate') {
-          if (vDist(pos, p.pos) >= 10) {
-            const cur = atan2(pos.y - p.pos.y, pos.x - p.pos.x);
-            let d = cur - dragState.lastAngle;
-            while (d > PI) d -= PI * 2;
-            while (d < -PI) d += PI * 2;
-            p.rot += d;
-            dragState.lastAngle = cur;
-            if (p.baseRot !== undefined) p.baseRot = p.rot;
-            playPrismRotate(abs(d) * 8);
-          }
+        } else if (dragState.mode === M_ROTATE) {
+          let d = (atan2(pos.y - p.pos.y, pos.x - p.pos.x) - dragState.lastAngle + 3 * PI) % (2 * PI) - PI;
+          p.rot += d;
+          dragState.lastAngle += d;
+          if (p.baseRot !== undefined) p.baseRot = p.rot;
+          playPrismRotate(abs(d) * 8);
         }
         onStateChange?.();
       }
@@ -165,16 +164,18 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
     stopStepAutoRepeat();
     if (dragState.prismIndex !== null) {
       dragState = { prismIndex: null, mode: null, dragOffset: v2(0, 0), lastAngle: 0, isTouch: false };
-      canvas.style.cursor = 'default';
+      canvas.style.cursor = C_DEFAULT;
       updateHover(getPrisms());
       onStateChange?.();
     }
   };
 
-  canvas.addEventListener('mousedown', (e) => handlePointerDown(getCanvasPos(e), e.button === 2, false));
-  window.addEventListener('mousemove', (e) => handlePointerMove(getCanvasPos(e), false));
-  window.addEventListener('mouseup', handlePointerUp);
-  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  const on = (t: EventTarget, ev: string, fn: any, opts?: any) => t.addEventListener(ev, fn, opts);
+
+  on(canvas, 'mousedown', (e: MouseEvent) => handlePointerDown(getCanvasPos(e), e.button === 2, false));
+  on(window, 'mousemove', (e: MouseEvent) => handlePointerMove(getCanvasPos(e), false));
+  on(window, 'mouseup', handlePointerUp);
+  on(canvas, 'contextmenu', (e: MouseEvent) => e.preventDefault());
 
   /* JS13K OPTIMIZATION: Keyboard arrow nudging & shift/ctrl step modifiers
      Commented out to reduce bundle size. Mouse/touch drag controls and on-screen
@@ -221,10 +222,10 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
   const onTouch = (e: TouchEvent, isMove = false) => {
     if (e.touches[0]) (isMove ? handlePointerMove : handlePointerDown)(getCanvasPos(e.touches[0]), false, true);
   };
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onTouch(e); }, { passive: false });
-  window.addEventListener('touchmove', (e) => onTouch(e, true), { passive: false });
-  window.addEventListener('touchend', handlePointerUp);
-  window.addEventListener('touchcancel', handlePointerUp);
+  on(canvas, 'touchstart', (e: TouchEvent) => { e.preventDefault(); onTouch(e); }, { passive: false });
+  on(window, 'touchmove', (e: TouchEvent) => onTouch(e, true), { passive: false });
+  on(window, 'touchend', handlePointerUp);
+  on(window, 'touchcancel', handlePointerUp);
 
   return {
     getSelected: () => selectedPrismIndex,
