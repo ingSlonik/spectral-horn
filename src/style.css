@@ -273,14 +273,19 @@ select,
   align-items: center;
 }
 
-#title-screen {
+/* OPTIMIZATION (FULLSCREEN OVERLAYS): Group fixed inset positioning and fade-in animation */
+#title-screen,
+.modal {
   position: fixed;
   inset: 0;
+  animation: fIn .3s ease-out;
+}
+
+#title-screen {
   z-index: 20;
   justify-content: space-between;
   padding: 36px 24px;
   pointer-events: none;
-  animation: fIn .3s ease-out;
   overflow-y: auto;
 }
 
@@ -387,12 +392,9 @@ select,
 }
 
 .modal {
-  position: fixed;
-  inset: 0;
   background: rgba(2, 4, 10, .78);
   justify-content: center;
   z-index: 30;
-  animation: fIn .3s ease-out;
 }
 
 .modal-box {
