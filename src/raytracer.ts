@@ -49,17 +49,7 @@ export function traceScene(
 ): TraceResult {
   const rays: RayPath[] = [];
   const segments: RaySegment[] = [];
-  const targetStats = new Map<number, {
-    t: Target;
-    total: number;
-    r: number;
-    g: number;
-    b: number;
-  }>();
-
-  for (const t of targets) {
-    targetStats.set(t.id, { t, total: 0, r: 0, g: 0, b: 0 });
-  }
+  const tStats = targets.map((t) => ({ t, total: 0, r: 0, g: 0, b: 0 }));
 
   const emitters = Array.isArray(emitterInput) ? emitterInput : [emitterInput];
 
@@ -103,6 +93,8 @@ export function traceScene(
       let bounces = 0;
       const rayPoints: Vec2[] = [rOrigin];
 
+      const [cr, cg, cb] = wavelengthToRGB(wavelength);
+
       while (bounces < MAX_BOUNCES) {
         let minDist = Infinity;
         let hitPos: Vec2 | null = null;
@@ -139,11 +131,10 @@ export function traceScene(
         rayPoints.push(segEnd);
 
         // 3. SENSOR DETECTION: Integrate photon flux crossing the sensor photodiode aperture
-        for (const target of targets) {
-          if (distToSegment(target.pos, rOrigin, segEnd) <= target.radius * 0.374) {
-            const st = targetStats.get(target.id)!;
+        for (let ti = 0; ti < tStats.length; ti++) {
+          const st = tStats[ti];
+          if (distToSegment(st.t.pos, rOrigin, segEnd) <= st.t.radius * 0.374) {
             st.total++;
-            const [cr, cg, cb] = wavelengthToRGB(wavelength);
             st.r += cr;
             st.g += cg;
             st.b += cb;
@@ -155,26 +146,20 @@ export function traceScene(
         // 4. LAW OF SPECULAR REFLECTION: r_refl = d - 2 * (d · n) * n
         const isMirrorHit = (hitObs && hitObs.isMirror) || (hitPrism && hitPrism.shape === 'mirror');
         if (isMirrorHit && hitNormal) {
-          const refl = vSub(rDir, vScale(hitNormal, 2 * vDot(rDir, hitNormal)));
-          rDir = vNorm(refl);
-          rOrigin = vAdd(hitPos, vScale(rDir, EPS));
-          bounces++;
+          rDir = vNorm(vSub(rDir, vScale(hitNormal, 2 * vDot(rDir, hitNormal))));
         } else if (hitPrism && hitNormal) {
-          // 5. SNELL'S LAW & CHROMATIC DISPERSION:
-          // Wavelength-specific refractive index n(λ) produces wavelength-dependent deflection angles.
+          // 5. SNELL'S LAW & CHROMATIC DISPERSION
           const prismN = getRefractiveIndex(hitPrism.baseIndex, hitPrism.dispersionB, wavelength);
           const inside: boolean = insideId === hitPrism.id;
           const res = refractRay(rDir, hitNormal, inside ? prismN : 1.0, inside ? 1.0 : prismN, !inside);
           rDir = res.dir;
-          rOrigin = vAdd(hitPos, vScale(res.dir, EPS));
-          if (!res.isTIR) {
-            insideId = inside ? null : hitPrism.id;
-          }
-          bounces++;
+          if (!res.isTIR) insideId = inside ? null : hitPrism.id;
         } else {
           // Ray struck an opaque non-reflective obstacle or room boundary
           break;
         }
+        rOrigin = vAdd(hitPos, vScale(rDir, EPS));
+        bounces++;
       }
 
       rays.push({ wavelength, intensity: 1, points: rayPoints });
@@ -183,15 +168,16 @@ export function traceScene(
 
   // OPTIMIZATION: Streamlined reduction of sensor hit statistics avoiding intermediate array allocations
   const finalHits = new Map<number, TargetHitStats>();
-  for (const [id, st] of targetStats) {
+  for (let ti = 0; ti < tStats.length; ti++) {
+    const st = tStats[ti];
     const targetRgb = st.t.targetRgb || wavelengthToRGB((st.t.minLambda + st.t.maxLambda) / 2);
     const maxVal = max(st.r, st.g, st.b, 1);
-    const sampledRgb = st.total
-      ? ([st.r, st.g, st.b].map((c) => min(255, round((c / maxVal) * 255))) as [number, number, number])
-      : ([0, 0, 0] as [number, number, number]);
+    const sampledRgb: [number, number, number] = st.total
+      ? [min(255, round(st.r / maxVal * 255)), min(255, round(st.g / maxVal * 255)), min(255, round(st.b / maxVal * 255))]
+      : [0, 0, 0];
     const m = st.total ? checkColorMatch(sampledRgb, targetRgb) : { isMatch: false, hasLight: false };
 
-    finalHits.set(id, {
+    finalHits.set(st.t.id, {
       sampledRgb,
       isMatch: m.isMatch,
       hasLight: m.hasLight,
