@@ -39,10 +39,12 @@ export function wavelengthToRGB(wl: number): [number, number, number] {
   return [adj(r), adj(g), adj(b)];
 }
 
-export const wavelengthToHex = (wl: number) => rgbToHex(...wavelengthToRGB(wl));
+export const rgbToHex = (r: any, g = 0, b = 0): string => {
+  const [cr, cg, cb] = Array.isArray(r) ? r : [r, g, b];
+  return '#' + ((1 << 24) + (round(cr) << 16) + (round(cg) << 8) + round(cb)).toString(16).slice(1);
+};
 
-export const rgbToHex = (r: number, g: number, b: number): string =>
-  '#' + ((1 << 24) + (round(r) << 16) + (round(g) << 8) + round(b)).toString(16).slice(1);
+export const wavelengthToHex = (wl: number) => rgbToHex(wavelengthToRGB(wl));
 
 /**
  * Color conversion: RGB (0-255) to HSV (H: 0-360°, S: 0-1, V: 0-1)

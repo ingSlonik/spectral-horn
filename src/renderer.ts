@@ -544,12 +544,12 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     const c = targetCtx;
     const midWl = (target.minLambda + target.maxLambda) / 2;
     const targetRgb = target.targetRgb || wavelengthToRGB(midWl);
-    const targetHex = rgbToHex(targetRgb[0], targetRgb[1], targetRgb[2]);
+    const targetHex = rgbToHex(targetRgb);
 
     const isMatch = !!target.isColorMatching;
     const hasLight = !!target.hasLight;
     const sampledRgb = target.sampledRgb || [0, 0, 0];
-    const sampledHex = rgbToHex(sampledRgb[0], sampledRgb[1], sampledRgb[2]);
+    const sampledHex = rgbToHex(sampledRgb);
 
     c.save();
     c.translate(target.pos.x, target.pos.y);
@@ -687,10 +687,12 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     rRect(c, pad, pad, innerSize, innerSize, radius, undefined, 'rgba(56,189,248,0.06)', 6);
     rRect(c, pad, pad, innerSize, innerSize, radius, undefined, 'rgba(255,255,255,0.09)', 1.4);
 
-    for (const [px, py] of [[44, 44], [size - 44, 44], [size - 44, size - 44], [44, size - 44]]) {
-      line(c, px - 7.5, py, px + 7.5, py, rgbaG(0.6), 1.2, 'round');
-      line(c, px, py - 7.5, px, py + 7.5, rgbaG(0.6), 1.2, 'round');
-      circ(c, px, py, 1.4, rgbaW(0.9));
+    for (const px of [44, size - 44]) {
+      for (const py of [44, size - 44]) {
+        line(c, px - 7.5, py, px + 7.5, py, rgbaG(0.6), 1.2, 'round');
+        line(c, px, py - 7.5, px, py + 7.5, rgbaG(0.6), 1.2, 'round');
+        circ(c, px, py, 1.4, rgbaW(0.9));
+      }
     }
     c.restore();
   };

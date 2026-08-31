@@ -30,6 +30,7 @@ const [RS, GS, BS, VS, AS, CS, WS, BST, GSM, RSB, MST, CSB, YS] = [
 ].map((s) => s + ' Sensor');
 
 const [MIRROR, DOVE, ORB] = ['mirror', 'dove', 'orb'] as const;
+const W_RGB: [number, number, number] = [255, 255, 255];
 
 // OPTIMIZATION (COMPACT TUPLE ENCODING):
 // Why tuples instead of object literals?
@@ -43,7 +44,7 @@ const [MIRROR, DOVE, ORB] = ['mirror', 'dove', 'orb'] as const;
 // - Prism:    [x, y, rot=0, scale=1, baseIndex=1.52, dispersionB=22000, shape='horn', swayPhase=0]
 //             Smart shape tokens: [x, y, 'mirror'|'dove'|'orb', scale, ...] auto-configures defaults.
 //             Smart dispersion: [x, y, 45000] treats numbers > 100 as dispersionB.
-// - Target:   [x, y, minLambda, maxLambda, radius=25, name='', targetRgb?]
+// - Target:   [x, y, minLambda, maxLambda, name='', radius=25, targetRgb?]
 // - Obstacle: [x1, y1, x2, y2, isMirror=false]
 const RAW_LEVELS: any[] = [
   [
@@ -95,7 +96,7 @@ const RAW_LEVELS: any[] = [
     [[300, 450, 45000]],
     [
       [880, 230, 620, 700, RS],
-      [880, 88, 400, 490, CS, [0, 240, 255]],
+      [880, 88, 400, 490, CS, 25, [0, 240, 255]],
     ],
     [[350, 50, 400, 480], [260, 840, 580, 860, true], [680, 580, 730, 950]],
   ],
@@ -133,8 +134,8 @@ const RAW_LEVELS: any[] = [
     [[90, 485, 0, 4, 32, 650, 680], [90, 515, 0, 4, 32, 440, 470]],
     [[300, 750, 2, 1.6, 1.53, 12000, DOVE]],
     [
-      [880, 485, 440, 470, 20, BST],
-      [880, 515, 650, 680, 20, RSB],
+      [880, 485, 440, 470, BST, 20],
+      [880, 515, 650, 680, RSB, 20],
     ],
     [[480, 50, 880, 465], [480, 535, 880, 950]],
   ],
@@ -174,7 +175,7 @@ const RAW_LEVELS: any[] = [
     'Pure wavelengths won\'t satisfy this sensor. Intersect Red and Green beams in its lens!',
     [[90, 240, 0, 7, 52, 650, 680], [90, 760, 0, 7, 52, 525, 545]],
     [[240, 240, 0.35, 1, 1.52, 12000], [240, 760, -0.35, 1, 1.52, 12000]],
-    [[870, 500, 520, 680, 45, YS, [255, 235, 0]]],
+    [[870, 500, 520, 680, YS, 45, [255, 235, 0]]],
     [[520, 50, 560, 260], [520, 740, 560, 950]],
   ],
   [
@@ -191,8 +192,8 @@ const RAW_LEVELS: any[] = [
       [320, 200, ORB, 1.35, 1.58, 18000],
     ],
     [
-      [880, 296, 400, 700, 30, MST, [255, 40, 120]],
-      [880, 690, 400, 700, 30, CSB, [0, 255, 140]],
+      [880, 296, 400, 700, MST, 30, [255, 40, 120]],
+      [880, 690, 400, 700, CSB, 30, [0, 255, 140]],
     ],
   ],
   [
@@ -200,7 +201,7 @@ const RAW_LEVELS: any[] = [
     'Pure white light required! Use the second horn to re-converge the dispersed rainbow.',
     [90, 500, 0, 6, 68],
     [[240, 300, 26000], [580, 850, 26000]],
-    [[880, 670, 400, 700, 40, WS, [255, 255, 255]]],
+    [[880, 670, 400, 700, WS, 40, W_RGB]],
     [[420, 50, 460, 560]],
   ],
   [
@@ -231,12 +232,12 @@ const RAW_LEVELS: any[] = [
       [560, 160, MIRROR, 1.4],
     ],
     [
-      [880, 310, 400, 450, 22, BS],
-      [880, 435, 630, 700, 20, RS],
-      [880, 500, 520, 565, 24, GS],
-      [880, 560, 630, 700, 20, RS],
-      [880, 655, 400, 450, 22, BS],
-      [500, 500, 400, 700, 35, WS, [255, 255, 255]],
+      [880, 310, 400, 450, BS, 22],
+      [880, 435, 630, 700, RS, 20],
+      [880, 500, 520, 565, GS, 24],
+      [880, 560, 630, 700, RS, 20],
+      [880, 655, 400, 450, BS, 22],
+      [500, 500, 400, 700, WS, 35, W_RGB],
     ],
     [[450, 50, 490, 220], [450, 780, 490, 950]],
   ],
@@ -280,9 +281,9 @@ export const LEVELS: LevelDef[] = RAW_LEVELS.map(([title, hint, ems, prs, tgs, o
       pos: v2(a[0], a[1]),
       minLambda: a[2],
       maxLambda: a[3],
-      radius: typeof a[4] === 'number' ? a[4] : 25,
-      name: typeof a[4] === 'string' ? a[4] : a[5] || '',
-      targetRgb: typeof a[4] === 'number' ? a[6] : a[5],
+      name: a[4] || '',
+      radius: a[5] || 25,
+      targetRgb: a[6],
       charge: 0,
       isSatisfied: false,
     })),
