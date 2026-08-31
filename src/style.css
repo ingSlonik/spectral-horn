@@ -3,17 +3,18 @@
    Optimized for JS13k with shared glassmorphism, flex layouts, and CSSO compression.
    ========================================================================== */
 
-/* ANIMATIONS: Shimmer gradient shift & smooth modal fade-in */
-@keyframes sShift {
-  0%, to { background-position: 0 50%; }
-  50% { background-position: 100% 50%; }
+@keyframes s {
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
-@keyframes fIn {
-  0% { opacity: 0; }
+@keyframes f {
+  0% {
+    opacity: 0;
+  }
 }
 
-/* RESET & BASE VIEWPORT CONFIGURATION */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -21,7 +22,22 @@
   user-select: none;
 }
 
-#c, body {
+b,
+.l,
+.mt,
+.tm,
+.ch,
+.bp,
+.b1 {
+  font-weight: 900;
+}
+
+button b {
+  font-weight: 600;
+}
+
+body,
+#c {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -29,7 +45,7 @@
 
 body {
   background: #030611;
-  color: #f8fafc;
+  color: #fff;
   font-family: system-ui, sans-serif;
 }
 
@@ -39,134 +55,132 @@ body {
   touch-action: none;
 }
 
-/* OPTIMIZATION (SHARED GLASSMORPHISM): Group elements that share backdrop blur and border styles */
-#author-credit,
-#game-header,
-#game-hint-bar,
-.glass-card,
-.modal,
-.modal-box {
+header,
+footer,
+#ac,
+.gc,
+.m,
+.mb {
   backdrop-filter: blur(14px);
 }
 
-#author-credit,
-#game-header,
-#game-hint-bar {
+header,
+footer,
+#ac {
   position: fixed;
-  background: rgba(6, 10, 24, .35);
-  box-shadow: 0 0 16px rgba(56, 189, 248, .2);
+  background: #0a122a22;
+  box-shadow: 0 0 16px #38bdf833;
 }
 
-#game-header,
-#game-hint-bar {
-  z-index: 10;
+header,
+footer {
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-#author-credit,
-#game-header,
+header,
+#ac,
 button,
 select,
-.btn-play,
-.btn-primary {
+.bp,
+.b1 {
   border-radius: 99px;
 }
 
-#author-credit,
-#game-header,
-#game-hint-bar,
-.glass-card,
-.card-canvas,
-.card-lb,
+header,
+footer,
+#ac,
+.gc,
+.cc,
+.ci,
 button,
 select {
-  border: 1px solid rgba(56, 189, 248, .35);
+  border: 1px solid #38bdf859;
 }
 
-#game-header {
+header {
   top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
   padding: 5px 12px;
-  max-width: calc(100vw - 16px);
   gap: 6px;
+  z-index: 10;
 }
 
-#author-credit,
-#game-hint-bar {
+footer,
+#ac {
   bottom: 10px;
 }
 
-#game-hint-bar {
-  left: 50%;
-  transform: translateX(-50%);
+footer {
   padding: 5px 16px;
   border-radius: 14px;
   pointer-events: none;
   gap: 2px;
-  max-width: min(92vw, 440px);
   text-align: center;
+  z-index: 10;
 }
 
-#author-credit {
+footer b {
+  font-size: .8rem;
+}
+
+footer span,
+#ac {
+  font-size: .74rem;
+  color: #94a3b8;
+}
+
+#ac {
   right: 12px;
   z-index: 25;
   padding: 4px 10px;
-  font-size: .72rem;
-  color: #94a3b8;
   gap: 6px;
 }
 
-#author-credit a {
+#ac a {
   color: #38bdf8;
   text-decoration: none;
   font-weight: 700;
 }
 
-#author-credit a:hover,
-#lvl-title {
+#ac a:hover,
+footer b {
   color: gold;
+  text-shadow: 0 0 10px #ffd70099;
 }
 
-#author-credit:hover,
-#lvl-title {
-  text-shadow: 0 0 10px rgba(255, 215, 0, .6);
-}
-
-.logo,
-.modal-title,
-.title-main {
-  font-weight: 900;
+.l,
+.mt,
+.tm {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  background-image: linear-gradient(135deg, gold, #ff7b00, #ec4899, #38bdf8);
+  background-size: 200% 200%;
+  animation: s 5s ease infinite;
 }
 
-.logo,
+.l,
 button,
 select {
   white-space: nowrap;
 }
 
-.logo {
+.l {
   font-size: .95rem;
   letter-spacing: 1.5px;
-  background-image: linear-gradient(135deg, gold, #ff7b00, #ec4899, #38bdf8);
-  background-size: 200% 200%;
-  animation: sShift 6s ease infinite;
 }
 
 button,
 select {
-  background: rgba(10, 16, 38, .4);
-  color: #f8fafc;
+  background: #0a122a66;
+  color: #fff;
   padding: 5px 10px;
   font-size: .8rem;
-  font-weight: 600;
   cursor: pointer;
   outline: 0;
-  transition: .2s;
   justify-content: center;
   gap: 4px;
+  transition: .2s;
 }
 
 select {
@@ -174,17 +188,21 @@ select {
   text-overflow: ellipsis;
 }
 
-select option {
-  background: #090e20;
-  color: #f8fafc;
+option {
+  background: #0a122a;
+  color: #fff;
 }
 
-#author-credit:hover,
-.glass-card:hover,
+.gc {
+  transition: .2s;
+}
+
+#ac:hover,
+.gc:hover,
 button:hover,
 select:hover {
   border-color: gold;
-  box-shadow: 0 0 16px rgba(255, 215, 0, .5);
+  box-shadow: 0 0 16px #ffd70080;
   transform: translateY(-1px);
 }
 
@@ -192,98 +210,87 @@ button:active {
   transform: scale(.95);
 }
 
-/* OPTIMIZATION (CSS BUTTON CONSOLIDATION): Group shared gold gradients and glow shadows */
-.btn-play,
-.btn-primary {
+.bp,
+.b1 {
   background: linear-gradient(135deg, gold, #f59e0b);
   color: #030611;
-  font-weight: 900;
   border: 1px solid #fff275;
-  box-shadow: 0 0 24px rgba(255, 215, 0, .7);
+  box-shadow: 0 0 24px #ffd700b3;
 }
 
-.btn-primary {
+.b1 {
   padding: 10px 28px;
   font-size: 1rem;
   align-self: center;
 }
 
-#win-desc {
-  color: #cbd5e1;
-}
-
-.btn-play:hover,
-.btn-primary:hover {
+.bp:hover,
+.b1:hover {
   background: linear-gradient(135deg, #fff275, #fbbf24);
-  box-shadow: 0 0 36px rgba(255, 215, 0, .95);
+  box-shadow: 0 0 36px #ffd700f2;
 }
 
-.btn-play {
+.bp {
   font-size: 1.2rem;
   padding: 10px 44px;
   gap: 8px;
 }
 
-.btn-play:hover {
+.bp:hover {
   transform: scale(1.05);
 }
 
-#lvl-title {
-  font-size: .8rem;
-  font-weight: 900;
+#wm p {
+  color: #cbd5e1;
 }
 
-#lvl-hint {
-  font-size: .74rem;
-  color: #94a3b8;
+.h {
+  display: none !important;
 }
 
-.modal.hidden,
-body.is-title #game-header,
-body.is-title #game-hint-bar,
-body:not(.is-title) #title-screen {
+.t header,
+.t footer,
+body:not(.t) #ts {
   display: none;
 }
 
-/* OPTIMIZATION (CSS FLEX CONSOLIDATION): Group column flex layouts and centered align-items */
-#title-screen,
-.title-action,
-.title-hero,
-.modal,
-.modal-box {
+#ts,
+.th,
+.m,
+.mb,
+footer,
+.cl,
+.ci {
   display: flex;
   flex-direction: column;
+}
+
+#ts,
+.th,
+.m,
+.mb {
   align-items: center;
 }
 
-#game-hint-bar,
-.card-labels,
-.card-lb {
-  display: flex;
-  flex-direction: column;
-}
-
-#game-header,
-#author-credit,
+header,
+#ac,
 button,
 select,
-.logo,
-.btn-play,
-.card-body,
-.card-header {
+.l,
+.bp,
+.cb {
   display: flex;
   align-items: center;
 }
 
-/* OPTIMIZATION (FULLSCREEN OVERLAYS): Group fixed inset positioning and fade-in animation */
-#title-screen,
-.modal {
+#ts,
+.m {
   position: fixed;
   inset: 0;
-  animation: fIn .3s ease-out;
+  animation: f .3s ease-out;
 }
 
-#title-screen {
+#ts {
   z-index: 20;
   justify-content: space-between;
   padding: 36px 24px;
@@ -291,116 +298,108 @@ select,
   overflow-y: auto;
 }
 
-.title-action,
-.title-hero {
+.th {
   gap: 8px;
-  pointer-events: auto;
   text-align: center;
 }
 
-.title-main {
-  font-size: 3rem;
-  letter-spacing: 3.5px;
-  background-image: linear-gradient(135deg, gold, #ff7b00, #ec4899, #38bdf8, #c084fc);
-  background-size: 300% 300%;
-  animation: sShift 5s ease infinite;
-  filter: drop-shadow(0 0 36px rgba(56, 189, 248, .65));
+.th,
+.tc,
+.bp {
+  pointer-events: auto;
 }
 
-.title-sub {
+.tm {
+  font-size: 3rem;
+  letter-spacing: 3.5px;
+  filter: drop-shadow(0 0 36px #38bdf8a6);
+}
+
+#ts p {
   font-size: 1.05rem;
-  color: #e2e8f0;
+  color: #cbd5e1;
   font-weight: 600;
 }
 
-.title-cards {
+.tc {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 18px;
   width: 100%;
-  max-width: 960px;
-  pointer-events: auto;
+  max-width: 1040px;
+  text-align: center;
 }
 
-.glass-card {
-  background: rgba(8, 14, 32, .68);
+.gc {
+  background: #0a122a22;
   border-radius: 20px;
   padding: 16px 18px;
   gap: 8px;
-  box-shadow: 0 0 24px rgba(56, 189, 248, .2);
-  transition: .2s;
+  box-shadow: 0 0 24px #38bdf833;
 }
 
-.card-header {
+.ch {
   font-size: 1.05rem;
-  font-weight: 900;
   color: gold;
   gap: 8px;
+  padding: 0 0 8px 0;
 }
 
-.card-body {
+.cb {
   gap: 12px;
 }
 
-.card-canvas {
+.cc {
   width: 160px;
   height: 175px;
-  background: rgba(3, 7, 18, .6);
+  background: #0a122a99;
   border-radius: 12px;
   flex-shrink: 0;
 }
 
-.card-labels {
+.cl {
   gap: 8px;
   flex: 1;
 }
 
-.card-lb {
-  background: rgba(10, 18, 42, .85);
+.ci {
+  background: #0a122ad9;
   padding: 6px 10px;
   border-radius: 8px;
   gap: 2px;
 }
 
-/* OPTIMIZATION (CSS CURRENTCOLOR): border-color inherits text color for chromatic card tags */
-.cyan,
-.gold,
-.green {
-  border-color: currentColor;
-}
-
-.cyan {
+.c {
   color: #38bdf8;
 }
 
-.gold {
+.g {
   color: gold;
 }
 
-.green {
+.k {
   color: #4ade80;
 }
 
-.card-lb b {
+.ci b {
   font-size: .82rem;
-  font-weight: 900;
 }
 
-.card-lb span {
+.ci span {
   font-size: .72rem;
   color: #cbd5e1;
 }
 
-.modal {
-  background: rgba(2, 4, 10, .78);
+.m {
+  background: #0a122a22;
   justify-content: center;
   z-index: 30;
 }
 
-.modal-box {
-  background: rgba(10, 18, 42, .78);
+.mb {
+  background: #0a122ac7;
   border: 1.5px solid gold;
-  box-shadow: 0 0 54px rgba(255, 215, 0, .45);
+  box-shadow: 0 0 54px #ffd70073;
   padding: 32px 42px;
   border-radius: 24px;
   text-align: center;
@@ -408,33 +407,31 @@ select,
   max-width: min(92vw, 560px);
 }
 
-.modal-box-large {
+.ml {
   max-width: min(94vw, 920px);
   max-height: 90vh;
   overflow-y: auto;
   padding: 24px;
 }
 
-.modal-title {
+.mt {
   font-size: clamp(1.35rem, 4vw, 1.8rem);
   letter-spacing: 1.5px;
-  background-image: linear-gradient(135deg, gold, #fff275, #38bdf8);
 }
 
 /* RESPONSIVE LAYOUT BREAKPOINT */
 @media (max-width: 850px) {
-  #game-header {
+  header {
     top: 8px;
     padding: 4px 8px;
     gap: 4px;
-    max-width: calc(100vw - 12px);
   }
 
-  .logo {
+  .l {
     font-size: .92rem;
   }
 
-  #game-header b {
+  header b {
     display: none;
   }
 
@@ -448,23 +445,23 @@ select,
     padding: 5px 8px;
   }
 
-  #game-hint-bar {
+  footer {
     padding: 5px 14px;
   }
 
-  #author-credit {
+  #ac {
     bottom: 8px;
     right: 8px;
     font-size: .7rem;
     padding: 4px 8px;
   }
 
-  .title-cards {
+  .tc {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  #title-screen {
+  #ts {
     padding: 24px 16px;
   }
 }
