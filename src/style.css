@@ -39,6 +39,7 @@ body {
   touch-action: none;
 }
 
+/* OPTIMIZATION (SHARED GLASSMORPHISM): Group elements that share backdrop blur and border styles */
 #author-credit,
 #game-header,
 #game-hint-bar,
@@ -189,17 +190,17 @@ button:active {
   transform: scale(.95);
 }
 
+/* OPTIMIZATION (CSS BUTTON CONSOLIDATION): Group shared gold gradients and glow shadows */
 .btn-play,
 .btn-primary {
   background: linear-gradient(135deg, gold, #f59e0b);
   color: #030611;
   font-weight: 900;
   border: 1px solid #fff275;
-  cursor: pointer;
+  box-shadow: 0 0 24px rgba(255, 215, 0, .7);
 }
 
 .btn-primary {
-  box-shadow: 0 0 24px rgba(255, 215, 0, .7);
   padding: 10px 28px;
   font-size: 1rem;
   align-self: center;
@@ -242,14 +243,20 @@ body:not(.is-title) #title-screen {
   display: none;
 }
 
+/* OPTIMIZATION (CSS FLEX CONSOLIDATION): Group column flex layouts and centered align-items */
 #title-screen,
 .title-action,
 .title-hero,
-#game-hint-bar,
-.card-labels,
-.card-lb,
 .modal,
 .modal-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#game-hint-bar,
+.card-labels,
+.card-lb {
   display: flex;
   flex-direction: column;
 }
@@ -263,14 +270,6 @@ select,
 .card-body,
 .card-header {
   display: flex;
-  align-items: center;
-}
-
-#title-screen,
-.title-action,
-.title-hero,
-.modal,
-.modal-box {
   align-items: center;
 }
 
@@ -358,18 +357,22 @@ select,
   gap: 2px;
 }
 
+/* OPTIMIZATION (CSS CURRENTCOLOR): border-color inherits text color for chromatic card tags */
+.cyan,
+.gold,
+.green {
+  border-color: currentColor;
+}
+
 .cyan {
-  border-color: #38bdf8;
   color: #38bdf8;
 }
 
 .gold {
-  border-color: gold;
   color: gold;
 }
 
 .green {
-  border-color: #4ade80;
   color: #4ade80;
 }
 
@@ -416,6 +419,7 @@ select,
   background-image: linear-gradient(135deg, gold, #fff275, #38bdf8);
 }
 
+/* RESPONSIVE LAYOUT BREAKPOINT */
 @media (max-width: 850px) {
   #game-header {
     top: 8px;
@@ -443,7 +447,6 @@ select,
   }
 
   #game-hint-bar {
-    bottom: 10px;
     padding: 5px 14px;
   }
 
