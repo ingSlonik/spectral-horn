@@ -59,15 +59,15 @@ export function initGame(): void {
   const elTitleScreen = $('title-screen');
 
   const cardsHtml = [
-    ['🎮 Controls & Steering', 'card-horn-c', [
-      ['cyan', '💫 Drag / Wheel', 'Rotate horn'],
-      ['gold', '↺ ↻ Step Buttons', '0.5° nudges'],
-      ['green', '✥ Drag Body', 'Move horn'],
+    ['🎮 Horn Controls & Steering', 'card-horn-c', [
+      ['cyan', '💫 Orbit Drag Ring', 'Drag outer ring to rotate horn'],
+      ['gold', '↺ ↻ Step Buttons', 'Click for precise 0.5° angle nudges'],
+      ['green', '✥ Drag Body', 'Move unicorn position across canvas'],
     ]],
-    ['🎯 Target Sensors', 'card-sensor-c', [
-      ['green', '🌈 Target Spectrum', 'Match wavelength'],
-      ['cyan', '🔬 Photodiode', 'Aim beam at lens'],
-      ['gold', '🏆 100% Charge', 'Hold beam to lock'],
+    ['🎯 Target Sensors: Objective', 'card-sensor-c', [
+      ['green', '🌈 Target Spectrum (λ)', 'Sensor demands exact color/wavelength'],
+      ['cyan', '🔬 Sensor Photodiode', 'Split white light & aim matching beam into lens'],
+      ['gold', '🏆 Charge to 100%', 'Hold steady beam until locked — charge all to win!'],
     ]],
   ].map(([hdr, cid, lbs]) => `
     <div class="glass-card">

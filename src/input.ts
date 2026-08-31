@@ -176,6 +176,9 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
   window.addEventListener('mouseup', handlePointerUp);
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
+  /* JS13K OPTIMIZATION: Keyboard arrow nudging & shift/ctrl step modifiers
+     Commented out to reduce bundle size. Mouse/touch drag controls and on-screen
+     step buttons (↺ ↻) provide full, intuitive positioning and angle steering without needing keyboard shortcuts.
   window.addEventListener('keydown', (e) => {
     if (selectedPrismIndex === null) return;
     const p = getPrisms()[selectedPrismIndex];
@@ -195,7 +198,10 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
       onStateChange?.();
     }
   });
+  */
 
+  /* JS13K OPTIMIZATION: Mouse wheel rotation handler
+     Commented out to save bytes. Rotation is cleanly handled by dragging the rotation ring or clicking step buttons.
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     initAudio();
@@ -210,6 +216,7 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
       }
     }
   }, { passive: false });
+  */
 
   const onTouch = (e: TouchEvent, isMove = false) => {
     if (e.touches[0]) (isMove ? handlePointerMove : handlePointerDown)(getCanvasPos(e.touches[0]), false, true);
