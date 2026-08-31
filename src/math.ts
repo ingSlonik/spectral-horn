@@ -11,16 +11,10 @@ export const vAdd = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x + b.x, y: a.y + b.y })
 export const vSub = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x - b.x, y: a.y - b.y });
 export const vScale = (v: Vec2, s: number): Vec2 => ({ x: v.x * s, y: v.y * s });
 export const vDot = (a: Vec2, b: Vec2): number => a.x * b.x + a.y * b.y;
-export const vDist = (a: Vec2, b: Vec2): number => hypot(a.x - b.x, a.y - b.y);
 
 export const vNorm = (v: Vec2): Vec2 => {
-  const l = hypot(v.x, v.y);
-  return l > 1e-7 ? { x: v.x / l, y: v.y / l } : { x: 1, y: 0 };
-};
-
-export const vRotate = (v: Vec2, rad: number): Vec2 => {
-  const c = cos(rad), s = sin(rad);
-  return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
+  const l = hypot(v.x, v.y) || 1;
+  return { x: v.x / l, y: v.y / l };
 };
 
 export function raySegmentIntersection(
@@ -39,10 +33,7 @@ export function raySegmentIntersection(
   const t1 = (v2x * v1y - v2y * v1x) / dot;
   const t2 = (v1x * -rd.y + v1y * rd.x) / dot;
 
-  if (t1 > 1e-4 && t2 >= 0 && t2 <= 1) {
-    return { t: t1, u: t2 };
-  }
-  return null;
+  return t1 > 1e-4 && t2 >= 0 && t2 <= 1 ? { t: t1, u: t2 } : null;
 }
 
 export function rayCircleIntersection(
@@ -63,12 +54,9 @@ export function rayCircleIntersection(
   const t1 = (-b - sqrtDisc) * 0.5;
   const t2 = (-b + sqrtDisc) * 0.5;
 
-  let t = -1;
-  if (isInside) {
-    t = t2 > 1e-4 ? t2 : t1 > 1e-4 ? t1 : -1;
-  } else {
-    t = t1 > 1e-4 ? t1 : t2 > 1e-4 ? t2 : -1;
-  }
+  const t = isInside
+    ? (t2 > 1e-4 ? t2 : t1 > 1e-4 ? t1 : -1)
+    : (t1 > 1e-4 ? t1 : t2 > 1e-4 ? t2 : -1);
   if (t <= 1e-4) return null;
 
   const hx = ro.x + rd.x * t;
@@ -134,7 +122,8 @@ export function getPrismVertices(prism: Prism): Vec2[] {
     : sh === 'dove'
     ? [[-30, -16], [30, -16], [62, 16], [-62, 16]]
     : [[0, -38], [22, 22], [-22, 22]];
-  return raw.map(([x, y]) => vAdd(vRotate(v2(x * s, y * s), prism.rot), prism.pos));
+  const c = cos(prism.rot) * s, sn = sin(prism.rot) * s, px = prism.pos.x, py = prism.pos.y;
+  return raw.map(([x, y]) => ({ x: x * c - y * sn + px, y: x * sn + y * c + py }));
 }
 
 // OPTIMIZATION NOTE:
