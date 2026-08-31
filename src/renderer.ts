@@ -58,31 +58,33 @@ const fillStroke = (ctx: CanvasRenderingContext2D, fill?: string | CanvasGradien
   if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
 };
 
+const beginPath = (ctx: CanvasRenderingContext2D) => {
+  ctx.beginPath();
+}
+
 // Compact Canvas 2D primitives
 const circ = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, fill?: string | CanvasGradient | CanvasPattern, stroke?: string, lw = 1) => {
-  ctx.beginPath();
+  beginPath(ctx);
   ctx.arc(x, y, r, 0, TAU);
   fillStroke(ctx, fill, stroke, lw);
 };
 
 const rRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number | number[], fill?: string | CanvasGradient, stroke?: string, lw = 1) => {
-  ctx.beginPath();
+  beginPath(ctx);
   ctx.roundRect(x, y, w, h, r);
   fillStroke(ctx, fill, stroke, lw);
 };
 
 const line = (ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, stroke: string, lw = 1, cap?: CanvasLineCap) => {
-  ctx.beginPath();
+  beginPath(ctx);
   if (cap) ctx.lineCap = cap;
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = lw;
-  ctx.stroke();
+  fillStroke(ctx, undefined, stroke, lw);
 };
 
 const addStops = (g: CanvasGradient, stops: [number, string][]) => {
-  for (let i = 0; i < stops.length; i++) g.addColorStop(stops[i][0], stops[i][1]);
+  stops.forEach(([o, c]) => g.addColorStop(o, c));
   return g;
 };
 
@@ -93,7 +95,7 @@ const linGrad = (ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: numb
   addStops(ctx.createLinearGradient(x1, y1, x2, y2), stops);
 
 const arc = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, sa: number, ea: number, stroke?: string, lw = 1, cap?: CanvasLineCap, fill?: string) => {
-  ctx.beginPath();
+  beginPath(ctx);
   if (cap) ctx.lineCap = cap;
   ctx.arc(x, y, r, sa, ea);
   fillStroke(ctx, fill, stroke, lw);
@@ -103,40 +105,34 @@ const C_GOLD = '#ffd700';
 const C_CYAN = '#38bdf8';
 const C_WHITE = '#ffffff';
 const C_GREEN = '#4ade80';
+const ROUND: CanvasLineCap = 'round';
+const LIGHTER: GlobalCompositeOperation = 'lighter';
+const H_CCW = 'step-ccw', H_CW = 'step-cw', H_BODY = 'body', H_ROT = 'rot';
+const M_MOVE = 'move', M_ROTATE = 'rotate';
+const SH_HORN = 'horn', SH_MIRROR = 'mirror', SH_DOVE = 'dove', SH_ORB = 'orb';
 const rgba = (r: number, g: number, b: number, a: number) => `rgba(${r},${g},${b},${a})`;
-const rgbaG = (a: number) => `rgba(255,215,0,${a})`;
-const rgbaC = (a: number) => `rgba(56,189,248,${a})`;
-const rgbaP = (a: number) => `rgba(192,132,252,${a})`;
-const rgbaW = (a: number) => `rgba(255,255,255,${a})`;
-const rgbaB = (a: number) => `rgba(15,23,42,${a})`;
-const rgbaPnk = (a: number) => `rgba(244,114,182,${a})`;
-const rgbaAmber = (a: number) => `rgba(251,191,36,${a})`;
+const rgbaG = (a: number) => rgba(255, 215, 0, a);
+const rgbaC = (a: number) => rgba(56, 189, 248, a);
+const rgbaP = (a: number) => rgba(192, 132, 252, a);
+const rgbaW = (a: number) => rgba(255, 255, 255, a);
+const rgbaB = (a: number) => rgba(15, 23, 42, a);
+const rgbaPnk = (a: number) => rgba(244, 114, 182, a);
+const rgbaAmber = (a: number) => rgba(251, 191, 36, a);
 
-const poly = (ctx: CanvasRenderingContext2D, pts: { x: number; y: number }[] | [number, number][], fill?: string | CanvasGradient, stroke?: string, lw = 1, close = true) => {
-  ctx.beginPath();
-  for (let i = 0; i < pts.length; i++) {
-    const p = pts[i] as any;
-    i ? ctx.lineTo(p.x ?? p[0], p.y ?? p[1]) : ctx.moveTo(p.x ?? p[0], p.y ?? p[1]);
-  }
+const poly = (ctx: CanvasRenderingContext2D, pts: any[], fill?: string | CanvasGradient, stroke?: string, lw = 1, close = true) => {
+  beginPath(ctx);
+  pts.forEach((p, i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, p.x ?? p[0], p.y ?? p[1]));
   if (close) ctx.closePath();
   fillStroke(ctx, fill, stroke, lw);
 };
 
-const drawCurve = (
-  ctx: CanvasRenderingContext2D,
-  start: [number, number],
-  segs: number[][],
-  fill?: string,
-  stroke?: string,
-  lw = 1.4,
-  close = true
-): void => {
-  ctx.beginPath();
-  ctx.moveTo(start[0], start[1]);
-  for (const s of segs) {
-    (ctx as any)[s.length === 6 ? 'bezierCurveTo' : s.length === 4 ? 'quadraticCurveTo' : 'lineTo'](...s);
+const drawCurve = (ctx: CanvasRenderingContext2D, pts: number[], fill?: string, stroke?: string, lw = 1.4) => {
+  beginPath(ctx);
+  ctx.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 6) {
+    ctx.bezierCurveTo(pts[i], pts[i + 1], pts[i + 2], pts[i + 3], pts[i + 4], pts[i + 5]);
   }
-  if (close) ctx.closePath();
+  ctx.closePath();
   fillStroke(ctx, fill, stroke, lw);
 };
 
@@ -164,7 +160,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       nctx.putImageData(img, 0, 0);
       noisePattern = ctx.createPattern(nc, 'repeat');
     }
-  } catch {}
+  } catch { }
 
   for (let i = 0; i < 45; i++) {
     dust.push({
@@ -195,8 +191,6 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       });
     }
   };
-
-
 
   const clear = (width = currentCtx.canvas.width, height = currentCtx.canvas.height): void => {
     const c = currentCtx;
@@ -231,17 +225,13 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     c.translate(0, floatY);
     c.rotate(floatRot);
 
-    const strokeColor = isDragged ? rgbaG(0.95) : isHovered ? 'rgba(165,229,255,0.9)' : 'rgba(160,180,235,0.55)';
+    const strokeColor = isDragged ? rgbaG(0.95) : isHovered ? rgbaC(0.9) : rgbaC(0.55);
 
     // Fluffy Celestial Tail
     const tailSway = sin(time * 0.003 + 2.2) * 6;
     drawCurve(
       c,
-      [38, 82],
-      [
-        [55 + tailSway, 72, 68 + tailSway, 92, 54 + tailSway, 112],
-        [46, 106, 40, 94, 36, 90],
-      ],
+      [38, 82, 55 + tailSway, 72, 68 + tailSway, 92, 54 + tailSway, 112, 46, 106, 40, 94, 36, 90],
       rgbaP(0.4),
       isDragged ? rgbaG(0.7) : rgbaP(0.6),
       1.4
@@ -256,62 +246,40 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       return (1 - upsideDown) * sin(time * 0.0035 + ph) * 0.35 + baseOffset * upsideDown + upsideDown * sin(time * 0.007 + ph) * 0.15;
     });
 
-    const drawLittleLeg = (pivotX: number, pivotY: number, swing: number, isFar: boolean) => {
+    const drawLeg = (px: number, py: number, swing: number, isFar: boolean) => {
       c.save();
-      c.translate(pivotX, pivotY);
+      c.translate(px, py);
       c.rotate(swing);
-
-      const legLength = isFar ? 14 : 17;
-      const legFill = isFar ? rgbaB(0.55) : isDragged ? rgbaB(0.7) : rgbaB(0.52);
-
-      rRect(c, -3.5, 0, 7, legLength, 3.5, legFill, strokeColor, isFar ? 1.0 : 1.4);
-      rRect(c, -3.5, legLength - 5, 7, 5, [0, 0, 3.5, 3.5], isDragged ? C_GOLD : C_CYAN);
+      const l = isFar ? 14 : 17;
+      rRect(c, -3.5, 0, 7, l, 3.5, isFar ? rgbaB(0.55) : isDragged ? rgbaB(0.7) : rgbaB(0.52), strokeColor, isFar ? 1.0 : 1.4);
+      rRect(c, -3.5, l - 5, 7, 5, 3.5, isDragged ? C_GOLD : C_CYAN);
       c.restore();
     };
 
-    const drawLegs = (isFar: boolean) => {
-      for (const [px, py, sw] of (isFar
-        ? [[16 - 3 * upsideDown, 102 - 3 * upsideDown, swingFR], [36 + 5 * upsideDown, 98 - 3 * upsideDown, swingBR]]
-        : [[4 - 4 * upsideDown, 106 - 3 * upsideDown, swingFL], [26 + 4 * upsideDown, 104 - 3 * upsideDown, swingBL]])) {
-        drawLittleLeg(px, py, sw, isFar);
-      }
-    };
-
     // Far legs
-    drawLegs(true);
+    drawLeg(16 - 3 * upsideDown, 102 - 3 * upsideDown, swingFR, true);
+    drawLeg(36 + 5 * upsideDown, 98 - 3 * upsideDown, swingBR, true);
 
     const s1 = sin(time * 0.003 + 0.4) * 4.5;
     const s2 = sin(time * 0.0036 + 1.2) * 5.5;
     const s3 = sin(time * 0.0028 + 2.0) * 4.0;
 
-    for (const [st, segs, f, str, w] of [
-      [[10, 22], [[34 + s1, 26, 42 + s1, 56, 34 + s1, 84], [24, 70, 20, 48, 14, 32]], isDragged ? rgbaG(0.35) : rgbaP(0.38), isDragged ? rgbaG(0.75) : rgbaP(0.65), 1.4],
-      [[14, 36], [[44 + s2, 48, 48 + s2, 82, 28 + s2, 104], [22, 86, 18, 64, 10, 48]], isDragged ? rgbaG(0.25) : rgbaC(0.35), isDragged ? rgbaG(0.65) : rgbaC(0.6), 1.4],
-      [[16, 54], [[38 + s3, 68, 40 + s3, 98, 22 + s3, 118], [16, 102, 14, 80, 8, 66]], rgbaAmber(0.3), rgbaAmber(0.55), 1.2],
-    ] as const) {
-      drawCurve(c, st as any, segs as any, f, str, w);
-    }
+    drawCurve(c, [10, 22, 34 + s1, 26, 42 + s1, 56, 34 + s1, 84, 24, 70, 20, 48, 14, 32], isDragged ? rgbaG(0.35) : rgbaP(0.38), isDragged ? rgbaG(0.75) : rgbaP(0.65));
+    drawCurve(c, [14, 36, 44 + s2, 48, 48 + s2, 82, 28 + s2, 104, 22, 86, 18, 64, 10, 48], isDragged ? rgbaG(0.25) : rgbaC(0.35), isDragged ? rgbaG(0.65) : rgbaC(0.6));
+    drawCurve(c, [16, 54, 38 + s3, 68, 40 + s3, 98, 22 + s3, 118, 16, 102, 14, 80, 8, 66], rgbaAmber(0.3), rgbaAmber(0.55), 1.2);
 
     // Silhouette
     drawCurve(
       c,
-      [-20, 21],
-      [
-        [-25, 28, -35, 38, -36, 48],
-        [-37, 56, -30, 62, -21, 60],
-        [-14, 59, -10, 54, -6, 50],
-        [-4, 64, -6, 82, -2, 96],
-        [2, 112, 18, 118, 34, 114],
-        [46, 110, 48, 92, 42, 80],
-        [36, 68, 26, 44, 20, 21],
-      ],
+      [-20, 21, -25, 28, -35, 38, -36, 48, -37, 56, -30, 62, -21, 60, -14, 59, -10, 54, -6, 50, -4, 64, -6, 82, -2, 96, 2, 112, 18, 118, 34, 114, 46, 110, 48, 92, 42, 80, 36, 68, 26, 44, 20, 21],
       isDragged ? rgbaB(0.65) : rgbaB(0.48),
       strokeColor,
       isDragged ? 2.0 : 1.5
     );
 
     // Near legs
-    drawLegs(false);
+    drawLeg(4 - 4 * upsideDown, 106 - 3 * upsideDown, swingFL, false);
+    drawLeg(26 + 4 * upsideDown, 104 - 3 * upsideDown, swingBL, false);
 
     // Cheek blush
     circ(c, -18, 50, 6, rgbaPnk(0.35));
@@ -321,19 +289,17 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     c.save();
     c.translate(14, 24);
     c.rotate(0.6 + earDroop * 0.04);
-    drawCurve(c, [-6, 0], [[-4, 16, 2, 26], [8, 18, 8, 0]], isDragged ? rgbaB(0.65) : rgbaB(0.52), strokeColor, 1.5);
-    drawCurve(c, [-3, 2], [[-1, 12, 2, 19], [5, 12, 5, 2]], isDragged ? rgbaG(0.45) : rgbaPnk(0.35));
+    beginPath(c); c.moveTo(-6, 0); c.quadraticCurveTo(-4, 16, 2, 26); c.quadraticCurveTo(8, 18, 8, 0); c.closePath();
+    fillStroke(c, isDragged ? rgbaB(0.65) : rgbaB(0.52), strokeColor, 1.5);
+    beginPath(c); c.moveTo(-3, 2); c.quadraticCurveTo(-1, 12, 2, 19); c.quadraticCurveTo(5, 12, 5, 2); c.closePath();
+    fillStroke(c, isDragged ? rgbaG(0.45) : rgbaPnk(0.35));
     c.restore();
 
     // Forelock
     const forelockSway = sin(time * 0.0032) * 2;
     drawCurve(
       c,
-      [-16, 20],
-      [
-        [-26 + forelockSway, 24, -28 + forelockSway, 32, -22 + forelockSway, 36],
-        [-18, 32, -14, 26, -12, 20],
-      ],
+      [-16, 20, -26 + forelockSway, 24, -28 + forelockSway, 32, -22 + forelockSway, 36, -18, 32, -14, 26, -12, 20],
       isDragged ? rgbaP(0.4) : rgbaP(0.38),
       isDragged ? rgbaG(0.7) : rgbaP(0.6),
       1.2
@@ -355,8 +321,8 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     if (blinkProgress > 0.75) {
       c.strokeStyle = eyeStroke;
       c.lineWidth = 2.4;
-      c.lineCap = 'round';
-      c.beginPath();
+      c.lineCap = ROUND;
+      beginPath(c);
       c.arc(-16, 39, 4.5, PI * 1.15, PI * 1.85);
       c.moveTo(-20, 40); c.lineTo(-22.5, 38.5);
       c.moveTo(-12, 40); c.lineTo(-9.5, 38.5);
@@ -366,15 +332,9 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       c.translate(-16, 38);
       c.scale(1, max(0.2, 1 - blinkProgress));
 
-      for (const [rw, rh, col, str, lw] of [
-        [5.5, 7.5, rgbaW(0.95), strokeColor, 1.0],
-        [4.2, 6.0, isDragged ? '#f59e0b' : C_CYAN],
-        [2.5, 3.8, rgbaB(1)],
-      ] as const) {
-        c.beginPath();
-        c.ellipse(0, rw === 2.5 ? 0.5 : 0, rw, rh, 0.05, 0, TAU);
-        fillStroke(c, col as string, str, lw as number);
-      }
+      beginPath(c); c.ellipse(0, 0, 5.5, 7.5, 0.05, 0, TAU); fillStroke(c, rgbaW(0.95), strokeColor, 1.0);
+      beginPath(c); c.ellipse(0, 0, 4.2, 6.0, 0.05, 0, TAU); fillStroke(c, isDragged ? '#f59e0b' : C_CYAN);
+      beginPath(c); c.ellipse(0, 0.5, 2.5, 3.8, 0.05, 0, TAU); fillStroke(c, rgbaB(1));
 
       circ(c, -1.5, -2.5, 1.8, C_WHITE);
       circ(c, 1.8, 2.2, 1.0, C_WHITE);
@@ -382,8 +342,8 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
 
       c.strokeStyle = eyeStroke;
       c.lineWidth = 2.0;
-      c.lineCap = 'round';
-      c.beginPath();
+      c.lineCap = ROUND;
+      beginPath(c);
       c.arc(-16, 36, 5.8, PI * 1.15, PI * 1.88);
       c.moveTo(-20.5, 33.5);
       c.lineTo(-23.2, 31.5);
@@ -412,7 +372,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     c.translate(prism.pos.x, prism.pos.y);
     c.rotate(prism.rot);
 
-    if (prism.shape === 'horn') {
+    if (prism.shape === SH_HORN) {
       renderPonyHead(c, s, isHovered || isSelected, isDragged, time, prism.rot);
     }
 
@@ -421,11 +381,11 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     const rimStroke = isDragged
       ? C_GOLD
       : (isHovered || isSelected)
-      ? '#a5e5ff'
-      : 'rgba(210,235,255,0.85)';
+        ? C_CYAN
+        : rgbaC(0.85);
     const rimWidth = isDragged ? 2.5 : (isHovered || isSelected) ? 2.0 : 1.5;
 
-    if (prism.shape === 'mirror') {
+    if (prism.shape === SH_MIRROR) {
       const w = 36, h = 6;
       rRect(c, -w - 2, -h - 2, (w + 2) * 2, (h + 2) * 2, 0, rgbaB(1));
       const grad = linGrad(c, -w, 0, w, 0, [[0, '#7dd3fc'], [0.5, C_WHITE], [1, C_CYAN]]);
@@ -433,25 +393,28 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       circ(c, 0, 0, 3, isDragged ? C_GOLD : C_CYAN);
     } else {
       const grad = linGrad(c, 0, -38, 0, 38, [
-        [0, isDragged ? 'rgba(255,240,200,0.48)' : 'rgba(200,240,255,0.35)'],
-        [1, isDragged ? rgbaG(0.24) : 'rgba(120,180,240,0.16)'],
+        [0, isDragged ? rgbaG(0.48) : rgbaC(0.35)],
+        [1, isDragged ? rgbaG(0.24) : rgbaC(0.16)],
       ]);
 
-      prism.shape === 'orb'
+      prism.shape === SH_ORB
         ? circ(c, 0, 0, 30, grad, rimStroke, rimWidth)
-        : poly(c, prism.shape === 'dove' ? [[-30, -16], [30, -16], [62, 16], [-62, 16]] : [[0, -38], [22, 22], [-22, 22]], grad, rimStroke, rimWidth);
+        : poly(c, prism.shape === SH_DOVE ? [[-30, -16], [30, -16], [62, 16], [-62, 16]] : [[0, -38], [22, 22], [-22, 22]], grad, rimStroke, rimWidth);
 
       c.save();
       const facetStroke = isDragged ? rgbaG(0.45) : rgbaW(0.38);
 
-      if (prism.shape === 'horn') {
+      if (prism.shape === SH_HORN) {
         for (let f = 1; f <= 3; f++) {
           const t = f / 4, y = -38 + 60 * t;
-          drawCurve(c, [-22 * t, y], [[0, y - 3, 22 * t, y]], undefined, facetStroke, 1.2, false);
+          beginPath(c);
+          c.moveTo(-22 * t, y);
+          c.quadraticCurveTo(0, y - 3, 22 * t, y);
+          fillStroke(c, undefined, facetStroke, 1.2);
         }
-      } else if (prism.shape === 'dove') {
+      } else if (prism.shape === SH_DOVE) {
         poly(c, [[-30, -16], [0, 16], [30, -16]], undefined, facetStroke, 1.2);
-      } else if (prism.shape === 'orb') {
+      } else if (prism.shape === SH_ORB) {
         const starPulse = 3.5 + sin(time * 0.005) * 1.5;
         circ(c, -8, -8, 4, isDragged ? C_GOLD : C_WHITE);
         poly(c, [[0, -starPulse], [starPulse * 0.3, 0], [0, starPulse], [-starPulse * 0.3, 0]], isDragged ? C_GOLD : C_WHITE);
@@ -469,13 +432,13 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       const pulse = 0.8 + sin(time * 0.005) * 0.2;
       const aura = radGrad(c, 0, 20, 10, 85, [
         [0, isDragged ? rgbaG(0.28 * pulse) : rgbaC(0.18 * pulse)],
-        [1, 'rgba(0,0,0,0)'],
+        [1, '#0000'],
       ]);
       circ(c, 0, 20, 85, aura);
 
       // Rotation Ring
       const ringRadius = 78;
-      const isRotActive = (isDragged && dragMode === 'rotate') || hoverHandle === 'rot';
+      const isRotActive = (isDragged && dragMode === M_ROTATE) || hoverHandle === H_ROT;
 
       c.save();
       c.setLineDash([8, 6]);
@@ -485,8 +448,9 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       const topBeadR = isRotActive ? 6.5 : 5.2;
       circ(c, 0, -ringRadius, topBeadR, isRotActive ? C_GOLD : C_CYAN, C_WHITE, 1.2);
 
-      for (const [bx, isCCW] of [[-ringRadius, true], [ringRadius, false]] as const) {
-        const handle = isCCW ? 'step-ccw' : 'step-cw';
+      for (const isCCW of [true, false]) {
+        const bx = isCCW ? -ringRadius : ringRadius;
+        const handle = isCCW ? H_CCW : H_CW;
         const isBtnHovered = hoverHandle === handle;
         const isBtnActive = isDragged && dragMode === handle;
         const isHot = isBtnHovered || isBtnActive;
@@ -504,7 +468,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
         c.save();
         c.translate(bx, 0);
         if (isCCW) c.scale(-1, 1);
-        arc(c, 0, 0, 6, PI * 0.08, PI * 1.5, iconColor, 1.8, 'round');
+        arc(c, 0, 0, 6, PI * 0.08, PI * 1.5, iconColor, 1.8, ROUND);
         poly(c, [[2.4, -6], [-2.2, -9.2], [-2.2, -2.8]], iconColor);
         c.restore();
       }
@@ -512,7 +476,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
 
       // Move Indicator
       const moveY = 82;
-      const isMoveActive = (isDragged && dragMode === 'move') || hoverHandle === 'body';
+      const isMoveActive = (isDragged && dragMode === M_MOVE) || hoverHandle === H_BODY;
 
       const badgeR = 19;
       const moveFill = isMoveActive ? rgbaB(0.96) : rgbaB(0.9);
@@ -559,7 +523,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     const glow = radGrad(c, 0, 0, centerRadius, glowRad, [
       [0, targetHex + (isMatch ? 'cc' : '66')],
       [0.5, targetHex + (isMatch ? '55' : '22')],
-      [1, 'rgba(0,0,0,0)'],
+      [1, '#0000'],
     ]);
     circ(c, 0, 0, glowRad, glow);
 
@@ -575,7 +539,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
 
     // 4. Charge Progress Ring
     if (target.charge > 0) {
-      arc(c, 0, 0, r - 2, -PI / 2, -PI / 2 + TAU * target.charge, isMatch ? C_WHITE : '#fef08a', 4.0, 'round');
+      arc(c, 0, 0, r - 2, -PI / 2, -PI / 2 + TAU * target.charge, isMatch ? C_WHITE : '#fef08a', 4.0, ROUND);
     }
 
     // 5. Mid-chassis Ring
@@ -601,9 +565,10 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     // 7. Mounting Brackets & Optical Reticle Notches (4-way symmetry loop)
     const ti = centerRadius - 2, to = centerRadius + 3;
     const reticleCol = isMatch ? C_WHITE : rgbaW(0.55);
+    const r1 = 0.71 * (r - 2), r2 = 0.71 * (r + 6);
     for (let i = 0; i < 4; i++) {
       c.rotate(PI / 2);
-      line(c, 0.71 * (r - 2), 0.71 * (r - 2), 0.71 * (r + 6), 0.71 * (r + 6), 'rgba(100,116,139,0.45)', 2);
+      line(c, r1, r1, r2, r2, 'rgba(100,116,139,0.45)', 2);
       line(c, 0, -ti, 0, -to, reticleCol);
     }
 
@@ -629,7 +594,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       c.lineWidth = 1.3;
       c.setLineDash([3, 3]);
       const dx = 158 - x1, dy = y2 - y1;
-      c.beginPath();
+      beginPath(c);
       c.moveTo(x1, y1);
       c.bezierCurveTo(x1 + dx * 0.45, y1 + dy * 0.45, 158 - dx * 0.35, y2, 158, y2);
       c.stroke();
@@ -655,69 +620,59 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     };
 
     renderCard(
-      '#card-horn-c',
-      (cctx) => renderPrism({ id: 99, pos: v2(66, 88), rot: 0, scale: 0.62, baseIndex: 1.52, dispersionB: 22000, shape: 'horn', basePos: v2(66, 88), baseRot: 0 }, true, false, 'rot', time, true, null, cctx),
+      '#ch',
+      (cctx) => renderPrism({ id: 99, pos: v2(66, 88), rot: 0, scale: 0.62, baseIndex: 1.52, dispersionB: 22000, shape: SH_HORN, basePos: v2(66, 88), baseRot: 0 }, true, false, H_ROT, time, true, null, cctx),
       [[72, 40, 28, C_CYAN], [124, 88, 88, C_GOLD], [78, 139, 146, C_GREEN]]
     );
 
     renderCard(
-      '#card-sensor-c',
+      '#cs',
       (cctx) => renderTarget({ id: 99, pos: v2(66, 80), radius: 26, minLambda: 520, maxLambda: 565, charge: 0.75, isSatisfied: false, isColorMatching: true, hasLight: true, sampledRgb: [50, 240, 90], name: 'Green Sensor' }, time, cctx),
       [[84, 56, 28, C_GREEN], [78, 80, 88, C_CYAN], [90, 122, 146, C_GOLD]]
     );
     currentCtx = ctx;
   };
 
-  const renderSquareBounds = (size = 1000): void => {
+  const renderSquareBounds = (): void => {
     const c = currentCtx;
     c.save();
-    const pad = 12;
-    const innerSize = size - pad * 2;
-    const radius = 24;
+    rRect(c, 12, 12, 976, 976, 24, undefined, rgbaC(0.06), 6);
+    rRect(c, 12, 12, 976, 976, 24, undefined, rgbaW(0.09), 1.4);
 
-    rRect(c, pad, pad, innerSize, innerSize, radius, undefined, 'rgba(56,189,248,0.06)', 6);
-    rRect(c, pad, pad, innerSize, innerSize, radius, undefined, 'rgba(255,255,255,0.09)', 1.4);
-
-    for (const px of [44, size - 44]) {
-      for (const py of [44, size - 44]) {
-        line(c, px - 7.5, py, px + 7.5, py, rgbaG(0.6), 1.2, 'round');
-        line(c, px, py - 7.5, px, py + 7.5, rgbaG(0.6), 1.2, 'round');
+    for (const px of [44, 956]) {
+      for (const py of [44, 956]) {
+        line(c, px - 7.5, py, px + 7.5, py, rgbaG(0.6), 1.2, ROUND);
+        line(c, px, py - 7.5, px, py + 7.5, rgbaG(0.6), 1.2, ROUND);
         circ(c, px, py, 1.4, rgbaW(0.9));
       }
     }
     c.restore();
   };
 
-  const updateDust = (_time: number): void => {
-    dust.forEach((d) => {
-      d.x = (d.x + d.vx + 1000) % 1000;
-      d.y = (d.y + d.vy + 1000) % 1000;
-      d.glintAlpha *= 0.88;
-    });
-  };
-
   const renderDust = (segments: RaySegment[], time: number = performance.now()): void => {
     const c = currentCtx;
     const segCount = segments.length;
-    if (dust.length === 0 || segCount === 0) return;
+    if (dust.length === 0) return;
 
     for (let i = 0; i < dust.length; i++) {
       const d = dust[i];
-      if (time < d.nextFlashTime) continue;
+      d.x = (d.x + d.vx + 1000) % 1000;
+      d.y = (d.y + d.vy + 1000) % 1000;
+      d.glintAlpha *= 0.88;
 
-      for (let s = 0; s < segCount; s++) {
-        const seg = segments[s];
-        const minX = min(seg.p1.x, seg.p2.x) - 12;
-        const maxX = max(seg.p1.x, seg.p2.x) + 12;
-        const minY = min(seg.p1.y, seg.p2.y) - 12;
-        const maxY = max(seg.p1.y, seg.p2.y) + 12;
-        if (d.x < minX || d.x > maxX || d.y < minY || d.y > maxY) continue;
-
-        if (distToSegment(d, seg.p1, seg.p2) <= 12) {
-          d.glintWl = seg.wavelength;
-          d.glintAlpha = 1.0;
-          d.nextFlashTime = time + 1200 + random() * 2800;
-          break;
+      if (segCount > 0 && time >= d.nextFlashTime) {
+        for (let s = 0; s < segCount; s++) {
+          const seg = segments[s];
+          const minX = min(seg.p1.x, seg.p2.x) - 12;
+          const maxX = max(seg.p1.x, seg.p2.x) + 12;
+          const minY = min(seg.p1.y, seg.p2.y) - 12;
+          const maxY = max(seg.p1.y, seg.p2.y) + 12;
+          if (d.x >= minX && d.x <= maxX && d.y >= minY && d.y <= maxY && distToSegment(d, seg.p1, seg.p2) <= 12) {
+            d.glintWl = seg.wavelength;
+            d.glintAlpha = 1.0;
+            d.nextFlashTime = time + 1200 + random() * 2800;
+            break;
+          }
         }
       }
     }
@@ -725,7 +680,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     if (!dust.some((d) => d.glintAlpha > 0.05)) return;
 
     c.save();
-    c.globalCompositeOperation = 'lighter';
+    c.globalCompositeOperation = LIGHTER;
 
     for (let i = 0; i < dust.length; i++) {
       const d = dust[i];
@@ -751,8 +706,6 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     const rayCount = rays.length;
     if (rayCount === 0) return;
 
-    // OPTIMIZATION: 'rayCanvas' automatically matches context dimensions whenever the viewport changes.
-    // Removes the need for a separate exported 'renderer.resize(w, h)' method.
     if (rayCanvas.width !== currentCtx.canvas.width || rayCanvas.height !== currentCtx.canvas.height) {
       rayCanvas.width = currentCtx.canvas.width;
       rayCanvas.height = currentCtx.canvas.height;
@@ -763,8 +716,8 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
 
     const sd = bounds.scale * bounds.dpr;
     rayCtx.setTransform(sd, 0, 0, sd, bounds.offsetX * bounds.dpr, bounds.offsetY * bounds.dpr);
-    rayCtx.globalCompositeOperation = 'lighter';
-    rayCtx.lineCap = 'round';
+    rayCtx.globalCompositeOperation = LIGHTER;
+    rayCtx.lineCap = ROUND;
     rayCtx.lineWidth = 2.4;
 
     for (let i = 0; i < rayCount; i++) {
@@ -778,7 +731,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     const c = currentCtx;
     c.save();
     c.setTransform(1, 0, 0, 1, 0, 0);
-    c.globalCompositeOperation = 'lighter';
+    c.globalCompositeOperation = LIGHTER;
     c.drawImage(rayCanvas, 0, 0);
     c.restore();
   };
@@ -798,7 +751,7 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     const glow = radGrad(c, 0, 0, 2, 28, [
       [0, rgba(er, eg, eb, 0.5 * pulse)],
       [0.5, rgba(er, eg, eb, 0.2 * pulse)],
-      [1, 'rgba(0,0,0,0)'],
+      [1, '#0000'],
     ]);
     circ(c, 0, 0, 28, glow);
 
@@ -816,12 +769,10 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
   const renderObstacle = (obs: Obstacle): void =>
     poly(currentCtx, obs.points, obs.isMirror ? '#3a4a68' : '#141724', obs.isMirror ? '#a5f3fc' : '#2d3748', obs.isMirror ? 2 : 1.8);
 
-  // OPTIMIZATION: Particle physics integration and rendering are combined into a single reverse loop.
-  // Eliminates a separate 'updateParticles()' function, simplifying runtime execution and saving bytes.
   const renderParticles = (): void => {
     const c = currentCtx;
     c.save();
-    c.globalCompositeOperation = 'lighter';
+    c.globalCompositeOperation = LIGHTER;
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.x += p.vx;
@@ -842,7 +793,6 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
     clear,
     renderCardPreview,
     renderSquareBounds,
-    updateDust,
     renderDust,
     renderRays,
     renderEmitters,
