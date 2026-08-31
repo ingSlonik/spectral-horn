@@ -90,6 +90,8 @@ export function toggleSfx(): boolean {
   return sfxMuted;
 }
 
+const S_SINE: OscillatorType = 'sine', S_TRI: OscillatorType = 'triangle';
+
 function playChordCluster(frequencies: number[], startTime: number, durationSec: number): void {
   if (!audioCtx || !filterNode) return;
   const t = max(audioCtx.currentTime, startTime);
@@ -105,8 +107,8 @@ function playChordCluster(frequencies: number[], startTime: number, durationSec:
     ng.gain.linearRampToValueAtTime(vol, t + fade);
     ng.gain.setValueAtTime(vol, t + durationSec - fade);
     ng.gain.linearRampToValueAtTime(0.0001, t + durationSec);
-    osc(i === 0 ? 'sine' : 'triangle', freq, t, t + durationSec + 0.15, ng);
-    osc('sine', freq * pow(2, detune / 1200), t, t + durationSec + 0.15, ng);
+    osc(i === 0 ? S_SINE : S_TRI, freq, t, t + durationSec + 0.15, ng);
+    osc(S_SINE, freq * pow(2, detune / 1200), t, t + durationSec + 0.15, ng);
   });
 }
 
@@ -135,7 +137,7 @@ function playTone(
   f: number,
   dur = 0.15,
   gVal = 0.04,
-  type: OscillatorType = 'sine',
+  type: OscillatorType = S_SINE,
   rampF?: number,
   delay = 0,
   outNode?: AudioNode
@@ -164,8 +166,8 @@ export const playPrismMove = (_speed = 1): void => {
   if (now - lastMoveSound < 65) return;
   lastMoveSound = now;
   const base = 260 + sin(now * 0.005) * 60;
-  playTone(base, 0.18, 0.06, 'triangle', base * 1.2);
-  playTone(base * 1.5, 0.18, 0.06, 'sine', base * 1.8);
+  playTone(base, 0.18, 0.06, S_TRI, base * 1.2);
+  playTone(base * 1.5, 0.18, 0.06, S_SINE, base * 1.8);
 };
 
 export const playSensorPulse = (progress: number): void => {
@@ -173,18 +175,18 @@ export const playSensorPulse = (progress: number): void => {
   if (now - lastChargeSound < 110) return;
   lastChargeSound = now;
   const f = 440 + progress * 440;
-  playTone(f, 0.14, 0.04 + progress * 0.03, 'sine', f * 1.05);
-  playTone(f / 2, 0.14, 0.03, 'triangle');
+  playTone(f, 0.14, 0.04 + progress * 0.03, S_SINE, f * 1.05);
+  playTone(f / 2, 0.14, 0.03, S_TRI);
 };
 
 export const playVictory = (): void => {
   [0, 4, 7, 11, 12, 16].forEach((s, idx) => {
     const f = note(587.3, s);
-    for (const m of [1, 2]) playTone(f * m, 0.65, 0.08, 'sine', undefined, idx * 0.09);
+    for (const m of [1, 2]) playTone(f * m, 0.65, 0.08, S_SINE, undefined, idx * 0.09);
   });
 };
 
 export const playClick = (): void => {
-  playTone(1046.5, 0.05, 0.04, 'sine', 523.25);
+  playTone(1046.5, 0.05, 0.04, S_SINE, 523.25);
 };
 
