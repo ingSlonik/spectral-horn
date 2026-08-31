@@ -137,7 +137,6 @@ export function traceScene(
         const segEnd = hitPos || vAdd(rOrigin, vScale(rDir, 3000));
         segments.push({ p1: rOrigin, p2: segEnd, wavelength, intensity: 1 });
         rayPoints.push(segEnd);
-        if (!hitPos) break;
 
         // 3. SENSOR DETECTION: Integrate photon flux crossing the sensor photodiode aperture
         for (const target of targets) {
@@ -150,6 +149,8 @@ export function traceScene(
             st.b += cb;
           }
         }
+
+        if (!hitPos) break;
 
         // 4. LAW OF SPECULAR REFLECTION: r_refl = d - 2 * (d · n) * n
         const isMirrorHit = (hitObs && hitObs.isMirror) || (hitPrism && hitPrism.shape === 'mirror');
