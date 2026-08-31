@@ -48,9 +48,7 @@ export function traceScene(
   emitterInput: Emitter | Emitter[],
   prisms: Prism[],
   obstacles: Obstacle[],
-  targets: Target[],
-  boundsOrWidth: number | { minX: number; minY: number; maxX: number; maxY: number } = 1000,
-  height = 1000
+  targets: Target[]
 ): TraceResult {
   const rays: RayPath[] = [];
   const segments: RaySegment[] = [];
@@ -90,16 +88,11 @@ export function traceScene(
     pushEdges(pts, v2((pts[0].x + pts[2].x) / 2, (pts[0].y + pts[2].y) / 2), undefined, obs);
   }
 
-  const b = typeof boundsOrWidth === 'object'
-    ? boundsOrWidth
-    : { minX: 0, minY: 0, maxX: boundsOrWidth, maxY: height };
-
-  const { minX, minY, maxX, maxY } = b;
   for (const [x1, y1, x2, y2, nx, ny] of [
-    [minX, minY, maxX, minY, 0, 1],
-    [maxX, minY, maxX, maxY, -1, 0],
-    [maxX, maxY, minX, maxY, 0, -1],
-    [minX, maxY, minX, minY, 1, 0],
+    [0, 0, 1000, 0, 0, 1],
+    [1000, 0, 1000, 1000, -1, 0],
+    [1000, 1000, 0, 1000, 0, -1],
+    [0, 1000, 0, 0, 1, 0],
   ]) sceneEdges.push({ p1: v2(x1, y1), p2: v2(x2, y2), nOut: v2(nx, ny) });
 
   for (const emitter of emitters) {

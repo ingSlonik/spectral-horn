@@ -19,14 +19,12 @@ let musicMuted = false,
 // Aliasing Math functions to local module scope allows Terser to mangle them into 1-letter variables.
 const { sin, max, min, floor, abs, random, pow } = Math;
 
-const CHORDS = [
-  [146.8, 220, 277.2, 329.6, 370, 440],
-  [98, 146.8, 196, 246.9, 293.7, 370],
-  [123.5, 185, 220, 293.7, 329.6, 370],
-  [110, 164.8, 220, 246.9, 329.6, 415.3],
-];
+const note = (base: number, semi: number) => base * pow(2, semi / 12);
+const CHORDS = [146.8, 98, 123.5, 110].map((r, i) =>
+  [[0, 7, 11, 14, 16, 19], [0, 7, 12, 16, 19, 23], [0, 7, 10, 15, 17, 19], [0, 7, 12, 14, 19, 23]][i].map((s) => note(r, s))
+);
 
-const BELL_SCALE = [587.3, 659.3, 740, 880, 987.8, 1174.7, 1318.5, 1480];
+const BELL_SCALE = [0, 2, 4, 7, 9, 12, 14, 16].map((s) => note(587.3, s));
 
 // OPTIMIZATION (WEBAUDIO NATIVE API WRAPPERS):
 // WebAudio properties (createOscillator, createGain, setValueAtTime, linearRampToValueAtTime,
@@ -181,7 +179,8 @@ export const playSensorPulse = (progress: number): void => {
 };
 
 export const playVictory = (): void => {
-  [587.3, 740, 880, 1108.7, 1174.7, 1480].forEach((f, idx) => {
+  [0, 4, 7, 11, 12, 16].forEach((s, idx) => {
+    const f = note(587.3, s);
     for (const m of [1, 2]) playTone(f * m, 0.65, 0.08, 'sine', undefined, idx * 0.09);
   });
 };

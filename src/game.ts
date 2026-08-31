@@ -293,7 +293,7 @@ export function initGame(): void {
     renderer.renderEmitters(curEmitters, time);
     drawPrisms();
 
-    const traceResult = traceScene(curEmitters, prisms, curObstacles, targets, bounds);
+    const traceResult = traceScene(curEmitters, prisms, curObstacles, targets);
     renderer.renderRays(traceResult.rays, bounds);
     renderer.renderDust(traceResult.segments, time);
 

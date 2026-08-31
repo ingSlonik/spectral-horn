@@ -51,10 +51,7 @@ body {
   backdrop-filter: blur(14px) saturate(180%);
 }
 
-#game-header {
-  border-radius: 99px;
-}
-
+#author-credit,
 #game-header,
 #game-hint-bar {
   position: fixed;
@@ -65,34 +62,32 @@ body {
 }
 
 #author-credit,
+#game-header,
+button,
+select,
+.btn-play,
+.btn-primary {
+  border-radius: 99px;
+}
+
+#author-credit,
 button,
 select {
   border: 1px solid rgba(56, 189, 248, .35);
-  border-radius: 99px
-}
-
-#author-credit {
-  position: fixed;
-  background: rgba(6, 10, 24, .35);
-  box-shadow: 0 0 16px rgba(56, 189, 248, .2)
 }
 
 #game-header {
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 6px;
   padding: 5px 12px;
-  max-width: calc(100vw - 16px)
+  max-width: calc(100vw - 16px);
+  gap: 6px;
 }
 
 #author-credit,
 #game-hint-bar {
   bottom: 10px;
-  display: flex;
-  align-items: center
 }
 
 #game-hint-bar {
@@ -101,10 +96,9 @@ select {
   padding: 5px 16px;
   border-radius: 14px;
   pointer-events: none;
-  flex-direction: column;
   gap: 2px;
   max-width: min(92vw, 440px);
-  text-align: center
+  text-align: center;
 }
 
 #author-credit {
@@ -113,23 +107,23 @@ select {
   padding: 4px 10px;
   font-size: .72rem;
   color: #94a3b8;
-  gap: 6px
+  gap: 6px;
 }
 
 #author-credit a {
   color: #38bdf8;
   text-decoration: none;
-  font-weight: 700
+  font-weight: 700;
 }
 
 #author-credit a:hover,
 #lvl-title {
-  color: gold
+  color: gold;
 }
 
 #author-credit:hover,
 #lvl-title {
-  text-shadow: 0 0 10px rgba(255, 215, 0, .6)
+  text-shadow: 0 0 10px rgba(255, 215, 0, .6);
 }
 
 .logo,
@@ -138,18 +132,21 @@ select {
   font-weight: 900;
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent
+  color: transparent;
+}
+
+.logo,
+button,
+select {
+  white-space: nowrap;
 }
 
 .logo {
   font-size: .95rem;
-  white-space: nowrap;
   letter-spacing: 1.5px;
   background-image: linear-gradient(135deg, gold, #ff7b00, #ec4899, #38bdf8);
   background-size: 200% 200%;
-  display: flex;
-  align-items: center;
-  animation: sShift 6s ease infinite
+  animation: sShift 6s ease infinite;
 }
 
 button,
@@ -162,21 +159,18 @@ select {
   cursor: pointer;
   outline: 0;
   transition: .2s;
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
   gap: 4px;
-  white-space: nowrap
 }
 
 select {
   max-width: 150px;
-  text-overflow: ellipsis
+  text-overflow: ellipsis;
 }
 
 select option {
   background: #090e20;
-  color: #f8fafc
+  color: #f8fafc;
 }
 
 #author-credit:hover,
@@ -185,11 +179,11 @@ button:hover,
 select:hover {
   border-color: gold;
   box-shadow: 0 0 16px rgba(255, 215, 0, .5);
-  transform: translateY(-1px)
+  transform: translateY(-1px);
 }
 
 button:active {
-  transform: scale(.95)
+  transform: scale(.95);
 }
 
 .btn-play,
@@ -198,62 +192,83 @@ button:active {
   color: #030611;
   font-weight: 900;
   border: 1px solid #fff275;
-  border-radius: 99px;
-  cursor: pointer
+  cursor: pointer;
 }
 
 .btn-primary {
   box-shadow: 0 0 24px rgba(255, 215, 0, .7);
   padding: 10px 28px;
   font-size: 1rem;
-  align-self: center
+  align-self: center;
 }
 
 #win-desc {
-  color: #cbd5e1
+  color: #cbd5e1;
 }
 
 .btn-play:hover,
 .btn-primary:hover {
   background: linear-gradient(135deg, #fff275, #fbbf24);
-  box-shadow: 0 0 36px rgba(255, 215, 0, .95)
+  box-shadow: 0 0 36px rgba(255, 215, 0, .95);
 }
 
 .btn-play {
   font-size: 1.2rem;
   padding: 10px 44px;
-  display: flex;
-  align-items: center;
-  gap: 8px
+  gap: 8px;
 }
 
 .btn-play:hover {
-  transform: scale(1.05)
+  transform: scale(1.05);
 }
 
 #lvl-title {
   font-size: .8rem;
-  font-weight: 900
+  font-weight: 900;
 }
 
 #lvl-hint {
   font-size: .74rem;
-  color: #94a3b8
+  color: #94a3b8;
 }
 
 .modal.hidden,
 body.is-title #game-header,
 body.is-title #game-hint-bar,
 body:not(.is-title) #title-screen {
-  display: none
+  display: none;
 }
 
 #title-screen,
 .title-action,
-.title-hero {
+.title-hero,
+#game-hint-bar,
+.card-labels,
+.card-lb,
+.modal,
+.modal-box {
   display: flex;
   flex-direction: column;
-  align-items: center
+}
+
+#game-header,
+#author-credit,
+button,
+select,
+.logo,
+.btn-play,
+.card-body,
+.card-header {
+  display: flex;
+  align-items: center;
+}
+
+#title-screen,
+.title-action,
+.title-hero,
+.modal,
+.modal-box {
+  align-items: center;
 }
 
 #title-screen {
@@ -264,14 +279,14 @@ body:not(.is-title) #title-screen {
   padding: 36px 24px;
   pointer-events: none;
   animation: fIn .3s ease-out;
-  overflow-y: auto
+  overflow-y: auto;
 }
 
 .title-action,
 .title-hero {
   gap: 8px;
   pointer-events: auto;
-  text-align: center
+  text-align: center;
 }
 
 .title-main {
@@ -280,13 +295,13 @@ body:not(.is-title) #title-screen {
   background-image: linear-gradient(135deg, gold, #ff7b00, #ec4899, #38bdf8, #c084fc);
   background-size: 300% 300%;
   animation: sShift 5s ease infinite;
-  filter: drop-shadow(0 0 36px rgba(56, 189, 248, .65))
+  filter: drop-shadow(0 0 36px rgba(56, 189, 248, .65));
 }
 
 .title-sub {
   font-size: 1.05rem;
   color: #e2e8f0;
-  font-weight: 600
+  font-weight: 600;
 }
 
 .title-cards {
@@ -295,7 +310,7 @@ body:not(.is-title) #title-screen {
   gap: 18px;
   width: 100%;
   max-width: 960px;
-  pointer-events: auto
+  pointer-events: auto;
 }
 
 .glass-card {
@@ -303,28 +318,20 @@ body:not(.is-title) #title-screen {
   border: 1px solid rgba(56, 189, 248, .35);
   border-radius: 20px;
   padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
   gap: 8px;
   box-shadow: 0 0 24px rgba(56, 189, 248, .2);
-  transition: .2s
-}
-
-.card-body,
-.card-header {
-  display: flex;
-  align-items: center
+  transition: .2s;
 }
 
 .card-header {
   font-size: 1.05rem;
   font-weight: 900;
   color: gold;
-  gap: 8px
+  gap: 8px;
 }
 
 .card-body {
-  gap: 12px
+  gap: 12px;
 }
 
 .card-canvas {
@@ -333,18 +340,12 @@ body:not(.is-title) #title-screen {
   background: rgba(3, 7, 18, .6);
   border: 1px solid rgba(56, 189, 248, .25);
   border-radius: 12px;
-  flex-shrink: 0
-}
-
-.card-labels,
-.card-lb {
-  display: flex;
-  flex-direction: column
+  flex-shrink: 0;
 }
 
 .card-labels {
   gap: 8px;
-  flex: 1
+  flex: 1;
 }
 
 .card-lb {
@@ -352,48 +353,41 @@ body:not(.is-title) #title-screen {
   border: 1px solid rgba(56, 189, 248, .3);
   padding: 6px 10px;
   border-radius: 8px;
-  gap: 2px
+  gap: 2px;
 }
 
 .cyan {
   border-color: #38bdf8;
-  color: #38bdf8
+  color: #38bdf8;
 }
 
 .gold {
   border-color: gold;
-  color: gold
+  color: gold;
 }
 
 .green {
   border-color: #4ade80;
-  color: #4ade80
+  color: #4ade80;
 }
 
 .th {
   font-size: .82rem;
-  font-weight: 900
+  font-weight: 900;
 }
 
 .ts {
   font-size: .72rem;
-  color: #cbd5e1
-}
-
-.modal,
-.modal-box {
-  display: flex;
-  flex-direction: column
+  color: #cbd5e1;
 }
 
 .modal {
   position: fixed;
   inset: 0;
   background: rgba(2, 4, 10, .78);
-  align-items: center;
   justify-content: center;
   z-index: 30;
-  animation: fIn .3s ease-out
+  animation: fIn .3s ease-out;
 }
 
 .modal-box {
@@ -404,32 +398,32 @@ body:not(.is-title) #title-screen {
   border-radius: 24px;
   text-align: center;
   gap: 16px;
-  max-width: min(92vw, 560px)
+  max-width: min(92vw, 560px);
 }
 
 .modal-box-large {
   max-width: min(94vw, 920px);
   max-height: 90vh;
   overflow-y: auto;
-  padding: 24px
+  padding: 24px;
 }
 
 .modal-title {
   font-size: clamp(1.35rem, 4vw, 1.8rem);
   letter-spacing: 1.5px;
-  background-image: linear-gradient(135deg, gold, #fff275, #38bdf8)
+  background-image: linear-gradient(135deg, gold, #fff275, #38bdf8);
 }
 
-@media (max-width:850px) {
+@media (max-width: 850px) {
   #game-header {
     top: 8px;
     padding: 4px 8px;
     gap: 4px;
-    max-width: calc(100vw - 12px)
+    max-width: calc(100vw - 12px);
   }
 
   .logo {
-    font-size: .92rem
+    font-size: .92rem;
   }
 
   .btn-text,
@@ -440,31 +434,31 @@ body:not(.is-title) #title-screen {
   select {
     max-width: 140px;
     font-size: .76rem;
-    padding: 4px 6px
+    padding: 4px 6px;
   }
 
   button {
-    padding: 5px 8px
+    padding: 5px 8px;
   }
 
   #game-hint-bar {
     bottom: 10px;
-    padding: 5px 14px
+    padding: 5px 14px;
   }
 
   #author-credit {
     bottom: 8px;
     right: 8px;
     font-size: .7rem;
-    padding: 4px 8px
+    padding: 4px 8px;
   }
 
   .title-cards {
     grid-template-columns: 1fr;
-    gap: 12px
+    gap: 12px;
   }
 
   #title-screen {
-    padding: 24px 16px
+    padding: 24px 16px;
   }
 }
