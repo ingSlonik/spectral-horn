@@ -38,38 +38,11 @@ async function build() {
 
   // 2. Minify JavaScript with Terser (with property mangling)
   console.log('\n⚡ Step 2: Minifying JavaScript with Terser & Property Mangling...');
-  const DOM_PROPERTIES = [
-    // Canvas 2D
-    'addColorStop', 'arc', 'beginPath', 'bezierCurveTo', 'clearRect', 'clip', 'closePath',
-    'createImageData', 'createLinearGradient', 'createPattern', 'createRadialGradient',
-    'drawImage', 'ellipse', 'fill', 'fillRect', 'fillStyle', 'fillText', 'font', 'getImageData',
-    'globalAlpha', 'globalCompositeOperation', 'lineCap', 'lineJoin', 'lineTo', 'lineWidth',
-    'measureText', 'moveTo', 'putImageData', 'quadraticCurveTo', 'rect', 'restore', 'rotate',
-    'roundRect', 'save', 'scale', 'setLineDash', 'setTransform', 'shadowBlur', 'shadowColor',
-    'stroke', 'strokeRect', 'strokeStyle', 'textAlign', 'textBaseline', 'transform', 'translate',
-    'canvas', 'getContext', 'width', 'height', 'data',
-    // Audio
-    'AudioContext', 'webkitAudioContext', 'destination', 'currentTime', 'state', 'resume',
-    'createOscillator', 'createGain', 'createBiquadFilter', 'setValueAtTime', 'setTargetAtTime',
-    'exponentialRampToValueAtTime', 'linearRampToValueAtTime', 'cancelScheduledValues',
-    'connect', 'disconnect', 'start', 'stop', 'type', 'frequency', 'gain', 'Q',
-    // DOM & Window
-    'document', 'window', 'addEventListener', 'removeEventListener', 'getElementById',
-    'querySelector', 'querySelectorAll', 'createElement', 'appendChild', 'removeChild',
-    'classList', 'add', 'remove', 'toggle', 'contains', 'style', 'dataset', 'innerHTML',
-    'textContent', 'value', 'selectedIndex', 'options', 'disabled', 'checked', 'focus',
-    'blur', 'click', 'getBoundingClientRect', 'clientX', 'clientY', 'pageX', 'pageY',
-    'offsetX', 'offsetY', 'touches', 'changedTouches', 'target', 'preventDefault',
-    'stopPropagation', 'key', 'code', 'shiftKey', 'ctrlKey', 'altKey', 'metaKey',
-    'localStorage', 'getItem', 'setItem', 'removeItem', 'clear',
-    'requestAnimationFrame', 'cancelAnimationFrame', 'performance', 'now', 'setTimeout',
-    'clearTimeout', 'setInterval', 'clearInterval', 'body',
-  ];
 
   const terserResult = await minifyJs(bundledJs, {
     ecma: 2020,
     compress: {
-      passes: 10,
+      passes: 20,
       unsafe: true,
       unsafe_math: true,
       unsafe_arrows: true,
@@ -95,7 +68,7 @@ async function build() {
     mangle: {
       toplevel: true,
       properties: {
-        reserved: DOM_PROPERTIES,
+        reserved: [],
       },
     },
     format: {
@@ -141,11 +114,13 @@ async function build() {
     minifyJS: false,
   });
 
-  fs.writeFileSync(path.resolve("dist", 'index_skeletone.html'), minifiedSkeleton + "<script>" + minifiedJs + "</script>");
+  // fs.writeFileSync(path.resolve("dist", 'index_skeletone.js'), minifiedJs);
+  // fs.writeFileSync(path.resolve("dist", 'index_skeletone.html'), minifiedSkeleton + "<script>" + minifiedJs + "</script>");
 
   // 5. Roadroller Unified Crusher (Compresses HTML + CSS + JavaScript in a single JS payload)
   console.log('\n🛞 Step 5: Crushing HTML + CSS + JavaScript with Roadroller...');
-  const combinedJs = `document.write(${JSON.stringify(minifiedSkeleton)});\n${minifiedJs}`;
+  const escapedSkeleton = minifiedSkeleton.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const combinedJs = `document.write('${escapedSkeleton}');\n${minifiedJs}`;
   const roadrollerStart = Date.now();
   const packer = new Packer(
     [
@@ -157,6 +132,7 @@ async function build() {
     ],
     {
       allowFreeVars: true,
+      dynamicModels: 1,
     }
   );
   await packer.optimize(2);
