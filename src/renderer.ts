@@ -115,15 +115,13 @@ const rgbaB = (a: number) => `rgba(15,23,42,${a})`;
 const rgbaPnk = (a: number) => `rgba(244,114,182,${a})`;
 const rgbaAmber = (a: number) => `rgba(251,191,36,${a})`;
 
-// OPTIMIZATION: Compact polygon path builder - index 0 uses moveTo, subsequent indices use lineTo.
-// Replaced previous boilerplate with manual array length check and separate 0-index handling.
-const poly = (ctx: CanvasRenderingContext2D, pts: { x: number; y: number }[] | [number, number][], fill?: string | CanvasGradient, stroke?: string, lw = 1) => {
+const poly = (ctx: CanvasRenderingContext2D, pts: { x: number; y: number }[] | [number, number][], fill?: string | CanvasGradient, stroke?: string, lw = 1, close = true) => {
   ctx.beginPath();
   for (let i = 0; i < pts.length; i++) {
     const p = pts[i] as any;
     i ? ctx.lineTo(p.x ?? p[0], p.y ?? p[1]) : ctx.moveTo(p.x ?? p[0], p.y ?? p[1]);
   }
-  ctx.closePath();
+  if (close) ctx.closePath();
   fillStroke(ctx, fill, stroke, lw);
 };
 
@@ -783,15 +781,10 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
 
     for (let i = 0; i < rayCount; i++) {
       const r = rays[i];
-      const pts = r.points;
-      const ptLen = pts.length;
-      if (ptLen < 2) continue;
-      const wl = max(380, min(750, round(r.wavelength)));
-      rayCtx.strokeStyle = `rgba(${COLOR_TABLE[wl] || '255,255,255'},0.12)`;
-      rayCtx.beginPath();
-      rayCtx.moveTo(pts[0].x, pts[0].y);
-      for (let j = 1; j < ptLen; j++) rayCtx.lineTo(pts[j].x, pts[j].y);
-      rayCtx.stroke();
+      if (r.points.length >= 2) {
+        const wl = max(380, min(750, round(r.wavelength)));
+        poly(rayCtx, r.points, undefined, `rgba(${COLOR_TABLE[wl] || '255,255,255'},0.12)`, 2.4, false);
+      }
     }
 
     const c = currentCtx;

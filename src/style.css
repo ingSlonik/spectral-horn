@@ -426,8 +426,7 @@ select,
     font-size: .92rem;
   }
 
-  .btn-text,
-  .logo-text {
+  #game-header b {
     display: none;
   }
 

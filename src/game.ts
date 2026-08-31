@@ -197,7 +197,7 @@ export function initGame(): void {
     bindClick('play-btn', () => loadLevel(currentLevelIdx));
     const toggleBtn = (id: string, fn: () => boolean, iconOn: string, label: string) => {
       bindClick(id, () => {
-        $(id).innerHTML = `${fn() ? '🔇' : iconOn}<span class="btn-text"> ${label}</span>`;
+        $(id).innerHTML = `${fn() ? '🔇' : iconOn}<b> ${label}</b>`;
       });
     };
     toggleBtn('music-btn', toggleMusic, '🎵', 'Music');
