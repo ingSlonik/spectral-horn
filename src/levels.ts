@@ -42,32 +42,29 @@ export const TITLE_SCENE: { emitters: Emitter[]; prisms: Prism[] } = {
   ].map(makePrism),
 };
 
-const SENSORS =
-  'Red~Green~Blue~Violet~Amber~Cyan~White~Blue (Top)~Green (Mid)~Red (Bot)~Magenta (Top)~Cyan (Bot)~Yellow'.split(
-    '~'
-  );
+const SENSORS = 'Red~Green~Blue~Violet~Amber~Cyan~White~Blue (Top)~Green (Mid)~Red (Bot)~Magenta (Top)~Cyan (Bot)~Yellow'.split('~');
 
 const [MIRROR, DOVE, ORB] = ['mirror', 'dove', 'orb'] as const;
 const W_RGB: [number, number, number] = [255, 255, 255];
 
 const META_STR =
-  "First Horn~Rotate your horn into the beam. Snell's law refracts green photons directly into the sensor.~" +
-  "Prismatic Party~Red bends gently, violet sharply. Fan the rainbow across all three sensors simultaneously!~" +
-  "Obsidian Shield~The sensor hides behind obsidian. Flip your horn upside down to refract photons upward!~" +
-  "Periscope Trick~Refraction can't turn 90°. Tilt past the critical angle for total internal reflection!~" +
-  "Celestial Mirror~Bank the beam off the mirror, then scoop photons back up into the amber sensor.~" +
-  "Cosmic Trickshot~Bank off the floor mirror, then position your horn to split the rebound into both sensors.~" +
-  "Upside-Down Rainbow~The horn puts Red on top and Blue below. Bounce off the mirror to invert the colors!~" +
-  "Hall of Mirrors~Ricochet off the floor mirror into the green sensor, clipping the red sensor en route!~" +
-  "Enter the Dove~Colors inverted in a tunnel! The Dove prism flips color order without bending the beam.~" +
-  "Prismatic Inversion~Fan out a rainbow, then pass through the Dove prism to reverse the color stack.~" +
-  "Crystal Orb~Beam too wide! Focus to a point with the Orb, then steer the exit ray with your horn.~" +
-  "Squeeze & Scatter~Squeeze through the keyhole with the Orb, then catch the focal point to split colors.~" +
-  "Additive Alchemy: Yellow~Pure wavelengths won't satisfy this sensor. Intersect Red and Green beams in its lens!~" +
-  "Dual Synthesis~Broaden the Blue beam with the Orb so it pairs with Red at top and Green at bottom.~" +
-  "Great Recombination~Pure white light required! Use the second horn to re-converge the dispersed rainbow.~" +
-  "Prismatic Ensemble~Optical tour: bend up with the horn, bank off the mirror, and focus with the Orb.~" +
-  "Grand Optical Symphony~Orchestrate Horns, Mirrors, Orb, and Dove to light every sensor and the White core!";
+  "First Horn~Let Snell's law steer green into the sensor.~" +
+  "Prismatic Party~Red is lazy, blue is sharp. Hit all three targets.~" +
+  "Obsidian Shield~Sensor is hidden. Flip horn upside down to bend light up.~" +
+  "Periscope Trick~90° turn? Exceed critical angle for total internal reflection.~" +
+  "Celestial Mirror~Bank off the mirror straight into the amber sensor.~" +
+  "Cosmic Trickshot~Floor bounce into a horn split. Two targets, one beam.~" +
+  "Upside-Down Rainbow~A mirror bounce flips the entire color stack.~" +
+  "Hall of Mirrors~The rainbow always finds its way.~" +
+  "Enter the Dove~Dove prism: flips color order, zero beam deflection.~" +
+  "Prismatic Inversion~Disperse the rainbow, flip the stack with the Dove.~" +
+  "Crystal Orb~If you want to focus, use the Orb.~" +
+  "Squeeze & Scatter~Focus on what you already have.~" +
+  "Additive Alchemy: Yellow~Subtractive makes mud, additive makes light.~" +
+  "Dual Synthesis~Fatten Blue with the Orb to bridge Red and Green.~" +
+  "Great Recombination~Target wants white. Use horn #2 to undo the rainbow.~" +
+  "Prismatic Ensemble~Horn bends, mirror banks, Orb focuses. Run the combo.~" +
+  "Grand Optical Symphony~All gear on deck. Light every target!";
 
 const META = META_STR.split('~');
 
@@ -97,7 +94,7 @@ const RAW_LEVELS: any[] = [
     [90, 820],
     [[340, 820]],
     [[880, 528, 520, 565, 1]],
-    [[700, 50, 740, 660]],
+    [[600, 50, 640, 660]],
   ],
   [
     [90, 240],

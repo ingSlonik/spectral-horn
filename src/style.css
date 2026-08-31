@@ -47,6 +47,7 @@ body {
   background: #030611;
   color: #fff;
   font-family: system-ui, sans-serif;
+  text-align: center;
 }
 
 #c {
@@ -92,7 +93,6 @@ footer,
 #ac,
 .gc,
 .cc,
-.ci,
 button,
 select {
   border: 1px solid #38bdf859;
@@ -115,7 +115,6 @@ footer {
   border-radius: 14px;
   pointer-events: none;
   gap: 2px;
-  text-align: center;
   z-index: 10;
 }
 
@@ -300,7 +299,6 @@ select,
 
 .th {
   gap: 8px;
-  text-align: center;
 }
 
 .th,
@@ -327,7 +325,6 @@ select,
   gap: 18px;
   width: 100%;
   max-width: 1040px;
-  text-align: center;
 }
 
 .gc {
@@ -371,14 +368,17 @@ select,
 
 .c {
   color: #38bdf8;
+  border: 1px solid #38bdf8;
 }
 
 .g {
   color: gold;
+  border: 1px solid gold;
 }
 
 .k {
   color: #4ade80;
+  border: 1px solid #4ade80;
 }
 
 .ci b {
@@ -402,7 +402,6 @@ select,
   box-shadow: 0 0 54px #ffd70073;
   padding: 32px 42px;
   border-radius: 24px;
-  text-align: center;
   gap: 16px;
   max-width: min(92vw, 560px);
 }
