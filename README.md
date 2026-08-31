@@ -2,37 +2,26 @@
 > *When theoretical optics, procedural rendering, crystal unicorns, and an unforgiving 13-kilobyte limit collide.*
 
 [![JS13kGames](https://img.shields.io/badge/JS13kGames-2026-ff0055.svg?style=flat-square)](https://js13kgames.com)
-[![Bundle Size](https://img.shields.io/badge/size-%3C%2013%20KB%20(ECT%20ZIP)-brightgreen.svg?style=flat-square)](#-how-on-earth-did-this-fit-in-13-kb)
-[![Physics](https://img.shields.io/badge/optics-Snell%20%2B%20Cauchy%20%2B%20TIR-blueviolet.svg?style=flat-square)](#-physics-under-the-hood-why-light-is-fascinating)
+[![Bundle Size](https://img.shields.io/badge/size-13%2C310%20%2F%2013%2C312%20B%20(2%20bytes%20left!)-brightgreen.svg?style=flat-square)](#-how-on-earth-did-this-fit-in-13-kb)
+[![Physics](https://img.shields.io/badge/optics-Snell%20%2B%20Cauchy%20%2B%20TIR%20%2B%20Alchemy-blueviolet.svg?style=flat-square)](#-physics-under-the-hood-why-light-is-genuinely-awesome)
+[![Levels](https://img.shields.io/badge/levels-17%20puzzles%20%2B%20sandbox-gold.svg?style=flat-square)](#-gameplay--the-17-level-odyssey)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 ---
 
 ## 🧐 What's the Big Idea?
 
-In 1666, Sir Isaac Newton stuck a glass prism into a sunbeam and proved that white light is secretly a chaotic party of all rainbow colors combined. 
+In 1666, Sir Isaac Newton stuck a glass prism into a sunbeam and discovered that white light is secretly a chaotic party of rainbow colors combined. 
 
-Naturally, we asked the ultimate follow-up question of modern science: **What if that prism was actually the crystalline horn of a celestial unicorn, and you had to solve wicked optical puzzles with it?**
+Naturally, we asked the only logical follow-up question of modern science: **What if that prism was attached to the forehead of a celestial unicorn, and you had to solve wicked optical puzzles across 17 handcrafted levels?**
 
-**Spectral Horn** is a 2D optical puzzle game handcrafted for the **[js13kGames](https://js13kgames.com/)** challenge. No bloated game engines, zero megabytes of textures, and strictly zero pre-rendered fakery. Every single ray of light—from Cauchy wavelength dispersion to Total Internal Reflection (TIR)—is computed in real time on your CPU and rendered with the pure HTML5 Canvas 2D API.
+**Spectral Horn** is a 2D optical physics puzzle game handcrafted for the **[js13kGames](https://js13kgames.com/)** competition. No bloated game engines, zero megabytes of textures, zero pre-recorded audio files, and strictly zero pre-rendered fakery. Every single ray of light—from Cauchy wavelength dispersion to Total Internal Reflection (TIR), Dove prism inversions, and spherical lens focusing—is computed analytically in real time on your CPU and rendered with the pure HTML5 Canvas 2D API.
 
 ---
 
 ## 🌈 Physics Under the Hood (Why Light is Genuinely Awesome)
 
-The optics in this game are not an arcade approximation like “red bounces right because reasons”. Every single ray obeys the actual laws of wave and geometric optics:
-
-```
-                      \  Surface Normal (n)
-                       \
-     Incident Ray in Air\       
-      (n₁ = 1.00)        \  θ₁  
-    --------------------->\ | . . . . . . . . .
-    ═══════════════════════╲═══════════════════  Crystal Horn Interface
-                            \ θ₂
-                             \    Refracted Ray in Horn
-                              \   (n₂ = n(λ) > 1.0)
-```
+The optics in this game are not an arcade approximation like “red bounces right because video games”. Every single ray obeys the actual laws of wave and geometric optics.
 
 ### 1. Snell's Law of Refraction (Snell-Descartes)
 At each boundary interface (air $\leftrightarrow$ unicorn horn), the angle of refraction follows:
@@ -43,14 +32,14 @@ In vector form, for an incident unit vector $\vec{v}$ and surface normal $\vec{n
 
 $$\vec{r} = \eta \vec{v} + \left(\eta (\vec{n} \cdot (-\vec{v})) - \sqrt{1 - \eta^2 (1 - (\vec{n} \cdot (-\vec{v}))^2)}\right) \vec{n}$$
 
-where $\eta = \frac{n_1}{n_2}$. If the expression under the square root drops below zero, nature triggers...
+where $\eta = \frac{n_1}{n_2}$. If the expression under the radical drops below zero, nature triggers...
 
 ### 2. Total Internal Reflection (TIR)
-When light travels from an optically denser medium (crystal horn, $n \approx 1.5$) into a rarer one (air, $n = 1.0$) at an angle steeper than the critical angle:
+When light travels from an optically denser medium (crystal horn, $n \approx 1.52$) into a rarer one (air, $n = 1.0$) at an angle steeper than the critical angle:
 
 $$\theta_c = \arcsin\left(\frac{n_2}{n_1}\right)$$
 
-light cannot escape the crystal and bounces back inside with **100% efficiency** and zero loss of energy. This exact principle powers modern fiber-optic internet, submarine periscopes—and in our game, trick levels where you must trap light inside a horn to steer it around dark obsidian walls.
+light cannot escape the crystal and bounces back inside with **100% efficiency** and zero loss of energy. This exact principle powers modern fiber-optic internet, submarine periscopes—and in our game, trick levels where you must trap light inside a horn to steer it around dark obsidian barriers.
 
 ### 3. Cauchy's Dispersion Equation (How Rainbows are Born)
 Why does white light split into a spectrum inside the horn? Because the refractive index $n$ **is not constant for all colors**!
@@ -64,85 +53,136 @@ $$n(\lambda) = n_{\text{base}} + \frac{B}{\lambda^2}$$
 
 Thanks to this physical phenomenon, a single compact white beam (composed of dozens of discrete wavelengths $\lambda \in [400, 700]\text{ nm}$) fans out into a continuous, vibrant spectral rainbow.
 
-### 4. Wavelength to sRGB Mapping (CIE Standard)
-Every ray in the game carries a real physical wavelength $\lambda$ in nanometers. To display on computer screens, the wavelength is mapped to human color perception (sRGB tristimulus approximation) with non-linear gamma correction ($\gamma = 0.8$) and smooth perceptual sensitivity falloff at spectral boundaries (380 nm and 750 nm).
+### 4. Wavelength to sRGB Mapping (CIE Colorimetry)
+Every ray in the game carries a physical wavelength $\lambda$ in nanometers. To display on computer screens, the wavelength is mapped to human color perception (sRGB tristimulus approximation based on Dan Bruton's piecewise curves) with non-linear gamma correction ($\gamma = 0.8$) and smooth perceptual luminosity falloff at spectral boundaries (380 nm and 750 nm).
+
+### 5. Additive Optical Alchemy & HSV Sensing
+Unlike mixing paint (subtractive color), light is **additive**:
+- Red ($\sim 660\text{ nm}$) + Green ($\sim 535\text{ nm}$) additively combine into radiant **Yellow** ($\sim 580\text{ nm}$).
+- Red + Green + Blue recombine back into pure **White** light!
+
+Our target sensors integrate incoming photon flux in real time and evaluate the perceived hue and saturation in HSV color space. If a puzzle demands Yellow, you can hit it with a pure 580 nm amber beam *or* synthesize it by overlapping Red and Green rays!
 
 ---
 
-## 🎨 Rendering Engine Architecture
+## 🔬 The Optical Arsenal
 
-When you have a 13-kilobyte budget for code, sound, levels, and visuals, loading Three.js or heavyweight shaders is out of the question.
+Across the 17 levels, you will command a full laboratory of celestial optical components:
+
+| Component | Visual | Optical Function |
+| :--- | :---: | :--- |
+| **🦄 The Unicorn Horn** | Crystalline Prism | Asymmetric triangular prism that bends light and disperses white beams into full-spectrum rainbows via Cauchy dispersion. |
+| **🕊️ The Dove Prism** | Trapezoidal Glass | Flips and inverts the spectral stack (turning red-on-top into violet-on-top) with **zero net angular deflection**. |
+| **🔮 The Crystal Orb** | Spherical Lens | Converging circular optics that focus divergent beams into tight pinpoints or expand them into wide washes. |
+| **🪞 Chrome Mirror** | Specular Reflector | Pure $100\%$ specular reflection surface. Flips ray geometry and color order across bounce angles. |
+| **🧱 Obsidian Shield** | Monolithic Barrier | Absorbs all incident photons. Forces you to find clever periscope paths and ceiling bounces. |
+| **🎯 Spectral Sensor** | Photodiode Ring | Demands a specific wavelength or composite hue. Requires a steady photon stream to charge up to $100\%$ and lock. |
+
+---
+
+## 🎨 Engine Architecture & Procedural Aesthetics
+
+When you have a 13-kilobyte budget for code, sound, levels, physics, and visuals, importing Three.js or heavy assets is out of the question.
 
 ```
-       [ 48–64 Spectral Rays with varying λ ]
-                   │
-                   ▼
-       ┌───────────────────────────────────┐
-       │     Analytical 2D Raytracer       │  (Up to 12 bounces / refractions per ray)
-       └───────────────────────────────────┘
-                   │
-         ┌─────────┴─────────┐
-         ▼                   ▼
-    Pass 1: Bloom       Pass 2: Core
-    (Soft wide beam,    (Sharp narrow beam,
-     subtle alpha)       high saturation)
-         │                   │
-         └─────────┬─────────┘
-                   ▼
-    [ ctx.globalCompositeOperation = 'lighter' ]  ==>  ✨ True Additive Photon Mixing
+       [ 48–72 Spectral Rays with varying λ ∈ [400, 700] nm ]
+                                │
+                                ▼
+       ┌─────────────────────────────────────────────────┐
+       │             Analytical 2D Raytracer             │  (Up to 24 bounces / refractions per ray)
+       └─────────────────────────────────────────────────┘
+                                │
+                      ┌─────────┴─────────┐
+                      ▼                   ▼
+                 Pass 1: Bloom       Pass 2: Core
+                 (Soft wide glow,    (Sharp radiant beam,
+                  atmospheric aura)   intense core)
+                      │                   │
+                      └─────────┬─────────┘
+                                ▼
+       [ ctx.globalCompositeOperation = 'lighter' ]  ==>  ✨ True Additive Photon Mixing
 ```
 
 1. **Real-time Analytical 2D Raytracer:**
-   - No stepped raymarching through blurry grids.
-   - Exact mathematical intersection of ray $\vec{P}(t) = \vec{O} + t\vec{D}$ with line segments of polygon edges (crystal horns, obsidian walls, and chrome mirrors) using cross products and determinants.
-   - Recursive ray tracing up to **12 bounces/refractions** per ray across dozens of wavelengths at a rock-solid **60 FPS**.
+   - Exact mathematical intersections of rays $\vec{P}(t) = \vec{O} + t\vec{D}$ with polygon edges and circular lenses using vector algebra, cross products, and quadratic discriminants.
+   - Recursive ray tracing up to **24 bounces/refractions** per ray across dozens of wavelengths at a rock-solid **60 FPS**.
 
 2. **Additive Light Blending (`globalCompositeOperation = 'lighter'`):**
-   - Rays are rendered in two passes:
-     - **Bloom Pass:** Wider, soft translucent beam simulating atmospheric glow and optical dispersion.
-     - **Core Pass:** Sharp, intensely radiant beam core.
-   - When dispersed spectral rays recombine at a single focal point, their colors additively sum back into pure white light—exactly like in physical reality!
+   - Rays are rendered in dual passes (atmospheric Bloom + radiant Core).
+   - Dispersed rays naturally recombine at focal points into brilliant white light.
 
-3. **Pure Procedural Vector Visuals:**
-   - Minimalist unicorn silhouettes, crystalline horn facets, diptychs, sensors, and starry particle systems are generated entirely with mathematical curves (Bézier curves, quadratic arcs, dynamic gradients).
-   - Razor-sharp at any resolution (from mobile phones to 4K Retina displays).
+3. **Procedural Unicorn Silhouette & Upside-Down Fluttering:**
+   - Generated entirely with mathematical Bézier curves, dynamic gradient shading, and ambient stardust particles.
+   - Featuring floating breathing rhythms, a swishing celestial tail, and **four animated paddling legs** that kick into dynamic fluttering whenever you flip the unicorn upside down!
 
 4. **Procedural Web Audio Synthesis:**
-   - Crystalline rotation chimes, energy pulses during sensor charging, and triumphant victory arpeggios are synthesized on the fly via the browser's `AudioContext`, custom oscillators (`sine`, `triangle`, `square`), and exponential gain ramps. 0 bytes of audio files!
+   - 0 bytes of audio files! Ambient 4-chord generative progressions, crystalline bell scale rotation harmonics, smooth dragging whooshes, sensor charging pulses, and triumph fanfare arpeggios synthesized on the fly via the Web Audio API.
 
 ---
 
 ## 🗜️ How on Earth Did This Fit in 13 KB?
 
-The JS13k competition limit is **13,312 bytes** in a `.zip` archive. Our custom build pipeline wrings out every single bit:
+The JS13k competition limit is **13,312 bytes** in a `.zip` archive. We utilized literally **99.98%** of the available space, leaving just **2 single bytes** to spare:
 
 | Step | Tool | What it does |
 | :--- | :--- | :--- |
-| **1. Bundle** | `esbuild` | Compiles TypeScript into a single self-contained IIFE bundle. |
-| **2. JS Minify** | `terser` | 3 aggressive passes with `unsafe_math`, `pure_getters`, and top-level mangling. |
+| **1. Bundle** | `esbuild` | Compiles TypeScript into a clean, tree-shaken IIFE JavaScript bundle. |
+| **2. JS Minify** | `terser` | 20 aggressive passes with `unsafe_math`, `pure_getters`, and property name mangling. |
 | **3. CSS Minify**| `csso` | Structural optimization and style minification. |
-| **4. Inlining** | `html-minifier-terser` | Inlines all minified CSS and JS directly into `index.html` with zero external dependencies. |
-| **5. Ultra ZIP** | `ect` (Enhanced Compression Tool) | Maximum DEFLATE compression with stripped metadata (`-9 -strip`). |
+| **4. Inlining** | `html-minifier-terser` | Strips redundant attributes and whitespace from the HTML skeleton. |
+| **5. Crushing** | `roadroller` | Squeezes HTML, CSS, and JS into a single self-extracting JS payload. |
+| **6. Ultra ZIP** | `ect` (Enhanced Compression Tool) | Maximum DEFLATE compression with stripped zip metadata (`-9 -strip`). |
 
-The resulting archive currently weighs in at **~11.05 KB (11,312 bytes)**—a comfortable **2,000 bytes below the limit**, leaving plenty of headroom for extra optical wizardry!
+```
+======================================================
+📦 Final ZIP File : dist/spectral-horn.zip
+📊 Size           : 13,310 bytes (13.00 KB)
+🎯 JS13k Limit    : 13,312 bytes (13 KB)
+📈 Limit Usage    : 99.98% (2 bytes remaining!)
+======================================================
+```
+
+> [!TIP]
+> **2 bytes remaining:** That is exactly 16 bits of breathing room left for Sir Isaac Newton's ghost to rest comfortably inside the zip file.
 
 ---
 
-## 🎮 Controls & Gameplay Mechanics
+## 🎮 Gameplay & The 17-Level Odyssey
 
-| Action | Controls |
-| :--- | :--- |
-| **Move Unicorn** | Click and drag the unicorn's body |
-| **Rotate Horn** | Drag the **golden knob** at the horn tip / **Mouse Scroll Wheel** |
-| **Objective** | Disperse white light and illuminate each target sensor with its designated wavelength (e.g. 540 nm for green, 650 nm for red). |
-| **Charge Sensor** | Sensors require a steady beam of matching color photons—reaching 100% locks the sensor. |
+### Controls & Steering
+- **Move Unicorn:** Click / touch and drag the unicorn's body.
+- **Rotate Horn:** Drag the circular **Orbit Ring** surrounding the horn.
+- **Micro-Nudge:** Click the **`↺` and `↻` Step Buttons** for precise $0.5^\circ$ angle fine-tuning.
+- **Touch-Friendly:** Built-in vertical touch offset ensures your thumb never covers the unicorn while dragging on mobile/tablets.
+- **Level Select & Reset:** Jump to any unlocked level or hit Reset if you get stuck in an optical labyrinth.
+- **Audio Controls:** Independent toggles for ambient generative music and crystalline sound effects.
+
+### Level Campaign
+1. **First Horn** — *Snell's law primer: steer green light into the photodiode.*
+2. **Prismatic Party** — *Disperse white light to satisfy three color sensors simultaneously.*
+3. **Obsidian Shield** — *Flip the horn upside down to clear high dark barriers.*
+4. **Periscope Trick** — *Exceed the critical angle for internal reflection.*
+5. **Celestial Mirror** — *Bank light off chrome mirrors into target diodes.*
+6. **Cosmic Trickshot** — *Floor bounces into multi-target splits.*
+7. **Upside-Down Rainbow** — *Mirror bounces that flip the entire color spectrum.*
+8. **Hall of Mirrors** — *Complex multi-surface reflection mazes.*
+9. **Enter the Dove** — *Introducing the Dove prism: flips color order with zero beam deflection.*
+10. **Prismatic Inversion** — *Disperse the spectrum, then flip it with the Dove.*
+11. **Crystal Orb** — *Harness spherical converging optics to focus divergent light.*
+12. **Squeeze & Scatter** — *Focusing and redirecting multi-beam arrays.*
+13. **Additive Alchemy: Yellow** — *Synthesize yellow light by overlapping Red and Green photons.*
+14. **Dual Synthesis** — *Orb-expanded blue light bridging composite chromatic targets.*
+15. **Great Recombination** — *Use a second horn to undo dispersion and synthesize pure White light.*
+16. **Prismatic Ensemble** — *Horn + Mirror + Orb combos.*
+17. **Grand Optical Symphony** — *The ultimate test: all instruments on deck to illuminate the cosmos!*
+* **+ Cosmic Sandbox** — *Freely experiment with light, prisms, and physics on the interactive title screen!*
 
 ---
 
 ## 🚀 How to Run Locally
 
 ### Prerequisites
-- Node.js $\ge$ 18
+- [Node.js](https://nodejs.org/) $\ge$ 18
 - npm
 
 ### Installation & Development
@@ -154,16 +194,16 @@ cd spectral-horn
 # 2. Install dependencies
 npm install
 
-# 3. Start local Vite development server
+# 3. Start local development server
 npm run dev
 ```
 Open `http://localhost:5173` in your browser.
 
-### Building the JS13k Production Package
+### Building the JS13k Production ZIP
 ```bash
 npm run build
 ```
-The optimized and compressed archive will be generated at `dist/spectral-horn.zip`. The build script automatically outputs your exact byte usage relative to the 13 KB limit.
+The optimized archive will be generated at `dist/spectral-horn.zip`. The build script verifies your byte count against the strict 13,312 byte limit.
 
 ---
 
@@ -174,5 +214,5 @@ This project is licensed under the [MIT](LICENSE) License.
 ---
 <p align="center">
   <i>“Nature does not conceal her secrets through malice, but through her own grandeur.”</i><br>
-  — Albert Einstein (most likely while experimenting with light and unicorns) ✨🦄
+  — Albert Einstein (almost certainly while experimenting with unicorns, prisms, and roadroller compression) ✨🦄
 </p>
