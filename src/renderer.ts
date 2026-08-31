@@ -567,27 +567,21 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
       addSpark(target.pos.x, target.pos.y, targetHex, 1);
     }
 
-    // 2. Mounting Brackets
-    for (let i = 0; i < 4; i++) {
-      c.rotate(PI / 2);
-      line(c, 0.71 * (r - 2), 0.71 * (r - 2), 0.71 * (r + 6), 0.71 * (r + 6), 'rgba(100,116,139,0.45)', 2);
-    }
-
-    // 3. Chassis Backplate
+    // 2. Chassis Backplate
     circ(c, 0, 0, r, rgbaB(0.42), rgbaW(0.18), 1.5);
 
-    // 4. Target Color Band
+    // 3. Target Color Band
     circ(c, 0, 0, r - 2, undefined, targetHex, 3.2);
 
-    // 5. Charge Progress Ring
+    // 4. Charge Progress Ring
     if (target.charge > 0) {
       arc(c, 0, 0, r - 2, -PI / 2, -PI / 2 + TAU * target.charge, isMatch ? C_WHITE : '#fef08a', 4.0, 'round');
     }
 
-    // 6. Mid-chassis Ring
+    // 5. Mid-chassis Ring
     circ(c, 0, 0, r * 0.68, rgbaB(0.55));
 
-    // 7. Sensor Aperture Lens
+    // 6. Sensor Aperture Lens
     if (hasLight) {
       const [sr, sg, sb] = sampledRgb;
       const lensGrad = radGrad(c, 0, 0, 0, centerRadius, [
@@ -604,11 +598,12 @@ export function createRenderer(ctx: CanvasRenderingContext2D) {
 
     circ(c, 0, 0, centerRadius, undefined, isMatch ? C_WHITE : hasLight ? sampledHex : 'rgba(148,163,184,0.5)', isMatch ? 2.2 : 1.5);
 
-    // 8. Optical Reticle Notches
-    const ti = centerRadius - 2.0, to = centerRadius + 3.0;
+    // 7. Mounting Brackets & Optical Reticle Notches (4-way symmetry loop)
+    const ti = centerRadius - 2, to = centerRadius + 3;
     const reticleCol = isMatch ? C_WHITE : rgbaW(0.55);
     for (let i = 0; i < 4; i++) {
       c.rotate(PI / 2);
+      line(c, 0.71 * (r - 2), 0.71 * (r - 2), 0.71 * (r + 6), 0.71 * (r + 6), 'rgba(100,116,139,0.45)', 2);
       line(c, 0, -ti, 0, -to, reticleCol);
     }
 
