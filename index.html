@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta id="vpmeta" name="viewport" content="width=700">
   <title>Spectral Horn - JS13k Optical Puzzle</title>
   <link rel="stylesheet" href="./src/style.css">
 </head>
+
 <body class="is-title">
   <canvas id="c"></canvas>
   <div id="game-header">
     <div class="logo"><span class="logo-icon">✨</span><span class="logo-text"> SPECTRAL HORN</span></div>
     <select id="lvl-select"></select>
-    <button id="menu-btn" title="Return to Title Screen">🏠<span class="btn-text"> Menu</span></button>
-    <button id="reset-btn" title="Reset Horn Positions">🔄<span class="btn-text"> Reset</span></button>
-    <button id="help-btn" title="Controls &amp; Help">❓<span class="btn-text"> Help</span></button>
-    <button id="music-btn" title="Toggle Music">🎵<span class="btn-text"> Music</span></button>
-    <button id="sfx-btn" title="Toggle Sound FX">🔊<span class="btn-text"> SFX</span></button>
+    <button id="menu-btn">🏠<span class="btn-text"> Menu</span></button>
+    <button id="reset-btn">🔄<span class="btn-text"> Reset</span></button>
+    <button id="help-btn">❓<span class="btn-text"> Help</span></button>
+    <button id="music-btn">🎵<span class="btn-text"> Music</span></button>
+    <button id="sfx-btn">🔊<span class="btn-text"> SFX</span></button>
   </div>
   <div id="game-hint-bar">
     <span id="lvl-title">Level 1</span>
@@ -51,4 +53,5 @@
   </aside>
   <script type="module" src="./src/game.ts"></script>
 </body>
+
 </html>
