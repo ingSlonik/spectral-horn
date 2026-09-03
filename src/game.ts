@@ -334,3 +334,6 @@ export function initGame(): void {
 }
 
 initGame();
+
+// JS13K: Initialize Wavedash SDK for the Wavedash category
+self.Wavedash?.init();

@@ -10,3 +10,10 @@ declare module 'roadroller' {
     makeDecoder(): { firstLine: string; secondLine: string };
   }
 }
+
+interface Window {
+  Wavedash?: {
+    init: () => void;
+  };
+}
+
