@@ -2,7 +2,7 @@
 > *When theoretical optics, procedural rendering, crystal unicorns, and an unforgiving 13-kilobyte limit collide.*
 
 [![JS13kGames](https://img.shields.io/badge/JS13kGames-2026-ff0055.svg?style=flat-square)](https://js13kgames.com)
-[![Bundle Size](https://img.shields.io/badge/size-13%2C310%20%2F%2013%2C312%20B%20(2%20bytes%20left!)-brightgreen.svg?style=flat-square)](#-how-on-earth-did-this-fit-in-13-kb)
+[![Bundle Size](https://img.shields.io/badge/size-%E2%89%A4%2013%20KB%20(ZIP)-brightgreen.svg?style=flat-square)](#-how-on-earth-did-this-fit-in-13-kb)
 [![Physics](https://img.shields.io/badge/optics-Snell%20%2B%20Cauchy%20%2B%20TIR%20%2B%20Alchemy-blueviolet.svg?style=flat-square)](#-physics-under-the-hood-why-light-is-genuinely-awesome)
 [![Levels](https://img.shields.io/badge/levels-17%20puzzles%20%2B%20sandbox-gold.svg?style=flat-square)](#-gameplay--the-17-level-odyssey)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
@@ -122,7 +122,7 @@ When you have a 13-kilobyte budget for code, sound, levels, physics, and visuals
 
 ## 🗜️ How on Earth Did This Fit in 13 KB?
 
-The JS13k competition limit is **13,312 bytes** in a `.zip` archive. We utilized literally **99.98%** of the available space, leaving just **2 single bytes** to spare:
+The JS13k competition limit is strictly **13,312 bytes** in a `.zip` archive. Fitting a full analytical 2D raytracer, 17 handcrafted levels, procedural vector rendering, and a real-time Web Audio synthesizer requires wringing out every single bit:
 
 | Step | Tool | What it does |
 | :--- | :--- | :--- |
@@ -133,17 +133,7 @@ The JS13k competition limit is **13,312 bytes** in a `.zip` archive. We utilized
 | **5. Crushing** | `roadroller` | Squeezes HTML, CSS, and JS into a single self-extracting JS payload. |
 | **6. Ultra ZIP** | `ect` (Enhanced Compression Tool) | Maximum DEFLATE compression with stripped zip metadata (`-9 -strip`). |
 
-```
-======================================================
-📦 Final ZIP File : dist/spectral-horn.zip
-📊 Size           : 13,310 bytes (13.00 KB)
-🎯 JS13k Limit    : 13,312 bytes (13 KB)
-📈 Limit Usage    : 99.98% (2 bytes remaining!)
-======================================================
-```
-
-> [!TIP]
-> **2 bytes remaining:** That is exactly 16 bits of breathing room left for Sir Isaac Newton's ghost to rest comfortably inside the zip file.
+The build script packages the entire game into `dist/spectral-horn.zip`, automatically calculating the exact byte budget and ensuring the final archive lands right under the 13 KB threshold.
 
 ---
 
