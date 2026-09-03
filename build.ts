@@ -114,15 +114,14 @@ async function build() {
     minifyJS: false,
   });
 
-  // fs.writeFileSync(path.resolve("dist", 'index_skeletone.js'), minifiedJs);
-  // fs.writeFileSync(path.resolve("dist", 'index_skeletone.html'), minifiedSkeleton + "<script>" + minifiedJs + "</script>");
+  // 5. Roadroller Unified Crusher & JS-only Crusher
+  console.log('\n🛞 Step 5: Crushing with Roadroller (Unified + JS-only)...');
+  const roadrollerStart = Date.now();
 
-  // 5. Roadroller Unified Crusher (Compresses HTML + CSS + JavaScript in a single JS payload)
-  console.log('\n🛞 Step 5: Crushing HTML + CSS + JavaScript with Roadroller...');
   const escapedSkeleton = minifiedSkeleton.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const combinedJs = `document.write('${escapedSkeleton}');\n${minifiedJs}`;
-  const roadrollerStart = Date.now();
-  const packer = new Packer(
+
+  const unifiedPacker = new Packer(
     [
       {
         data: combinedJs,
@@ -135,21 +134,60 @@ async function build() {
       dynamicModels: 1,
     }
   );
-  await packer.optimize(2);
-  const { firstLine, secondLine } = packer.makeDecoder();
-  const roadrolledJs = firstLine + secondLine;
-  console.log(
-    `   Roadroller output size: ${(roadrolledJs.length / 1024).toFixed(2)} KB (${roadrolledJs.length} bytes) [took ${Date.now() - roadrollerStart}ms]`
+
+  const jsOnlyPacker = new Packer(
+    [
+      {
+        data: minifiedJs,
+        type: 'js' as any,
+        action: 'eval' as any,
+      },
+    ],
+    {
+      allowFreeVars: true,
+      dynamicModels: 1,
+    }
   );
+
+  await Promise.all([
+    unifiedPacker.optimize(2),
+    jsOnlyPacker.optimize(2),
+  ]);
+
+  // 5a. Unified index.html (HTML + CSS + JS packed into single script payload)
+  const { firstLine: uFl, secondLine: uSl } = unifiedPacker.makeDecoder();
+  const roadrolledJs = uFl + uSl;
+  console.log(
+    `   Roadroller unified output size: ${(roadrolledJs.length / 1024).toFixed(2)} KB (${roadrolledJs.length} bytes)`
+  );
+
+  if (!fs.existsSync(distDir)) {
+    fs.mkdirSync(distDir, { recursive: true });
+  }
 
   const finalHtml = `<script>${roadrolledJs}</script>`;
   const htmlDistPath = path.join(distDir, 'index.html');
   fs.writeFileSync(htmlDistPath, finalHtml, 'utf8');
   const htmlSize = fs.statSync(htmlDistPath).size;
-  console.log(`   Single HTML output size: ${(htmlSize / 1024).toFixed(2)} KB (${htmlSize} bytes)`);
+  console.log(`   Single HTML output (dist/index.html): ${(htmlSize / 1024).toFixed(2)} KB (${htmlSize} bytes)`);
 
-  // 5. Compress with ECT for maximum ZIP compression
-  console.log('\n🗜️  Step 5: Compressing archive with ECT (max compression)...');
+  // 5b. Uncompressed HTML with Roadroller JS (pure HTML skeleton + script)
+  const { firstLine: jsFl, secondLine: jsSl } = jsOnlyPacker.makeDecoder();
+  const roadrolledJsOnly = jsFl + jsSl;
+  console.log(
+    `   Roadroller JS-only output size: ${(roadrolledJsOnly.length / 1024).toFixed(2)} KB (${roadrolledJsOnly.length} bytes)`
+  );
+
+  const uncompressedHtml = `${minifiedSkeleton}<script>${roadrolledJsOnly}</script>`;
+  const uncompressedDistPath = path.join(distDir, 'index_uncompressed.html');
+  fs.writeFileSync(uncompressedDistPath, uncompressedHtml, 'utf8');
+  const uncompressedSize = fs.statSync(uncompressedDistPath).size;
+  console.log(
+    `   Uncompressed HTML output (dist/index_uncompressed.html): ${(uncompressedSize / 1024).toFixed(2)} KB (${uncompressedSize} bytes) [took ${Date.now() - roadrollerStart}ms]`
+  );
+
+  // 6. Compress with ECT for maximum ZIP compression
+  console.log('\n🗜️  Step 6: Compressing archive with ECT (max compression)...');
   const zipName = 'spectral-horn.zip';
   const zipPath = path.join(distDir, zipName);
 
