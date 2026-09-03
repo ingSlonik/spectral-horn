@@ -13,20 +13,17 @@ export interface DragState {
   mode: 'move' | 'rotate' | 'step-ccw' | 'step-cw' | null;
   dragOffset: Vec2;
   lastAngle: number;
-  isTouch: boolean;
 }
 
-const TOUCH_OFFSET_Y = 60;
-
 export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => void) {
-  let mousePos: Vec2 = v2(0, 0);
+  const V0 = v2(0, 0);
+  let mousePos: Vec2 = V0;
   let selectedPrismIndex: number | null = null;
   let dragState: DragState = {
     prismIndex: null,
     mode: null,
-    dragOffset: v2(0, 0),
+    dragOffset: V0,
     lastAngle: 0,
-    isTouch: false,
   };
   let hoverPrismIndex: number | null = null;
   let hoverHandle: 'body' | 'rot' | 'step-ccw' | 'step-cw' | null = null;
@@ -96,7 +93,7 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
     canvas.style.cursor = !hit ? C_DEFAULT : hit.handle === H_BODY ? M_MOVE : hit.handle === H_ROT ? 'grab' : C_POINTER;
   };
 
-  const handlePointerDown = (pos: Vec2, isRightClick: boolean, isTouch: boolean): void => {
+  const handlePointerDown = (pos: Vec2, isRightClick?: boolean): void => {
     initAudio();
     mousePos = pos;
     const prisms = getPrisms();
@@ -119,10 +116,9 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
         prismIndex: hit.idx,
         mode,
         dragOffset: mode === M_MOVE
-          ? v2(p.pos.x - pos.x, p.pos.y - (isTouch ? pos.y - TOUCH_OFFSET_Y : pos.y))
-          : v2(0, 0),
+          ? v2(p.pos.x - pos.x, p.pos.y - pos.y)
+          : V0,
         lastAngle: mode === M_ROTATE ? atan2(pos.y - p.pos.y, pos.x - p.pos.x) : 0,
-        isTouch,
       };
       canvas.style.cursor = mode === M_ROTATE ? 'grabbing' : mode === M_MOVE ? M_MOVE : C_POINTER;
     } else {
@@ -133,7 +129,7 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
     onStateChange?.();
   };
 
-  const handlePointerMove = (pos: Vec2, isTouch: boolean): void => {
+  const handlePointerMove = (pos: Vec2): void => {
     mousePos = pos;
     const prisms = getPrisms();
 
@@ -141,9 +137,8 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
       const p = prisms[dragState.prismIndex];
       if (p && !p.locked) {
         if (dragState.mode === M_MOVE) {
-          const y = isTouch ? pos.y - TOUCH_OFFSET_Y : pos.y;
           p.pos.x = max(60, min(940, pos.x + dragState.dragOffset.x));
-          p.pos.y = max(60, min(940, y + dragState.dragOffset.y));
+          p.pos.y = max(60, min(940, pos.y + dragState.dragOffset.y));
           if (p.basePos) { p.basePos.x = p.pos.x; p.basePos.y = p.pos.y; }
           playPrismMove(0.2);
         } else if (dragState.mode === M_ROTATE) {
@@ -163,7 +158,7 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
   const handlePointerUp = (): void => {
     stopStepAutoRepeat();
     if (dragState.prismIndex !== null) {
-      dragState = { prismIndex: null, mode: null, dragOffset: v2(0, 0), lastAngle: 0, isTouch: false };
+      dragState = { prismIndex: null, mode: null, dragOffset: V0, lastAngle: 0 };
       canvas.style.cursor = C_DEFAULT;
       updateHover(getPrisms());
       onStateChange?.();
@@ -172,8 +167,8 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
 
   const on = (t: EventTarget, ev: string, fn: any, opts?: any) => t.addEventListener(ev, fn, opts);
 
-  on(canvas, 'mousedown', (e: MouseEvent) => handlePointerDown(getCanvasPos(e), e.button === 2, false));
-  on(window, 'mousemove', (e: MouseEvent) => handlePointerMove(getCanvasPos(e), false));
+  on(canvas, 'mousedown', (e: MouseEvent) => handlePointerDown(getCanvasPos(e), e.button === 2));
+  on(window, 'mousemove', (e: MouseEvent) => handlePointerMove(getCanvasPos(e)));
   on(window, 'mouseup', handlePointerUp);
   on(canvas, 'contextmenu', (e: MouseEvent) => e.preventDefault());
 
@@ -219,8 +214,8 @@ export function createInput(canvas: HTMLCanvasElement, onStateChange?: () => voi
   }, { passive: false });
   */
 
-  const onTouch = (e: TouchEvent, isMove = false) => {
-    if (e.touches[0]) (isMove ? handlePointerMove : handlePointerDown)(getCanvasPos(e.touches[0]), false, true);
+  const onTouch = (e: TouchEvent, isMove?: boolean) => {
+    if (e.touches[0]) (isMove ? handlePointerMove : handlePointerDown)(getCanvasPos(e.touches[0]));
   };
   on(canvas, 'touchstart', (e: TouchEvent) => { e.preventDefault(); onTouch(e); }, { passive: false });
   on(window, 'touchmove', (e: TouchEvent) => onTouch(e, true), { passive: false });

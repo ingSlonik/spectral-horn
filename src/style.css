@@ -82,9 +82,7 @@ footer {
 header,
 #ac,
 button,
-select,
-.bp,
-.b1 {
+select {
   border-radius: 99px;
 }
 
@@ -357,6 +355,7 @@ select,
 .cl {
   gap: 8px;
   flex: 1;
+  text-align: left;
 }
 
 .ci {
