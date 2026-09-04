@@ -74,7 +74,7 @@ export function traceScene(
   }
 
   for (const emitter of emitters) {
-    const count = emitter.rayCount || 48;
+    const count = emitter.rayCount || 128;
     const minL = emitter.minLambda || 400;
     const maxL = emitter.maxLambda || 700;
     const width = emitter.width || 6;
