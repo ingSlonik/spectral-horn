@@ -153,8 +153,8 @@ The build script packages the entire game into `dist/spectral-horn.zip`, automat
 3. **Obsidian Shield** — *Flip the horn upside down to clear high dark barriers.*
 4. **Periscope Trick** — *Exceed the critical angle for internal reflection.*
 5. **Celestial Mirror** — *Bank light off chrome mirrors into target diodes.*
-6. **Cosmic Trickshot** — *Floor bounces into multi-target splits.*
-7. **Upside-Down Rainbow** — *Mirror bounces that flip the entire color spectrum.*
+6. **Upside-Down Rainbow** — *Mirror bounces that flip the entire color spectrum.*
+7. **Cosmic Trickshot** — *Floor bounces into multi-target splits.*
 8. **Hall of Mirrors** — *Complex multi-surface reflection mazes.*
 9. **Enter the Dove** — *Introducing the Dove prism: flips color order with zero beam deflection.*
 10. **Prismatic Inversion** — *Disperse the spectrum, then flip it with the Dove.*

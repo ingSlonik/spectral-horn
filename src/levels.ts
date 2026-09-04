@@ -58,8 +58,8 @@ const META_STR =
   "Obsidian Shield~Sensor is hidden. Flip horn upside down to bend light up.~" +
   "Periscope Trick~90° turn? Exceed critical angle for total internal reflection.~" +
   "Celestial Mirror~Bank off the mirror straight into the amber sensor.~" +
-  "Cosmic Trickshot~Floor bounce into a horn split. Two targets, one beam.~" +
   "Upside-Down Rainbow~A mirror bounce flips the entire color stack.~" +
+  "Cosmic Trickshot~Floor bounce into a horn split. Two targets, one beam.~" +
   "Hall of Mirrors~The rainbow always finds its way.~" +
   "Enter the Dove~Dove prism: flips color order, zero beam deflection.~" +
   "Prismatic Inversion~Disperse the rainbow, flip the stack with the Dove.~" +
@@ -114,15 +114,6 @@ const RAW_LEVELS: any[] = [
     [[540, 50, 580, 600]],
   ],
   [
-    [90, 220, 1.05],
-    [[300, 450, 45000]],
-    [
-      [880, 230, 620, 700, 0],
-      [880, 88, 400, 490, 5, 25, [0, 240, 255]],
-    ],
-    [[350, 50, 400, 480], [260, 840, 580, 860, 1], [680, 580, 730, 950]],
-  ],
-  [
     [90, 200, 0, 6],
     [[220, 450, 45000], [580, 850, MIRROR, 1.8]],
     [
@@ -131,6 +122,15 @@ const RAW_LEVELS: any[] = [
       [880, 705, 620, 700, 9],
     ],
     [[320, 50, 360, 260]],
+  ],
+  [
+    [90, 220, 1.05],
+    [[300, 450, 45000]],
+    [
+      [880, 230, 620, 700, 0],
+      [880, 88, 400, 490, 5, 25, [0, 240, 255]],
+    ],
+    [[350, 50, 400, 480], [260, 840, 580, 860, 1], [680, 580, 730, 950]],
   ],
   [
     [90, 200, -0.2],
