@@ -19,12 +19,16 @@ Naturally, we asked the only logical follow-up question of modern science: **Wha
 
 ### 🏆 js13kGames Contest Assets
 
-Both assets are 100% in-game captures rendered in real time by the procedural Canvas 2D engine:
+Both assets are 100% in-game captures rendered in real time by the procedural Canvas 2D engine, optimized strictly within the js13k submission constraints:
 
-| Cover Image (`800 × 500 px`) | Thumbnail (`320 × 320 px`) |
+| Cover Image (`800 × 500 px`, $\le$ 256 KB) | Thumbnail (`320 × 320 px`, $\le$ 64 KB) |
 | :---: | :---: |
 | [![Cover](assets/cover.png)](assets/cover.png) | [![Thumbnail](assets/thumbnail.png)](assets/thumbnail.png) |
-| *Panoramic hero composition: horn dispersion, mirror reflection, spherical orb focus, and charged sensors* | *Square icon: pure Snell's law refraction, Cauchy dispersion, and the procedural celestial unicorn* |
+| *Panoramic hero composition: horn dispersion, mirror reflection, spherical orb focus, and charged sensors*<br>`208 KB` (81% of 256 KB limit) | *Square icon: pure Snell's law refraction, Cauchy dispersion, and the procedural celestial unicorn*<br>`54 KB` (84% of 64 KB limit) |
+
+> [!TIP]
+> **Asset Optimization:**  
+> To preserve delicate optical dispersion gradients and rainbows without color banding or speckled noise in dark backgrounds, assets are quantized into an optimal 256-color palette using **Atkinson error diffusion** and crushed losslessly with **ECT** (`ect -9 -strip`).
 
 ---
 
@@ -203,6 +207,12 @@ Open `http://localhost:5173` in your browser.
 npm run build
 ```
 The optimized archive will be generated at `dist/spectral-horn.zip`. The build script verifies your byte count against the strict 13,312 byte limit.
+
+### Optimizing Contest Assets
+```bash
+node scripts/optimize-assets.ts
+```
+Processes raw captures (`*-original.png`) in `assets/` to satisfy strict js13k size constraints while retaining high color fidelity.
 
 ---
 
