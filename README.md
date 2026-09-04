@@ -17,6 +17,47 @@ Naturally, we asked the only logical follow-up question of modern science: **Wha
 
 **Spectral Horn** is a 2D optical physics puzzle game handcrafted for the **[js13kGames](https://js13kgames.com/)** competition. No bloated game engines, zero megabytes of textures, zero pre-recorded audio files, and strictly zero pre-rendered fakery. Every single ray of light—from Cauchy wavelength dispersion to Total Internal Reflection (TIR), Dove prism inversions, and spherical lens focusing—is computed analytically in real time on your CPU and rendered with the pure HTML5 Canvas 2D API.
 
+### 🏆 js13kGames Contest Assets
+
+Both assets are 100% in-game captures rendered in real time by the procedural Canvas 2D engine:
+
+| Cover Image (`800 × 500 px`) | Thumbnail (`320 × 320 px`) |
+| :---: | :---: |
+| [![Cover](assets/cover.png)](assets/cover.png) | [![Thumbnail](assets/thumbnail.png)](assets/thumbnail.png) |
+| *Panoramic hero composition: horn dispersion, mirror reflection, spherical orb focus, and charged sensors* | *Square icon: pure Snell's law refraction, Cauchy dispersion, and the procedural celestial unicorn* |
+
+---
+
+## 🎮 Gameplay & The 17-Level Odyssey
+
+### Controls & Steering
+- **Move Unicorn:** Click / touch and drag the unicorn's body.
+- **Rotate Horn:** Drag the circular **Orbit Ring** surrounding the horn.
+- **Micro-Nudge:** Click the **`↺` and `↻` Step Buttons** for precise $0.5^\circ$ angle fine-tuning.
+- **Touch-Friendly:** Built-in vertical touch offset ensures your thumb never covers the unicorn while dragging on mobile/tablets.
+- **Level Select & Reset:** Jump to any unlocked level or hit Reset if you get stuck in an optical labyrinth.
+- **Audio Controls:** Independent toggles for ambient generative music and crystalline sound effects.
+
+### Level Campaign
+1. **First Horn** — *Snell's law primer: steer green light into the photodiode.*
+2. **Prismatic Party** — *Disperse white light to satisfy three color sensors simultaneously.*
+3. **Obsidian Shield** — *Flip the horn upside down to clear high dark barriers.*
+4. **Periscope Trick** — *Exceed the critical angle for internal reflection.*
+5. **Celestial Mirror** — *Bank light off chrome mirrors into target diodes.*
+6. **Upside-Down Rainbow** — *Mirror bounces that flip the entire color spectrum.*
+7. **Cosmic Trickshot** — *Floor bounces into multi-target splits.*
+8. **Hall of Mirrors** — *Complex multi-surface reflection mazes.*
+9. **Enter the Dove** — *Introducing the Dove prism: flips color order with zero beam deflection.*
+10. **Prismatic Inversion** — *Disperse the spectrum, then flip it with the Dove.*
+11. **Crystal Orb** — *Harness spherical converging optics to focus divergent light.*
+12. **Squeeze & Scatter** — *Focusing and redirecting multi-beam arrays.*
+13. **Additive Alchemy: Yellow** — *Synthesize yellow light by overlapping Red and Green photons.*
+14. **Dual Synthesis** — *Orb-expanded blue light bridging composite chromatic targets.*
+15. **Great Recombination** — *Use a second horn to undo dispersion and synthesize pure White light.*
+16. **Prismatic Ensemble** — *Horn + Mirror + Orb combos.*
+17. **Grand Optical Symphony** — *The ultimate test: all instruments on deck to illuminate the cosmos!*
+* **+ Cosmic Sandbox** — *Freely experiment with light, prisms, and physics on the interactive title screen!*
+
 ---
 
 ## 🌈 Physics Under the Hood (Why Light is Genuinely Awesome)
@@ -134,38 +175,6 @@ The JS13k competition limit is strictly **13,312 bytes** in a `.zip` archive. Fi
 | **6. Ultra ZIP** | `ect` (Enhanced Compression Tool) | Maximum DEFLATE compression with stripped zip metadata (`-9 -strip`). |
 
 The build script packages the entire game into `dist/spectral-horn.zip`, automatically calculating the exact byte budget and ensuring the final archive lands right under the 13 KB threshold.
-
----
-
-## 🎮 Gameplay & The 17-Level Odyssey
-
-### Controls & Steering
-- **Move Unicorn:** Click / touch and drag the unicorn's body.
-- **Rotate Horn:** Drag the circular **Orbit Ring** surrounding the horn.
-- **Micro-Nudge:** Click the **`↺` and `↻` Step Buttons** for precise $0.5^\circ$ angle fine-tuning.
-- **Touch-Friendly:** Built-in vertical touch offset ensures your thumb never covers the unicorn while dragging on mobile/tablets.
-- **Level Select & Reset:** Jump to any unlocked level or hit Reset if you get stuck in an optical labyrinth.
-- **Audio Controls:** Independent toggles for ambient generative music and crystalline sound effects.
-
-### Level Campaign
-1. **First Horn** — *Snell's law primer: steer green light into the photodiode.*
-2. **Prismatic Party** — *Disperse white light to satisfy three color sensors simultaneously.*
-3. **Obsidian Shield** — *Flip the horn upside down to clear high dark barriers.*
-4. **Periscope Trick** — *Exceed the critical angle for internal reflection.*
-5. **Celestial Mirror** — *Bank light off chrome mirrors into target diodes.*
-6. **Upside-Down Rainbow** — *Mirror bounces that flip the entire color spectrum.*
-7. **Cosmic Trickshot** — *Floor bounces into multi-target splits.*
-8. **Hall of Mirrors** — *Complex multi-surface reflection mazes.*
-9. **Enter the Dove** — *Introducing the Dove prism: flips color order with zero beam deflection.*
-10. **Prismatic Inversion** — *Disperse the spectrum, then flip it with the Dove.*
-11. **Crystal Orb** — *Harness spherical converging optics to focus divergent light.*
-12. **Squeeze & Scatter** — *Focusing and redirecting multi-beam arrays.*
-13. **Additive Alchemy: Yellow** — *Synthesize yellow light by overlapping Red and Green photons.*
-14. **Dual Synthesis** — *Orb-expanded blue light bridging composite chromatic targets.*
-15. **Great Recombination** — *Use a second horn to undo dispersion and synthesize pure White light.*
-16. **Prismatic Ensemble** — *Horn + Mirror + Orb combos.*
-17. **Grand Optical Symphony** — *The ultimate test: all instruments on deck to illuminate the cosmos!*
-* **+ Cosmic Sandbox** — *Freely experiment with light, prisms, and physics on the interactive title screen!*
 
 ---
 
